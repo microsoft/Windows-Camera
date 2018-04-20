@@ -24,7 +24,6 @@
   </Applications>
   <Capabilities>
     <uap:Capability Name="picturesLibrary" />
-    <uap:Capability Name="videosLibrary" />
     <DeviceCapability Name="webcam" />
     <DeviceCapability Name="microphone" />
   </Capabilities>

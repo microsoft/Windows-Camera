@@ -53,13 +53,12 @@ namespace Cam360
         private bool _isRecording = false;
         private double _panSpeed;
 
-        private static readonly Semaphore semaphore = new Semaphore(1, 1);
         private string _manufacturer;
         private string _product;
 
         // Mediacapture and projection variables
         private MediaCapture _mediaCapture;
-        private Windows.Media.Effects.VideoTransformEffectDefinition _projectionXVP;
+        private Windows.Media.Effects.VideoTransformEffectDefinition _sphericalProjectionEffect;
         private MediaFrameSource _selectedFrameSource;
         private DeviceInformationCollection _cameraList;
         private List<MediaFrameSourceGroup> _mediaFrameSourceGroupList;
@@ -67,7 +66,7 @@ namespace Cam360
         private MediaPlayer _mediaPlayer;
         private MediaPlaybackSphericalVideoProjection _mediaPlayerProjection;
         private List<MediaFrameFormat> _filteredSourceFormat;
-        private LowLagPhotoCapture _lowLagPhotoCapture = null;
+        private LowLagPhotoCapture _lowLagPhotoCapture;
 
 
         /// <summary>
@@ -112,9 +111,9 @@ namespace Cam360
             {
                 RecordSymbol.Symbol = Symbol.Target;
                 await StopVideoRecordingAsync();
-                if (_projectionXVP != null)
+                if (_sphericalProjectionEffect != null)
                 {
-                    _projectionXVP = null;
+                    _sphericalProjectionEffect = null;
                 }
             }
             await CleanupCameraAsync();
@@ -193,7 +192,7 @@ namespace Cam360
             }
             catch (Exception ex)
             {
-                TraceException(ex);
+                TraceExceptionAsync(ex);
             }
 
             // If initialization succeeded, start the preview
@@ -232,7 +231,7 @@ namespace Cam360
             }
             catch (Exception ex)
             {
-                TraceException(ex);
+                TraceExceptionAsync(ex);
             }
         }
 
@@ -269,22 +268,22 @@ namespace Cam360
         /// <param name="e"></param>
         private async void RecordButton_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            if(_isRecording)
+            if (_isRecording)
             {
                 RecordSymbol.Symbol = Symbol.Target;
                 await StopVideoRecordingAsync();
                 await _mediaCapture.ClearEffectsAsync(MediaStreamType.VideoRecord);
-                if (_projectionXVP != null)
+                if (_sphericalProjectionEffect != null)
                 {
-                    if (_projectionXVP.SphericalProjection.IsEnabled)
+                    if (_sphericalProjectionEffect.SphericalProjection.IsEnabled)
                     {
                         _mediaPlayerProjection.IsEnabled = (_mediaPlayerProjection.FrameFormat == SphericalVideoFrameFormat.Equirectangular) || (ToggleForceSpherical.IsChecked == true);
-                        _mediaPlayerProjection.FrameFormat = _projectionXVP.SphericalProjection.FrameFormat;
-                        _mediaPlayerProjection.HorizontalFieldOfViewInDegrees = _projectionXVP.SphericalProjection.HorizontalFieldOfViewInDegrees;
-                        _mediaPlayerProjection.ProjectionMode = _projectionXVP.SphericalProjection.ProjectionMode;
-                        _mediaPlayerProjection.ViewOrientation = _projectionXVP.SphericalProjection.ViewOrientation;
+                        _mediaPlayerProjection.FrameFormat = _sphericalProjectionEffect.SphericalProjection.FrameFormat;
+                        _mediaPlayerProjection.HorizontalFieldOfViewInDegrees = _sphericalProjectionEffect.SphericalProjection.HorizontalFieldOfViewInDegrees;
+                        _mediaPlayerProjection.ProjectionMode = _sphericalProjectionEffect.SphericalProjection.ProjectionMode;
+                        _mediaPlayerProjection.ViewOrientation = _sphericalProjectionEffect.SphericalProjection.ViewOrientation;
                     }
-                    _projectionXVP = null;
+                    _sphericalProjectionEffect = null;
                 }
             }
             else
@@ -292,19 +291,19 @@ namespace Cam360
                 RecordSymbol.Symbol = Symbol.Stop;
                 if (ToggleRecordProjection.IsChecked == true)
                 {
-                    _projectionXVP = new Windows.Media.Effects.VideoTransformEffectDefinition();
-                    _projectionXVP.SphericalProjection.IsEnabled = _mediaPlayerProjection.IsEnabled;
-                    _projectionXVP.SphericalProjection.FrameFormat = _mediaPlayerProjection.FrameFormat;
-                    _projectionXVP.SphericalProjection.HorizontalFieldOfViewInDegrees = _mediaPlayerProjection.HorizontalFieldOfViewInDegrees;
-                    _projectionXVP.SphericalProjection.ProjectionMode = _mediaPlayerProjection.ProjectionMode;
-                    _projectionXVP.SphericalProjection.ViewOrientation = _mediaPlayerProjection.ViewOrientation;
+                    _sphericalProjectionEffect = new Windows.Media.Effects.VideoTransformEffectDefinition();
+                    _sphericalProjectionEffect.SphericalProjection.IsEnabled = _mediaPlayerProjection.IsEnabled;
+                    _sphericalProjectionEffect.SphericalProjection.FrameFormat = _mediaPlayerProjection.FrameFormat;
+                    _sphericalProjectionEffect.SphericalProjection.HorizontalFieldOfViewInDegrees = _mediaPlayerProjection.HorizontalFieldOfViewInDegrees;
+                    _sphericalProjectionEffect.SphericalProjection.ProjectionMode = _mediaPlayerProjection.ProjectionMode;
+                    _sphericalProjectionEffect.SphericalProjection.ViewOrientation = _mediaPlayerProjection.ViewOrientation;
                     _mediaPlayerProjection.IsEnabled = false;
-                    await _mediaCapture.AddVideoEffectAsync(_projectionXVP, MediaStreamType.VideoRecord);
+                    await _mediaCapture.AddVideoEffectAsync(_sphericalProjectionEffect, MediaStreamType.VideoRecord);
                 }
                 await StartVideoRecordingAsync();
             }
-            await LockUnlockUIandSettingsAsync(_isRecording);
             _isRecording = !_isRecording;
+            await EnableDisableCameraControlsOnUI(!_isRecording);
         }
 
         /// <summary>
@@ -318,9 +317,9 @@ namespace Cam360
             {
                 _mediaPlayerProjection.HorizontalFieldOfViewInDegrees = SliderFieldOfView.Value;
             }
-            if (_projectionXVP != null)
+            if (_sphericalProjectionEffect != null)
             {
-                _projectionXVP.SphericalProjection.HorizontalFieldOfViewInDegrees = SliderFieldOfView.Value;
+                _sphericalProjectionEffect.SphericalProjection.HorizontalFieldOfViewInDegrees = SliderFieldOfView.Value;
             }
         }
 
@@ -354,9 +353,9 @@ namespace Cam360
             {
                 _mediaPlayerProjection.ViewOrientation *= CreateFromHeadingPitchRoll(horizontalMovementFactor, verticalMovementFactor, rotation);
             }
-            if (_projectionXVP != null)
+            if (_sphericalProjectionEffect != null)
             {
-                _projectionXVP.SphericalProjection.ViewOrientation *= CreateFromHeadingPitchRoll(horizontalMovementFactor, verticalMovementFactor, rotation);
+                _sphericalProjectionEffect.SphericalProjection.ViewOrientation *= CreateFromHeadingPitchRoll(horizontalMovementFactor, verticalMovementFactor, rotation);
             }
         }
 
@@ -368,15 +367,15 @@ namespace Cam360
         private void PreviewElement_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
             if ((_mediaPlayerProjection != null && _mediaPlayerProjection.IsEnabled)
-                   || (_projectionXVP != null && _projectionXVP.SphericalProjection.IsEnabled))
+                   || (_sphericalProjectionEffect != null && _sphericalProjectionEffect.SphericalProjection.IsEnabled))
             {
                 _isPanning = true;
 
                 // Show UI insight on how to interact with the view
                 PanningGuidance.Visibility = Visibility.Visible;
-                if (_projectionXVP != null)
+                if (_sphericalProjectionEffect != null)
                 {
-                    _panSpeed = _projectionXVP.SphericalProjection.HorizontalFieldOfViewInDegrees / (PreviewElement.ActualWidth);
+                    _panSpeed = _sphericalProjectionEffect.SphericalProjection.HorizontalFieldOfViewInDegrees / (PreviewElement.ActualWidth);
                 }
                 else if (_mediaPlayerProjection != null)
                 {
@@ -400,9 +399,9 @@ namespace Cam360
                 {
                     _mediaPlayerProjection.ViewOrientation = Quaternion.Identity;
                 }
-                if (_projectionXVP != null)
+                if (_sphericalProjectionEffect != null)
                 {
-                    _projectionXVP.SphericalProjection.ViewOrientation = Quaternion.Identity;
+                    _sphericalProjectionEffect.SphericalProjection.ViewOrientation = Quaternion.Identity;
                 }
                 SliderFieldOfView.Value = 120;
             }
@@ -415,15 +414,18 @@ namespace Cam360
         /// </summary>
         /// <param name="ex"></param>
         /// <param name="memberName"></param>
-        private void TraceException(
+        private async void TraceExceptionAsync(
             Exception ex,
             [System.Runtime.CompilerServices.CallerMemberName] string memberName = ""
             )
         {
-            string m = memberName + "\n" + ex.ToString();
-            ExceptionText.Text = m;
-            ExceptionText.Visibility = Visibility.Visible;
-            Debug.WriteLine(m + ex.ToString());
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                string m = memberName + "\n" + ex.ToString();
+                ExceptionText.Text = m;
+                ExceptionText.Visibility = Visibility.Visible;
+                Debug.WriteLine(m + ex.ToString());
+            });
         }
 
         /// <summary>
@@ -445,18 +447,18 @@ namespace Cam360
         }
 
         /// <summary>
-        /// Locking or unlocking the relevant UI controls
+        /// Enabling or Disabling the relevant UI controls
         /// </summary>
-        /// <param name="lockingValue"></param>
+        /// <param name="bDoEnable"></param>
         /// <returns></returns>
-        private async Task LockUnlockUIandSettingsAsync(bool unlockingValue)
+        private async Task EnableDisableCameraControlsOnUI(bool bDoEnable)
         {
-            Debug.WriteLine($"unlocking UI: {unlockingValue}");
+            Debug.WriteLine($"unlocking UI: {bDoEnable}");
 
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                cmbResolution.IsEnabled = unlockingValue;
-                cmbCamera.IsEnabled = unlockingValue;
+                cmbResolution.IsEnabled = bDoEnable;
+                cmbCamera.IsEnabled = bDoEnable;
             });
         }
 
@@ -502,7 +504,7 @@ namespace Cam360
                         cmbCamera.ItemsSource = cameraNamesList;
                         cmbCamera.SelectedIndex = 0;
 
-                        await LockUnlockUIandSettingsAsync(true);
+                        await EnableDisableCameraControlsOnUI(true);
                     }
                     else
                     {
@@ -514,7 +516,7 @@ namespace Cam360
             }
             catch (Exception ex)
             {
-                TraceException(ex);
+                TraceExceptionAsync(ex);
             }
         }
 
@@ -614,9 +616,9 @@ namespace Cam360
                     _mediaPlayerProjection.FrameFormat = SphericalVideoFrameFormat.Equirectangular;
                     _mediaPlayerProjection.IsEnabled = true;
                     _mediaPlayerProjection.HorizontalFieldOfViewInDegrees = 120;
-                    if (_projectionXVP != null)
+                    if (_sphericalProjectionEffect != null)
                     {
-                        _projectionXVP.SphericalProjection.HorizontalFieldOfViewInDegrees = 120;
+                        _sphericalProjectionEffect.SphericalProjection.HorizontalFieldOfViewInDegrees = 120;
                     }
                 }
                 else
@@ -654,7 +656,7 @@ namespace Cam360
             }
             catch (Exception ex)
             {
-                TraceException(ex);
+                TraceExceptionAsync(ex);
             }
             finally
             {
