@@ -78,10 +78,6 @@ namespace Cam360
 
             Application.Current.Suspending += Application_Suspending;
             Application.Current.Resuming += Application_Resuming;
-
-            var info = (new Windows.Security.ExchangeActiveSyncProvisioning.EasClientDeviceInformation());
-            _manufacturer = info.SystemManufacturer;
-            _product = info.SystemProductName.Replace('_', '-').Replace(' ', '-');
         }
 
         /// <summary>
@@ -188,7 +184,12 @@ namespace Cam360
 
                 _isInitialized = true;
 
-                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { RecordButton.IsEnabled = true; PhotoButton.IsEnabled = true; });
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, 
+                    () =>
+                    {
+                        RecordButton.IsEnabled = true;
+                        PhotoButton.IsEnabled = true;
+                    });
             }
             catch (Exception ex)
             {
@@ -226,7 +227,12 @@ namespace Cam360
                         await StartPreviewAsync();
                     }
 
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => {RecordButton.IsEnabled = true; PhotoButton.IsEnabled = true;});
+                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                        () =>
+                        {
+                            RecordButton.IsEnabled = true;
+                            PhotoButton.IsEnabled = true;
+                        });
                 }
             }
             catch (Exception ex)
@@ -476,9 +482,12 @@ namespace Cam360
 
                 if (_mediaCapture == null)
                 {
+                    //retrieve all camera sources on the system
                     IReadOnlyList<MediaFrameSourceGroup> allGroups = await MediaFrameSourceGroup.FindAllAsync();
                     List<MediaFrameSourceGroup> allGroupsList = allGroups.ToList();
                     string audioDeviceSelectorString = MediaDevice.GetAudioCaptureSelector();
+                    
+                    // list all sources for debugging
                     foreach (var sourceGroup in allGroupsList)
                     {
                         Debug.WriteLine($"{ sourceGroup.DisplayName}");
@@ -490,16 +499,19 @@ namespace Cam360
                             Debug.WriteLine($" {info.DeviceInformation.Name} ---- { names[(int)info.SourceKind]} -- {streamTypes[(int)info.MediaStreamType]}");
                         }
                     }
-
+                    //select only the sources which have have a color (non-IR/non-depth) video preview or video record stream
                     _mediaFrameSourceGroupList = allGroupsList.Where(group => group.SourceInfos.Any(sourceInfo => sourceInfo.SourceKind == MediaFrameSourceKind.Color 
                                                                                                                   && (sourceInfo.MediaStreamType == MediaStreamType.VideoPreview 
                                                                                                                       || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord))).ToList();
+                    // find all audio record sources.
                     _microphoneList = await DeviceInformation.FindAllAsync(audioDeviceSelectorString);
 
+                    // retrieve all physical cameras device information.
                     _cameraList = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
 
                     if (_mediaFrameSourceGroupList.Count > 0)
                     {
+                        // list all selectable sources into the drop down list for user
                         var cameraNamesList = _mediaFrameSourceGroupList.Select(group => group.DisplayName);
                         cmbCamera.ItemsSource = cameraNamesList;
                         cmbCamera.SelectedIndex = 0;
@@ -527,10 +539,13 @@ namespace Cam360
         {
             cmbResolution.Items.Clear();
             _filteredSourceFormat = new List<MediaFrameFormat>();
+            //retrieve all supported formats
             List<MediaFrameFormat> supportedFormats = _selectedFrameSource.SupportedFormats.ToList();
             uint maxResolution = 0;
             int maxResolutionPropertyIndex = 0;
             int supportedFormatIndex = 0;
+
+            // filter out and skip mjpeg and rgb24 video formats
             foreach(MediaFrameFormat format in supportedFormats)
             {
                 VideoMediaFrameFormat videoFormat = format.VideoFormat;
@@ -828,7 +843,7 @@ namespace Cam360
         }
 
         /// <summary>
-        /// Frind the greatest common denominator
+        /// Find the greatest common denominator
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
