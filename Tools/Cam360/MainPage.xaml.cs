@@ -425,12 +425,13 @@ namespace Cam360
             [System.Runtime.CompilerServices.CallerMemberName] string memberName = ""
             )
         {
+            string m = memberName + "\n" + ex.ToString();
+            Debug.WriteLine(m + ex.ToString());
+
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                string m = memberName + "\n" + ex.ToString();
                 ExceptionText.Text = m;
                 ExceptionText.Visibility = Visibility.Visible;
-                Debug.WriteLine(m + ex.ToString());
             });
         }
 
@@ -649,6 +650,11 @@ namespace Cam360
                 PreviewElement.ManipulationMode = _mediaPlayerProjection.IsEnabled ?
                     ManipulationModes.TranslateX | ManipulationModes.TranslateY | ManipulationModes.Rotate | ManipulationModes.TranslateInertia
                     : ManipulationModes.None;
+
+                // this check box makes sense only when spherical projectino is enabled.
+                ToggleRecordProjection.Visibility = _mediaPlayerProjection.IsEnabled ? 
+                    Visibility.Visible 
+                    : Visibility.Collapsed;
 
                 // Prevent the device from sleeping while we run the preview
                 _displayRequest.RequestActive();
