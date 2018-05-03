@@ -651,7 +651,7 @@ namespace Cam360
                     ManipulationModes.TranslateX | ManipulationModes.TranslateY | ManipulationModes.Rotate | ManipulationModes.TranslateInertia
                     : ManipulationModes.None;
 
-                // this check box makes sense only when spherical projectino is enabled.
+                // this check box makes sense only when spherical projection is enabled.
                 ToggleRecordProjection.Visibility = _mediaPlayerProjection.IsEnabled ? 
                     Visibility.Visible 
                     : Visibility.Collapsed;

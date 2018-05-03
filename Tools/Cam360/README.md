@@ -3,26 +3,21 @@
   samplefwlink: http://go.microsoft.com/fwlink/p/?LinkId=853072
 --->
 
-# Sample App for consumption of 360-degree Camera 
+# Sample App targeting the use of windows compliant 360-degree Camera 
 
-Shows how to preview, video record and photo capture output of a windows supported 360 camera.
-As windows supported 360 camera is a camera with one or many lenses/sensors and a driver package (driver + DeviceMFT) that provides stitched Equirectangular frames,
+Shows how to support preview, video record and photo capture scenarios with a 360 camera on Windows.
+A windows supported 360 camera is a camera with one or many lenses/sensors and a driver package (driver + DeviceMFT) that provides stitched Equirectangular frames,
 and has appropriate spherical attributes set on stream and mediatype.
 
 The sample uses the MediaPlayer class and MediaPlayerElement xaml element for 360-degree preview.
-For PC the MediaPlayer handles all aspects of the rendering.
+The MediaPlayer handles all aspects of the rendering.
 MediaPlaybackSphericalVideoProjection member of MediaPlayer class handles the projection from Equirectangular frames output of the camera to a viewport.
-The developer need only provide the look direction.
+The developer only needs to provide the look direction.
 The sample uses MediaCapture Class for accessing the camera for preview,video record and photo capture.
 The MediaCapture class handles the addition of appropriate spherical metadata on the captured photos and recorded files.
 
 
-> **Note:** This sample is part of a large collection of UWP feature samples. 
-> If you are unfamiliar with Git and GitHub, you can download the entire collection as a 
-> [ZIP file](https://github.com/Microsoft/Windows-universal-samples/archive/master.zip), but be 
-> sure to unzip everything to access shared dependencies. For more info on working with the ZIP file, 
-> the samples collection, and GitHub, see [Get the UWP samples from GitHub](https://aka.ms/ovu2uq). 
-> For more samples, see the [Samples portal](https://aka.ms/winsamples) on the Windows Dev Center. 
+**Note:** This sample is part of a collection app samples for windows camera 
 
 Specifically, this samples covers:
 
@@ -41,11 +36,9 @@ To obtain information about Windows 10 development, go to the [Windows Dev Cente
 [MediaPlayerElement](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.mediaplayerelement
 [MediaPlaybackSphericalVideoProjection] https://docs.microsoft.com/en-us/uwp/api/windows.media.playback.mediaplaybacksphericalvideoprojection
 [MediaCapture]https://docs.microsoft.com/en-us/uwp/api/windows.media.capture.mediacapture
+
 ## System requirements
-
-**Client:** Windows 10 build ?16299,
-
-**Phone:** Windows 10 build ?16299
+    Windows 10 build 17134,
 
 ## Build the sample
 
