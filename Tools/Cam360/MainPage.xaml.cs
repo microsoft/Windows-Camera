@@ -39,7 +39,7 @@ using Windows.UI.Xaml.Navigation;
 namespace Cam360
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Main camera application preview and UI controls page.
     /// </summary>
     public sealed partial class MainPage : Page
     {
@@ -52,9 +52,6 @@ namespace Cam360
         private bool _isPanning = false;
         private bool _isRecording = false;
         private double _panSpeed;
-
-        private string _manufacturer;
-        private string _product;
 
         // Mediacapture and projection variables
         private MediaCapture _mediaCapture;
