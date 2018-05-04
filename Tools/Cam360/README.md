@@ -33,8 +33,8 @@ To obtain information about Windows 10 development, go to the [Windows Dev Cente
 
 ### Reference
 [MediaPlayer](https://docs.microsoft.com/en-us/uwp/api/windows.media.playback.mediaplayer)  
-[MediaPlayerElement](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.mediaplayerelement)
-[MediaPlaybackSphericalVideoProjection](https://docs.microsoft.com/en-us/uwp/api/windows.media.playback.mediaplaybacksphericalvideoprojection)
+[MediaPlayerElement](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.controls.mediaplayerelement)  
+[MediaPlaybackSphericalVideoProjection](https://docs.microsoft.com/en-us/uwp/api/windows.media.playback.mediaplaybacksphericalvideoprojection)  
 [MediaCapture](https://docs.microsoft.com/en-us/uwp/api/windows.media.capture.mediacapture)
 
 ## System requirements
