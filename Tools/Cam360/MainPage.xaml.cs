@@ -617,6 +617,7 @@ namespace Cam360
             _mediaPlayer.RealTimePlayback = true;
             _mediaPlayer.AutoPlay = true;
             _mediaPlayer.Source = MediaSource.CreateFromMediaFrameSource(_selectedFrameSource);
+            _mediaPlayer.CommandManager.IsEnabled = false;
             PreviewElement.SetMediaPlayer(_mediaPlayer);
             _mediaPlayerProjection = _mediaPlayer.PlaybackSession.SphericalVideoProjection;
 
