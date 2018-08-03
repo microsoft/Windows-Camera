@@ -549,7 +549,8 @@ namespace Cam360
                 VideoMediaFrameFormat videoFormat = format.VideoFormat;
                 string subtype = format.Subtype.ToLowerInvariant();
                 if (subtype == MediaEncodingSubtypes.Mjpg.ToLowerInvariant()
-                    || subtype == MediaEncodingSubtypes.Rgb24.ToLowerInvariant())
+                    || (format.FrameRate.Denominator <=0 ) //workaround for some bad camera f/w
+                    )
                 {
                     continue;
                 }
