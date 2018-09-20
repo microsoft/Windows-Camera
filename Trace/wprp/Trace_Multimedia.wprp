@@ -1,0 +1,220 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<WindowsPerformanceRecorder Version="1.0" Author="Microsoft Corporation" Team="MediaFoundation" Comments="MF tracing profile" Company="Microsoft Corporation" Copyright="Microsoft Corporation" Tag="MFTrace">
+  <Profiles>
+    <EventCollector Id="EventCollector_Trace_Multimedia" Name="MFTrace Event Collector" Private="false" ProcessPrivate="false" Secure="false" Realtime="false">
+      <BufferSize Value="1024" />
+      <Buffers Value="40" />
+      <MaximumFileSize Value="256" FileMode="Circular" />
+      <FileMax Value="1" />
+    </EventCollector>
+    <EventProvider Id="CameraQComAvStream_DebugMenu" Name="e0141511-4523-463e-9709-b1a6fadbcbfb" Level="32" />
+    <EventProvider Id="CameraQComVFE_DebugMenu" Name="62774a98-5c63-43e1-8b13-3c5e8958e414" Level="32" />
+    <EventProvider Id="CTRLGUID_EVR_WPP" Name="d3045008-e530-485e-81b7-c6d54dbd9044" />
+    <EventProvider Id="DRMWMI" Name="6e03dd26-581b-4ec5-8f22-601a4de5f022" />
+    <EventProvider Id="Jedi" Name="e647b5bf-99a4-41fe-8789-56c6bb3fa9c8" Level="32" />
+    <EventProvider Id="MfWmiControl" Name="362007f7-6e50-4044-9082-dfa078c63a73" />
+    <EventProvider Id="Microsoft_Windows_Devices_Background" Name="64ef2b1c-4ae1-4e64-8599-1636e441ec88" />
+    <EventProvider Id="Microsoft-Apps-SkypeApp-UI" Name="edd0620d-036c-516e-dc22-564351a84725" />
+    <EventProvider Id="Microsoft-Skype-Cafe-Threshold-Calling" Name="eb5667d3-a91a-5ede-35bc-fcfb2c6bffb1" />
+    <EventProvider Id="Microsoft-Skype-Cafe-Threshold-Skype" Name="a5a483a3-76df-445b-a371-24265926199b" />
+    <EventProvider Id="Microsoft-Windows-Apps-Flighting-Photos" Name="dca2b5b9-047f-5768-688f-9b4c705b541f" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos" Name="3c20a2bd-0497-5e1d-ad49-7b789b9d7318" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-Analysis" Name="6a1e3074-ffee-5d94-f0b9-f1e92857ac55" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-AppCoreCS" Name="9192accc-612c-5570-ff17-6d6d222f80c9" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-AppCoreCS-Tracing" Name="eb528f81-7d3a-5d04-a41a-28858b9ca896" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-RemoteAccess" Name="8f4fd2af-c8db-5cc1-27ec-54a4bcf3aab5" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-Reporting" Name="b2393654-1cde-512b-8f3c-6654cd70172a" />
+    <EventProvider Id="Microsoft-Windows-Apps-Photos-Tracing" Name="054b421c-7def-54ef-ef59-41b32c8f94bc" />
+    <EventProvider Id="Microsoft-Windows-AudioEngineVerbose" Name="a6a00efd-21f2-4a99-807e-9b3bf1d90285" />
+    <EventProvider Id="Microsoft-Windows-AudioSes" Name="ae4bd3be-f36f-45b6-8d21-bdd6fb832853" />
+    <EventProvider Id="Microsoft-Windows-AudioStackTrace" Name="e27950eb-1768-451f-96ac-cc4e14f6d3d0" />
+    <EventProvider Id="Microsoft-Windows-AvStream" Name="46deb98e-b7d7-4578-a15a-e3f365c73ddb" />
+    <EventProvider Id="Microsoft-Windows-Capture-Photography" Name="2aa2b8df-8a4e-52a7-8cc7-c72f28293393" />
+    <EventProvider Id="Microsoft-Windows-Capture-RtMediaPreview" Name="c2b69254-1579-4c5f-9746-28ea00311bdd" />
+    <EventProvider Id="Microsoft-Windows-Devices-Lights-LightsWinRTLayer" Name="1964d316-5ec7-496f-82a8-a62c8b164b1a" />
+    <EventProvider Id="Microsoft-Windows-ExBusAudioWMIProvider" Name="a011308e-e43b-4120-ad04-c023bb14f2b6" />
+    <EventProvider Id="Microsoft-Windows-HDAudioBusWMIProvider" Name="9502cbc6-aa74-4eff-ba91-d9329bcce758" />
+    <EventProvider Id="Microsoft-Windows-Media-BackgroundPolicy" Name="5b1c79f0-a7b1-4fb1-a3c7-374528a7b075" />
+    <EventProvider Id="Microsoft-Windows-MediaEditing" Name="1123dc81-0423-4f27-bf57-6619e6bf85cc" Level="32">
+      <Keywords>
+        <Keyword Value="0x000000001FFFFFFF" />
+      </Keywords>
+    </EventProvider>
+    <EventProvider Id="Microsoft-Windows-MediaEngine" Name="8f2048e0-f260-4f57-a8d1-932376291682" />
+    <EventProvider Id="Microsoft-Windows-MediaFoundation-MFCaptureEngine" Name="b8197c10-845f-40ca-82ab-9341e98cfc2b" />
+    <EventProvider Id="Microsoft-Windows-MediaFoundation-MFReadWrite" Name="4b7eac67-fc53-448c-a49d-7cc6db524da7" />
+    <EventProvider Id="Microsoft-Windows-MediaFoundation-Platform" Name="bc97b970-d001-482f-8745-b8d7d5759f99" />
+    <EventProvider Id="Microsoft-Windows-MediaFoundation-SinkWriter" Name="ca1d0166-619f-4177-a6c5-6faae46b42ef" />
+    <EventProvider Id="Microsoft-Windows-MediaFoundation-SourceReader" Name="86bf288b-fe8c-4174-98aa-0ea625a0bea6" />
+    <EventProvider Id="Microsoft-Windows-MF" Name="a7364e1a-894f-4b3d-a930-2ed9c8c4c811" />
+    <EventProvider Id="Microsoft-Windows-MF-CAPTURE-ENGINE-WPP" Name="00000007-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-CORE-MFTS-WPP" Name="00000005-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-CORE-SINKS-WPP" Name="00000002-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-CORE-SOURCES-WPP" Name="00000003-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MFH264Enc" Name="2a49de31-8a5b-4d3a-a904-7fc7409ae90d" />
+    <EventProvider Id="Microsoft-Windows-MF-MEDIAENGINE-WPP" Name="c9c074d2-ff9b-410f-8ac6-81c7b8e60d0f" />
+    <EventProvider Id="Microsoft-Windows-MF-NETWORK-WPP" Name="00000004-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-PIPELINE-WPP" Name="00000001-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-PLATFORM-WPP" Name="00000000-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-PLAY-WPP" Name="00000006-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-Windows-MF-VIDEO_PROCESSOR-WPP" Name="00000008-0dc9-401d-b9b8-05e4eca4977e" />
+    <EventProvider Id="Microsoft-WindowsPhone-AppPlatProvider-Test" Name="1230dd62-03b6-4a26-92f5-06374d678571" />
+    <EventProvider Id="Microsoft-WindowsPhone-AudioRouting" Name="c72d385e-3a63-4e6d-8393-9399a36bd6e4" />
+    <EventProvider Id="Microsoft-WindowsPhone-AudioSrvPolicyManager" Name="71e0ac1e-cfa2-447c-91c7-4f307030f2fc" />
+    <EventProvider Id="Microsoft-WindowsPhone-AudioTuner" Name="ca48be7d-ce1c-4ca9-a00d-db5359e3a9a1" />
+    <EventProvider Id="Microsoft-WindowsPhone-AudioVolumeManager" Name="40902cc8-3c03-4e86-bc0d-183ee12a2215" />
+    <EventProvider Id="Microsoft-WindowsPhone-BackgroundAudio" Name="ccaf25e4-ba71-4fe5-bb4a-3440d9abeac4" />
+    <EventProvider Id="Microsoft-WindowsPhone-CaptureService" Name="7cd5c636-aa0a-486d-a630-8a63a7e8b764" />
+    <EventProvider Id="Microsoft-WindowsPhone-Comms-MediaApis" Name="0efbb51e-935f-438b-9413-5546fd4f6ab7" />
+    <EventProvider Id="Microsoft-WindowsPhone-Comms-MediaDataService" Name="266cdae9-1ae6-41eb-8872-bebf61829b50" />
+    <EventProvider Id="Microsoft-WindowsPhone-ElementaryMediaSource" Name="e8d25694-879b-4eb9-beb2-feff7e4f635e" />
+    <EventProvider Id="Microsoft-WindowsPhone-Exp-Apps-Podcasts" Name="40414124-61ba-40a0-8ff6-4d72614bc201" />
+    <EventProvider Id="Microsoft-WindowsPhone-Foundations-MediaLibrary" Name="41926823-e7c9-402e-97bf-c5112abb7993" />
+    <EventProvider Id="Microsoft-WindowsPhone-MediaService" Name="bbea663c-5f9b-4b9b-80f7-c412c14c2d59" />
+    <EventProvider Id="Microsoft-WindowsPhone-MediaServiceRemote" Name="d55e8d78-92fb-416a-9375-2d7e40e9b5df" />
+    <EventProvider Id="Microsoft-WindowsPhone-MFPAL" Name="70b36a56-9bfd-40ab-9282-ccf9e295d8cf" />
+    <EventProvider Id="Microsoft-WindowsPhone-MFVideoSink" Name="b34b0123-eb9d-411a-8f1e-9c5ef8577109" />
+    <EventProvider Id="Microsoft-WindowsPhone-MFVideoSinkFactory" Name="a13abc63-c22d-49e7-8d35-7ebaa2309e73" />
+    <EventProvider Id="Microsoft-WindowsPhone-MMAudio" Name="9ca9745c-2667-4e74-8782-3811ce02bb0c" />
+    <EventProvider Id="Microsoft-WindowsPhone-MMPhoneDeviceApi" Name="f3bea907-0867-4a05-8dab-556bf51bbee2" />
+    <EventProvider Id="Microsoft-WindowsPhone-MusicApp" Name="d2b6a184-da39-4c9a-9e0a-8b589b03dec0" />
+    <EventProvider Id="Microsoft-WindowsPhone-PhoneAudio" Name="3742be72-99a9-42e6-9fd5-c01a330e3625" />
+    <EventProvider Id="Microsoft-WindowsPhone-PhoneAudioSes" Name="6f34c0f0-d9f6-40d3-a94c-419b50fd8407" />
+    <EventProvider Id="Microsoft-WindowsPhone-PhotosApp" Name="e4515607-2c65-4073-be59-fb517e9ebd0a" />
+    <EventProvider Id="Microsoft-WindowsPhone-SlowmotionEffect" Name="3da3f5f2-a3f1-4bac-8f52-33514bf8dbdb" />
+    <EventProvider Id="Microsoft-WindowsPhone-StoryboardEngine" Name="b679d3b8-35a2-437f-9172-bdf0978d7de1" />
+    <EventProvider Id="Microsoft-WindowsPhone-VideoProvider" Name="d5e118bb-e2ca-42e5-8f5a-ba2f9b13660a" />
+    <EventProvider Id="Microsoft-WindowsPhone-zMediaQueueApp" Name="9e0d9603-4e6a-4a48-8cbd-63305d398f63" />
+    <EventProvider Id="Microsoft-Windows-Portcls" Name="10eb6007-818c-4db6-a694-b518e589d07a" />
+    <EventProvider Id="Microsoft-Windows-Runtime-Media" Name="8f0db3a8-299b-4d64-a4ed-907b409d4584" />
+    <EventProvider Id="Microsoft-Windows-SocCaptureSim" Name="e59fb1ec-318f-4ac6-b36b-6d11c5a49bec" />
+    <EventProvider Id="Microsoft-Windows-USBVideo" Name="da1d1dbd-3186-4fa2-bc2d-075efd9e43e2" Level="4" />
+    <EventProvider Id="Microsoft-Windows-VideoEditing" Name="acabb288-1997-439b-808b-6ffb52b3488f" Level="32">
+      <Keywords>
+        <Keyword Value="0x000000001FFFFFFF" />
+      </Keywords>
+    </EventProvider>
+    <EventProvider Id="Microsoft-Windows-WinRT-Error" Name="a86f8471-c31d-4fbc-a035-665d06047b03" Level="5" />
+    <EventProvider Id="Microsoft-Windows-WMP" Name="f3f14ff3-7b80-4868-91d0-d77e497b025e" />
+    <EventProvider Id="Osiris" Name="7d40a645-bcab-5bb4-82f0-09a26f9af2ea" Level="32" />
+    <EventProvider Id="PlayAudio" Name="ac239183-f48e-47b1-b70c-d028d24c2fb4" />
+    <EventProvider Id="PlayReady-WPP" Name="00000000-7ac4-430a-94e4-b0dfd254650f" />
+    <EventProvider Id="SSMFSOURCE" Name="8f55386b-eb37-4afc-88e0-c475b2fefd9a" />
+    <EventProvider Id="UsbVideo" Name="401f3683-4d1a-4396-99da-6d1fdfab1ddb" Level="4" NonPagedMemory="true" />
+    <EventProvider Id="Windows_Media_Player_Trace" Name="a9c1a3b7-54f3-4724-adce-58bc03e3bc78" />
+    <EventProvider Id="ZTrace" Name="f0febce4-5f0a-4cd8-b14c-7f04b2f57f9e" Level="32">
+      <Keywords>
+        <Keyword Value="0x000000007FFFFFFF" />
+      </Keywords>
+    </EventProvider>
+    <Profile Id="Trace_Multimedia.Verbose.File" Name="Trace_Multimedia" Description="MFTrace profile" DetailLevel="Verbose" LoggingMode="File">
+      <Collectors>
+        <EventCollectorId Value="EventCollector_Trace_Multimedia">
+          <EventProviders>
+            <EventProviderId Value="CameraQComAvStream_DebugMenu" />
+            <EventProviderId Value="CameraQComVFE_DebugMenu" />
+            <EventProviderId Value="CTRLGUID_EVR_WPP" />
+            <EventProviderId Value="DRMWMI" />
+            <EventProviderId Value="Jedi" />
+            <EventProviderId Value="MfWmiControl" />
+            <EventProviderId Value="Microsoft_Windows_Devices_Background" />
+            <EventProviderId Value="Microsoft-Apps-SkypeApp-UI" />
+            <EventProviderId Value="Microsoft-Skype-Cafe-Threshold-Calling" />
+            <EventProviderId Value="Microsoft-Skype-Cafe-Threshold-Skype" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Flighting-Photos" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-Analysis" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-AppCoreCS" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-AppCoreCS-Tracing" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-RemoteAccess" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-Reporting" />
+            <EventProviderId Value="Microsoft-Windows-Apps-Photos-Tracing" />
+            <EventProviderId Value="Microsoft-Windows-AudioEngineVerbose" />
+            <EventProviderId Value="Microsoft-Windows-AudioSes" />
+            <EventProviderId Value="Microsoft-Windows-AudioStackTrace" />
+            <EventProviderId Value="Microsoft-Windows-AvStream" />
+            <EventProviderId Value="Microsoft-Windows-Capture-Photography" />
+            <EventProviderId Value="Microsoft-Windows-Capture-RtMediaPreview" />
+            <EventProviderId Value="Microsoft-Windows-Devices-Lights-LightsWinRTLayer" />
+            <EventProviderId Value="Microsoft-Windows-ExBusAudioWMIProvider" />
+            <EventProviderId Value="Microsoft-Windows-HDAudioBusWMIProvider" />
+            <EventProviderId Value="Microsoft-Windows-Media-BackgroundPolicy" />
+            <EventProviderId Value="Microsoft-Windows-MediaEditing" />
+            <EventProviderId Value="Microsoft-Windows-MediaEngine" />
+            <EventProviderId Value="Microsoft-Windows-MediaFoundation-MFCaptureEngine" />
+            <EventProviderId Value="Microsoft-Windows-MediaFoundation-MFReadWrite" />
+            <EventProviderId Value="Microsoft-Windows-MediaFoundation-Platform" />
+            <EventProviderId Value="Microsoft-Windows-MediaFoundation-SinkWriter" />
+            <EventProviderId Value="Microsoft-Windows-MediaFoundation-SourceReader" />
+            <EventProviderId Value="Microsoft-Windows-MF" />
+            <EventProviderId Value="Microsoft-Windows-MF-CAPTURE-ENGINE-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-CORE-MFTS-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-CORE-SINKS-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-CORE-SOURCES-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MFH264Enc" />
+            <EventProviderId Value="Microsoft-Windows-MF-MEDIAENGINE-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-NETWORK-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-PIPELINE-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-PLATFORM-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-PLAY-WPP" />
+            <EventProviderId Value="Microsoft-Windows-MF-VIDEO_PROCESSOR-WPP" />
+            <EventProviderId Value="Microsoft-WindowsPhone-AppPlatProvider-Test" />
+            <EventProviderId Value="Microsoft-WindowsPhone-AudioRouting" />
+            <EventProviderId Value="Microsoft-WindowsPhone-AudioSrvPolicyManager" />
+            <EventProviderId Value="Microsoft-WindowsPhone-AudioTuner" />
+            <EventProviderId Value="Microsoft-WindowsPhone-AudioVolumeManager" />
+            <EventProviderId Value="Microsoft-WindowsPhone-BackgroundAudio" />
+            <EventProviderId Value="Microsoft-WindowsPhone-CaptureService" />
+            <EventProviderId Value="Microsoft-WindowsPhone-Comms-MediaApis" />
+            <EventProviderId Value="Microsoft-WindowsPhone-Comms-MediaDataService" />
+            <EventProviderId Value="Microsoft-WindowsPhone-ElementaryMediaSource" />
+            <EventProviderId Value="Microsoft-WindowsPhone-Exp-Apps-Podcasts" />
+            <EventProviderId Value="Microsoft-WindowsPhone-Foundations-MediaLibrary" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MediaService" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MediaServiceRemote" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MFPAL" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MFVideoSink" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MFVideoSinkFactory" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MMAudio" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MMPhoneDeviceApi" />
+            <EventProviderId Value="Microsoft-WindowsPhone-MusicApp" />
+            <EventProviderId Value="Microsoft-WindowsPhone-PhoneAudio" />
+            <EventProviderId Value="Microsoft-WindowsPhone-PhoneAudioSes" />
+            <EventProviderId Value="Microsoft-WindowsPhone-PhotosApp" />
+            <EventProviderId Value="Microsoft-WindowsPhone-SlowmotionEffect" />
+            <EventProviderId Value="Microsoft-WindowsPhone-StoryboardEngine" />
+            <EventProviderId Value="Microsoft-WindowsPhone-VideoProvider" />
+            <EventProviderId Value="Microsoft-WindowsPhone-zMediaQueueApp" />
+            <EventProviderId Value="Microsoft-Windows-Portcls" />
+            <EventProviderId Value="Microsoft-Windows-Runtime-Media" />
+            <EventProviderId Value="Microsoft-Windows-SocCaptureSim" />
+            <EventProviderId Value="Microsoft-Windows-USBVideo" />
+            <EventProviderId Value="Microsoft-Windows-VideoEditing" />
+            <EventProviderId Value="Microsoft-Windows-WinRT-Error" />
+            <EventProviderId Value="Microsoft-Windows-WMP" />
+            <EventProviderId Value="Osiris" />
+            <EventProviderId Value="PlayAudio" />
+            <EventProviderId Value="PlayReady-WPP" />
+            <EventProviderId Value="SSMFSOURCE" />
+            <EventProviderId Value="UsbVideo" />
+            <EventProviderId Value="Windows_Media_Player_Trace" />
+            <EventProviderId Value="ZTrace" />
+          </EventProviders>
+        </EventCollectorId>
+      </Collectors>
+    </Profile>
+  </Profiles>
+  <TraceMergeProperties>
+    <TraceMergeProperty Id="TraceMerge_Default" Name="TraceMerge_Default">
+      <CustomEvents>
+        <CustomEvent Value="ImageId" />
+        <CustomEvent Value="BuildInfo" />
+        <CustomEvent Value="VolumeMapping" />
+        <CustomEvent Value="EventMetadata" />
+        <CustomEvent Value="PerfTrackMetadata" />
+        <CustomEvent Value="WinSAT" />
+        <CustomEvent Value="NetworkInterface" />
+      </CustomEvents>
+    </TraceMergeProperty>
+  </TraceMergeProperties>
+</WindowsPerformanceRecorder>
