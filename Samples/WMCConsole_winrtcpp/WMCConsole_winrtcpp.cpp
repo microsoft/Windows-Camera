@@ -38,7 +38,7 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     auto sourceGroupIter = sourceGroups.First();
     while (sourceGroupIter.HasCurrent())
     {
-        sourceGroupIter.Current().DisplayName()
+        std::wcout << sourceGroupIter.Current().DisplayName().c_str();
         auto sourceInfos = sourceGroupIter.Current().SourceInfos();
         auto sourceInfoIter = sourceInfos.First();
         // iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
