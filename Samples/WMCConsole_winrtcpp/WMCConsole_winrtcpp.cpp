@@ -29,17 +29,17 @@ using namespace Windows::Devices::Enumeration;
 using namespace Windows::Storage;
 using namespace Windows::Graphics::Imaging;
 using namespace Windows::Media::Core;
-
+IVectorView<MediaFrameSourceGroup> sourceGroups;
 // Iterates through source groups and filter-out the frame sources which have IR,depth and other sources which we cannot consume in this app
 IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
 {
-    auto sourceGroups = MediaFrameSourceGroup::FindAllAsync().get();
     auto filteredSourceInfos = single_threaded_vector<MediaFrameSourceInfo>();
-
+    sourceGroups = MediaFrameSourceGroup::FindAllAsync().get();
     auto sourceGroupIter = sourceGroups.First();
     while (sourceGroupIter.HasCurrent())
     {
-        auto sourceInfoIter = sourceGroupIter.Current().SourceInfos().First();
+        auto sourceInfos = sourceGroupIter.Current().SourceInfos();
+        auto sourceInfoIter = sourceInfos.First();
         // iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
         while (sourceInfoIter.HasCurrent())
         {
@@ -48,6 +48,10 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
                 || sourceInfoIter.Current().MediaStreamType() == MediaStreamType::VideoRecord)
                 && sourceInfoIter.Current().SourceKind() == MediaFrameSourceKind::Color)
             {
+                if (sourceInfoIter.Current().SourceGroup() == nullptr)
+                {
+                    std::cout << "What the hell";
+                }
                 filteredSourceInfos.Append(sourceInfoIter.Current());
             }
             sourceInfoIter.MoveNext();
@@ -65,7 +69,10 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
     {
         idx++;
         auto currGroup = group.Current();
-        
+        if (currGroup.SourceGroup() == nullptr)
+        {
+            std::cout << "nullptr";
+        }
         // These are in the same order as the enum MediaStreamType
         // TODO: better solution is to create a Pair type lookup which is future proof
         std::wstring streamTypes[] = 
@@ -187,6 +194,7 @@ MediaCapture InitCamera()
     auto selectedSGidx = GetSGSelection(filteredGroups);
 
     auto selectedSrc = filteredGroups.GetAt(selectedSGidx);
+
     if (selectedSrc == nullptr)
     {
         throw_hresult(MF_E_OUT_OF_RANGE);
@@ -207,6 +215,11 @@ MediaCapture InitCamera()
 
     settings.StreamingCaptureMode(StreamingCaptureMode::Video);
     mediaCapture.InitializeAsync(settings).get();
+
+    if (_wcsicmp(mediaCapture.MediaCaptureSettings().VideoDeviceId().c_str(), selectedSrc.DeviceInformation().Id().c_str()) != 0)
+    {
+        std::wcout << mediaCapture.MediaCaptureSettings().VideoDeviceId().c_str() << L":" << selectedSrc.DeviceInformation().Id().c_str();
+    }
 
     //Set format on the medicapture frame source
     auto formatIdx = GetMediaTypeSelection(selectedSrc);
