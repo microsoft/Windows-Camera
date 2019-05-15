@@ -38,6 +38,7 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     auto sourceGroupIter = sourceGroups.First();
     while (sourceGroupIter.HasCurrent())
     {
+        sourceGroupIter.Current().DisplayName()
         auto sourceInfos = sourceGroupIter.Current().SourceInfos();
         auto sourceInfoIter = sourceInfos.First();
         // iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
@@ -48,10 +49,6 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
                 || sourceInfoIter.Current().MediaStreamType() == MediaStreamType::VideoRecord)
                 && sourceInfoIter.Current().SourceKind() == MediaFrameSourceKind::Color)
             {
-                if (sourceInfoIter.Current().SourceGroup() == nullptr)
-                {
-                    std::cout << "What the hell";
-                }
                 filteredSourceInfos.Append(sourceInfoIter.Current());
             }
             sourceInfoIter.MoveNext();
@@ -215,11 +212,6 @@ MediaCapture InitCamera()
 
     settings.StreamingCaptureMode(StreamingCaptureMode::Video);
     mediaCapture.InitializeAsync(settings).get();
-
-    if (_wcsicmp(mediaCapture.MediaCaptureSettings().VideoDeviceId().c_str(), selectedSrc.DeviceInformation().Id().c_str()) != 0)
-    {
-        std::wcout << mediaCapture.MediaCaptureSettings().VideoDeviceId().c_str() << L":" << selectedSrc.DeviceInformation().Id().c_str();
-    }
 
     //Set format on the medicapture frame source
     auto formatIdx = GetMediaTypeSelection(selectedSrc);
