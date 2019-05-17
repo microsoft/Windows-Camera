@@ -106,7 +106,7 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
         std::wcout << L"Enter selection:";
         std::cin >> idx;
     } while ((idx > filteredGroup.Size()) || (idx < 1));
-    return idx-1;
+    return idx-1; // Because selection idx is from 1 to N and indexes for from 0 to N-1
 }
 
 int GetMediaTypeSelection(MediaFrameSourceInfo selectedSource)
@@ -131,7 +131,7 @@ int GetMediaTypeSelection(MediaFrameSourceInfo selectedSource)
         std::wcout << L"Enter selection:";
         std::cin >> selection;
     } while ((selection > idx) || (selection < 1));
-    return selection-1; // because selection idx is from 1 to N and indexes for from 0 to N-1
+    return selection-1; // Because selection idx is from 1 to N and indexes for from 0 to N-1
 }
 
 void TakePhotosAndProcess(MediaCapture mediaCapture, uint32_t photoIndex)
@@ -149,15 +149,15 @@ void TakePhotosAndProcess(MediaCapture mediaCapture, uint32_t photoIndex)
     mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file2).get();
 
     auto sbList = single_threaded_vector<SoftwareBitmap>();
-    // open photos and decode them into NV12 format for processing
-    // photo1
+    // Open photos and decode them into NV12 format for processing
+    // Photo1
     {
         auto strm = file1.OpenReadAsync().get();
         auto decoder = BitmapDecoder::CreateAsync(strm).get();
         auto sb1 = decoder.GetSoftwareBitmapAsync().get();
         sbList.Append(SoftwareBitmap::Convert(sb1, BitmapPixelFormat::Nv12));
     }
-    // photo2
+    // Photo2
     {
         auto strm = file2.OpenReadAsync().get();
         auto decoder = BitmapDecoder::CreateAsync(strm).get();
@@ -204,21 +204,21 @@ MediaCapture InitCamera()
 
     settings.SourceGroup(selectedSrc.SourceGroup());
 
-    // if user explicitly selected a non-photo pin to take the photo
+    // If user explicitly selected a non-photo pin to take the photo
     if (selectedSrc.MediaStreamType() != MediaStreamType::Photo)
     {
         settings.PhotoCaptureSource(PhotoCaptureSource::VideoPreview);
     }
     else
     {
-        // we hope that auto will select the best photo pin options
+        // We hope that auto will select the best photo pin options
         settings.PhotoCaptureSource(PhotoCaptureSource::Auto);
     }
 
     settings.StreamingCaptureMode(StreamingCaptureMode::Video);
     mediaCapture.InitializeAsync(settings).get();
 
-    //Set format on the medicapture frame source
+    // Set format on the medicapture frame source
     auto formatIdx = GetMediaTypeSelection(selectedSrc);
     auto frameSourceIter = mediaCapture.FrameSources().First();
     while (frameSourceIter.HasCurrent())
