@@ -29,8 +29,11 @@ using namespace Windows::Devices::Enumeration;
 using namespace Windows::Storage;
 using namespace Windows::Graphics::Imaging;
 using namespace Windows::Media::Core;
-IVectorView<MediaFrameSourceGroup> sourceGroups;
-// Iterates through source groups and filter-out the frame sources which have IR,depth and other sources which we cannot consume in this app
+
+// This is global because we need to hold the reference to sourcegroups. The sourceinfos are holding weak references to this.
+IVectorView<MediaFrameSourceGroup> sourceGroups;  
+
+// Iterates through source groups and filter-out the frame sources which have IR, depth and other sources which we cannot consume in this app
 IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
 {
     auto filteredSourceInfos = single_threaded_vector<MediaFrameSourceInfo>();
@@ -38,10 +41,9 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     auto sourceGroupIter = sourceGroups.First();
     while (sourceGroupIter.HasCurrent())
     {
-        std::wcout << sourceGroupIter.Current().DisplayName().c_str();
         auto sourceInfos = sourceGroupIter.Current().SourceInfos();
         auto sourceInfoIter = sourceInfos.First();
-        // iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
+        // Iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
         while (sourceInfoIter.HasCurrent())
         {
             if ((sourceInfoIter.Current().MediaStreamType() == MediaStreamType::Photo
@@ -66,10 +68,7 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
     {
         idx++;
         auto currGroup = group.Current();
-        if (currGroup.SourceGroup() == nullptr)
-        {
-            std::cout << "nullptr";
-        }
+
         // These are in the same order as the enum MediaStreamType
         // TODO: better solution is to create a Pair type lookup which is future proof
         std::wstring streamTypes[] = 
@@ -97,8 +96,8 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
         {
             panelLocation = panelTypes[(int)enclosureLocation.Panel()];
         }
-        
-        std::wcout << idx << L":" << currGroup.DeviceInformation().Name().c_str() << ":" << streamTypes[(int)currGroup.MediaStreamType()].c_str() << panelLocation.c_str() << std::endl;
+
+        std::wcout << idx << L":" << currGroup.SourceGroup().DisplayName().c_str() <<"->" << currGroup.DeviceInformation().Name().c_str() << ":" << streamTypes[(int)currGroup.MediaStreamType()].c_str() << panelLocation.c_str() << std::endl;
         group.MoveNext();
     }
     do
@@ -141,7 +140,7 @@ void TakePhotosAndProcess(MediaCapture mediaCapture, uint32_t photoIndex)
     auto file1 = folder.CreateFileAsync(to_hstring(photoIndex) + L"_1.png", CreationCollisionOption::ReplaceExisting).get();
     auto file2 = folder.CreateFileAsync(to_hstring(photoIndex) + L"_2.png", CreationCollisionOption::ReplaceExisting).get();
 
-    //Capture and save two photos
+    // Capture and save two photos
     mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file1).get();
     mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file2).get();
 
@@ -226,6 +225,27 @@ MediaCapture InitCamera()
         }
         frameSourceIter.MoveNext();
     }
+
+    if (mediaCapture.VideoDeviceController().ExposureControl().Supported())
+    {
+        std::cout << (mediaCapture.VideoDeviceController().ExposureControl().Auto() ? "Exposure Control AutoMode already Set" : "Exposure Control AutoMode not Set..setting it now to true");
+        mediaCapture.VideoDeviceController().ExposureControl().SetAutoAsync(true);
+    }
+    else if (mediaCapture.VideoDeviceController().Exposure().Capabilities().Supported())
+    {
+        if (mediaCapture.VideoDeviceController().Exposure().Capabilities().AutoModeSupported())
+        {
+            bool autoexp = false;
+            mediaCapture.VideoDeviceController().Exposure().TryGetAuto(autoexp);
+            std::cout << (autoexp ? "Exposure AutoMode already Set" : "Exposure AutoMode not Set..setting it now to true");
+            mediaCapture.VideoDeviceController().Exposure().TrySetAuto(true);
+        }
+        else
+        {
+            std::cout << "Exposure AutoMode not supported";
+        }
+    }
+
     return mediaCapture;
 }
 
@@ -235,7 +255,7 @@ int wmain()
     auto mediaCapture = InitCamera();
 
     // Main processing part of photos
-    std::cout << "Press 'p' take photos and 'q' to quit";
+    std::cout << "Press 'p' to take photos and 'q' to quit";
     char key = 0;
     uint32_t photoCounter = 0;
     while(key != 'q')
