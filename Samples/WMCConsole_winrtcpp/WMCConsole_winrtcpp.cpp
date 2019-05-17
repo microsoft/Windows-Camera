@@ -44,7 +44,7 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     {
         auto sourceInfos = sourceGroupIter.Current().SourceInfos();
         auto sourceInfoIter = sourceInfos.First();
-        // Iterate through sources and filter-out the IR,depth and other sources which we cannot consume in this app
+        // Iterate through sources and filter-out the IR, depth and other sources which we cannot consume in this app
         while (sourceInfoIter.HasCurrent())
         {
             if ((sourceInfoIter.Current().MediaStreamType() == MediaStreamType::Photo
