@@ -72,33 +72,33 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
 
         // These are in the same order as the enum MediaStreamType
         // TODO: better solution is to create a Pair type lookup which is future proof
-        std::wstring streamTypes[] = 
-        { 
-            L"VideoPreview", 
-            L"VideoRecord", 
-            L"Audio", 
-            L"Photo" 
+        std::map<MediaStreamType,std::wstring> streamTypes = 
+        {
+            {MediaStreamType::VideoPreview, L"VideoPreview"},
+            {MediaStreamType::VideoRecord,  L"VideoRecord"},
+            {MediaStreamType::Audio,        L"Audio"},
+            {MediaStreamType::Photo,        L"Photo"}
         };
 
         // These are in the same order as the enum Panel
-        std::wstring panelTypes[] = 
+        std::map<Panel, std::wstring>  panelTypes =
         {
-            L"Unknown",
-            L"Front",
-            L"Back",
-            L"Top",
-            L"Bottom",
-            L"Left",
-            L"Right"
+            {Panel::Unknown, L"Unknown"},
+            {Panel::Front,   L"Front"  },
+            {Panel::Back,    L"Back"   },
+            {Panel::Top,     L"Top"    },
+            {Panel::Bottom,  L"Bottom" },
+            {Panel::Left,    L"Left"   },
+            {Panel::Right,   L"Right"  }
         };
         auto enclosureLocation = currGroup.DeviceInformation().EnclosureLocation();
         std::wstring panelLocation;
         if (enclosureLocation)
         {
-            panelLocation = panelTypes[(int)enclosureLocation.Panel()];
+            panelLocation = L"\\" + panelTypes[enclosureLocation.Panel()];
         }
 
-        std::wcout << idx << L":" << currGroup.SourceGroup().DisplayName().c_str() <<"->" << currGroup.DeviceInformation().Name().c_str() << ":" << streamTypes[(int)currGroup.MediaStreamType()].c_str() << panelLocation.c_str() << std::endl;
+        std::wcout << idx << L":" << currGroup.SourceGroup().DisplayName().c_str() <<"-->" << currGroup.DeviceInformation().Name().c_str() << panelLocation.c_str() << ":" << streamTypes[currGroup.MediaStreamType()].c_str() << std::endl;
         group.MoveNext();
     }
     do
