@@ -3,9 +3,9 @@
   samplefwlink: TBD
 --->
 
-# Win32 Desktop sample applications for using the [Wiindows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
+# Win32 Desktop sample applications for using the [Windows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
 
-	This folder contains sample application that demonstrate the Windows Media Capture API usage patterns for using the camera related features in Win32 Desktop applications for Windows 10. 
+	This folder contains a sample application that demonstrates the Windows Media Capture API usage patterns for using the camera related features in Win32 Desktop applications for Windows 10. 
 
 ## Requirements
 	
