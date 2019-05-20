@@ -64,7 +64,7 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
 }
 
 //
-// Prints information of all sources from the list in input arugment 'filteredSources' and returns user selected index of the source to use
+// Prints information of all sources from the list in input argument 'filteredSources' and returns user selected index of the source to use
 //
 int GetSGSelection(IVector<MediaFrameSourceInfo> filteredSources)
 {
@@ -75,8 +75,7 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredSources)
         idx++;
         auto currSource = source.Current();
 
-        // These are in the same order as the enum MediaStreamType
-        // TODO: better solution is to create a Pair type lookup which is future proof
+        // Add new entries to the following map initializations if new enum entries are added in the future
         std::map<MediaStreamType,std::wstring> streamTypes = 
         {
             {MediaStreamType::VideoPreview, L"VideoPreview"},
@@ -85,7 +84,6 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredSources)
             {MediaStreamType::Photo,        L"Photo"       }
         };
 
-        // These are in the same order as the enum Panel
         std::map<Panel, std::wstring>  panelTypes =
         {
             {Panel::Unknown, L"Unknown"},
