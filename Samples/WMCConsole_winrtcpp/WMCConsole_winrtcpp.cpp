@@ -34,7 +34,9 @@ using namespace Windows::Media::Core;
 // This is global because we need to hold the reference to sourcegroups. The sourceinfos are holding weak references to this.
 IVectorView<MediaFrameSourceGroup> sourceGroups;  
 
+//
 // Iterates through source groups and filter-out the frame sources which have IR, depth and other sources which we cannot consume in this app
+//
 IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
 {
     auto filteredSourceInfos = single_threaded_vector<MediaFrameSourceInfo>();
@@ -61,23 +63,26 @@ IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     return filteredSourceInfos;
 }
 
-int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
+//
+// Prints information of all sources from the list in input arugment 'filteredSources' and returns user selected index of the source to use
+//
+int GetSGSelection(IVector<MediaFrameSourceInfo> filteredSources)
 {
     unsigned int idx = 0;
-    auto group = filteredGroup.First();
-    while (group.HasCurrent())
+    auto source = filteredSources.First();
+    while (source.HasCurrent())
     {
         idx++;
-        auto currGroup = group.Current();
+        auto currSource = source.Current();
 
         // These are in the same order as the enum MediaStreamType
         // TODO: better solution is to create a Pair type lookup which is future proof
         std::map<MediaStreamType,std::wstring> streamTypes = 
         {
             {MediaStreamType::VideoPreview, L"VideoPreview"},
-            {MediaStreamType::VideoRecord,  L"VideoRecord"},
-            {MediaStreamType::Audio,        L"Audio"},
-            {MediaStreamType::Photo,        L"Photo"}
+            {MediaStreamType::VideoRecord,  L"VideoRecord" },
+            {MediaStreamType::Audio,        L"Audio"       },
+            {MediaStreamType::Photo,        L"Photo"       }
         };
 
         // These are in the same order as the enum Panel
@@ -91,28 +96,32 @@ int GetSGSelection(IVector<MediaFrameSourceInfo> filteredGroup)
             {Panel::Left,    L"Left"   },
             {Panel::Right,   L"Right"  }
         };
-        auto enclosureLocation = currGroup.DeviceInformation().EnclosureLocation();
+        auto enclosureLocation = currSource.DeviceInformation().EnclosureLocation();
         std::wstring panelLocation;
         if (enclosureLocation)
         {
             panelLocation = L"\\" + panelTypes[enclosureLocation.Panel()];
         }
 
-        std::wcout << idx << L":" << currGroup.SourceGroup().DisplayName().c_str() <<"-->" << currGroup.DeviceInformation().Name().c_str() << panelLocation.c_str() << ":" << streamTypes[currGroup.MediaStreamType()].c_str() << std::endl;
-        group.MoveNext();
+        std::wcout << idx << L":" << currSource.SourceGroup().DisplayName().c_str() <<"-->" << currSource.DeviceInformation().Name().c_str() << panelLocation.c_str() << ":" << streamTypes[currSource.MediaStreamType()].c_str() << std::endl;
+        source.MoveNext();
     }
     do
     {
         std::wcout << L"Enter selection:";
         std::cin >> idx;
-    } while ((idx > filteredGroup.Size()) || (idx < 1));
+    } while ((idx > filteredSources.Size()) || (idx < 1));
     return idx-1; // Because selection idx is from 1 to N and indexes for from 0 to N-1
 }
 
+//
+// Prints information of all available Mediatypes for the selected source and returns user selected index of the MediaType to use
+//
 int GetMediaTypeSelection(MediaFrameSourceInfo selectedSource)
 {
     auto mediaDescriptionIter = selectedSource.VideoProfileMediaDescription().First();
     int idx = 0;
+
     while (mediaDescriptionIter.HasCurrent())
     {
 
@@ -134,53 +143,71 @@ int GetMediaTypeSelection(MediaFrameSourceInfo selectedSource)
     return selection-1; // Because selection idx is from 1 to N and indexes for from 0 to N-1
 }
 
+//
+// Takes two photos and processes them using low light fusion API. Saves all photos to files
+//
 void TakePhotosAndProcess(MediaCapture mediaCapture, uint32_t photoIndex)
 {
     WCHAR ExePath[MAX_PATH] = { 0 };
-    GetModuleFileName(NULL, ExePath, _countof(ExePath));
+    if (GetModuleFileName(NULL, ExePath, _countof(ExePath)) == 0)
+    {
+        std::cout << "\nError getting the path to executable, defaulting output folder to C:\\test";
+        wcscpy_s(ExePath, L"C:\\");
+    }
+
     auto file = Windows::Storage::StorageFile::GetFileFromPathAsync(ExePath).get();
     auto folderRoot = file.GetParentAsync().get();
     auto folder = folderRoot.CreateFolderAsync(L"test\\", CreationCollisionOption::OpenIfExists).get();
     auto file1 = folder.CreateFileAsync(to_hstring(photoIndex) + L"_1.png", CreationCollisionOption::GenerateUniqueName).get();
     auto file2 = folder.CreateFileAsync(to_hstring(photoIndex) + L"_2.png", CreationCollisionOption::GenerateUniqueName).get();
     std::wcout << L"\nCapturing two photos:\n" << file1.Path().c_str() << L"\n" << file2.Path().c_str();
-    // Capture and save two photos
-    mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file1).get();
-    mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file2).get();
-
-    auto sbList = single_threaded_vector<SoftwareBitmap>();
-    // Open photos and decode them into NV12 format for processing
-    // Photo1
+    try
     {
-        auto strm = file1.OpenReadAsync().get();
-        auto decoder = BitmapDecoder::CreateAsync(strm).get();
-        auto sb1 = decoder.GetSoftwareBitmapAsync().get();
-        sbList.Append(SoftwareBitmap::Convert(sb1, BitmapPixelFormat::Nv12));
+        // Capture and save two photos
+        mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file1).get();
+        mediaCapture.CapturePhotoToStorageFileAsync(ImageEncodingProperties::CreatePng(), file2).get();
+
+        auto sbList = single_threaded_vector<SoftwareBitmap>();
+        // Open photos and decode them into NV12 format for processing
+        // Photo1
+        {
+            auto strm = file1.OpenReadAsync().get();
+            auto decoder = BitmapDecoder::CreateAsync(strm).get();
+            auto sb1 = decoder.GetSoftwareBitmapAsync().get();
+            sbList.Append(SoftwareBitmap::Convert(sb1, BitmapPixelFormat::Nv12));
+        }
+        // Photo2
+        {
+            auto strm = file2.OpenReadAsync().get();
+            auto decoder = BitmapDecoder::CreateAsync(strm).get();
+            auto sb1 = decoder.GetSoftwareBitmapAsync().get();
+            sbList.Append(SoftwareBitmap::Convert(sb1, BitmapPixelFormat::Nv12));
+        }
+
+        // Do some processing like low light fusion in this example
+        auto op = LowLightFusion::FuseAsync(sbList).get();
+
+        // Save the output
+        auto fname = to_hstring(photoIndex) + L"_LLF.png";
+        auto fileOp = folder.CreateFileAsync(fname, CreationCollisionOption::GenerateUniqueName).get();
+        {
+            auto strm = fileOp.OpenAsync(FileAccessMode::ReadWrite).get();
+            auto encoder = BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId(), strm).get();
+            encoder.SetSoftwareBitmap(SoftwareBitmap::Convert(op.Frame(), BitmapPixelFormat::Bgra8));
+            encoder.FlushAsync().get();
+            std::wcout << L"\nSaved LowLightFusion output to:\n " << fileOp.Path().c_str();
+        }
     }
-    // Photo2
+    catch (hresult_error const&ex)
     {
-        auto strm = file2.OpenReadAsync().get();
-        auto decoder = BitmapDecoder::CreateAsync(strm).get();
-        auto sb1 = decoder.GetSoftwareBitmapAsync().get();
-        sbList.Append(SoftwareBitmap::Convert(sb1, BitmapPixelFormat::Nv12));
+        std::cout << "\nError during photo capture and process";
+        throw(ex);
     }
-
-    // Do some processing like low light fusion in this example
-    auto op = LowLightFusion::FuseAsync(sbList).get();
-
-    // Save the output
-    auto fname = to_hstring(photoIndex) + L"_LLF.png";
-    auto fileOp = folder.CreateFileAsync(fname, CreationCollisionOption::GenerateUniqueName).get();
-    {
-        auto strm = fileOp.OpenAsync(FileAccessMode::ReadWrite).get();
-        auto encoder = BitmapEncoder::CreateAsync(BitmapEncoder::PngEncoderId(), strm).get();
-        encoder.SetSoftwareBitmap(SoftwareBitmap::Convert(op.Frame(), BitmapPixelFormat::Bgra8));
-        encoder.FlushAsync().get();
-    }
-
-     std::wcout << L"\nSaving LowLightFusion output to:\n " << fileOp.Path().c_str();
 }
 
+//
+// Initialized MediaCapture with appropriate settings, frame source and mediatype selection
+//
 MediaCapture InitCamera()
 {
     MediaCapture mediaCapture;
@@ -216,10 +243,11 @@ MediaCapture InitCamera()
     }
 
     settings.StreamingCaptureMode(StreamingCaptureMode::Video);
-    mediaCapture.InitializeAsync(settings).get();
 
     // Set format on the medicapture frame source
     auto formatIdx = GetMediaTypeSelection(selectedSrc);
+
+    mediaCapture.InitializeAsync(settings).get();
     auto frameSourceIter = mediaCapture.FrameSources().First();
     while (frameSourceIter.HasCurrent())
     {
@@ -255,20 +283,25 @@ MediaCapture InitCamera()
     return mediaCapture;
 }
 
+//
+// Main entry point of the application
+//
 int wmain()
 {
     std::cout << "Windows Media Capture in Win32 desktop Console app!";
-    auto mediaCapture = InitCamera();
-
-    // Main processing part of photos
-    char key = 0;
-    uint32_t photoCounter = 0;
-    while(key != 'q')
+    try
     {
-        std::cout << std::endl << "-----------Press 'p' to take photos and 'q' to quit-----------";
-        key = _getch();
-        switch (key)
+        auto mediaCapture = InitCamera();
+
+        // Main processing part of photos
+        char key = 0;
+        uint32_t photoCounter = 0;
+        while (key != 'q')
         {
+            std::cout << std::endl << "-----------Press 'p' to take photos and 'q' to quit-----------";
+            key = _getch();
+            switch (key)
+            {
             case 'p':
                 std::cout << "\nTaking photos and processing: " << ++photoCounter;
                 TakePhotosAndProcess(mediaCapture, photoCounter);
@@ -276,6 +309,11 @@ int wmain()
 
             default:
                 continue;
+            }
         }
+    }
+    catch (hresult_error const&ex)
+    {
+        std::wcout << L"\nError: " << std::hex << ex.code() << L":" << ex.message().c_str();
     }
 }
