@@ -3,36 +3,17 @@
   samplefwlink: TBD
 --->
 
-# Windows Platform sample applications and tools for using and developing the Camera features
+# Win32 Desktop sample applications for using the [Windows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
 
-This repo contains sample applications that demonstrate the API usage patterns for using the camera related features on Universal Windows Platform (UWP), Win32 Desktop platform and .NetCore 3.0 for Windows 10. 
-These code samples were created with the project templates available in Visual Studio, and are designed to run on desktop, mobile, and future devices.
+	This folder contains a sample application that demonstrates the Windows Media Capture API usage patterns for using the camera related features in Win32 Desktop applications for Windows 10. 
 
-> **Note:** If you are unfamiliar with Git and GitHub, you can download the entire collection as a 
-> [ZIP file](https://github.com/microsoft/Windows-Camera/archive/master.zip), but be 
-> sure to unzip everything to access shared dependencies. 
-
-## Universal Windows Platform (UWP) samples/tools
-
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 16299 for Windows 10.
-
-   [Get a free copy of Visual Studio 2017 Community Edition with support for building Universal Windows Platform apps](http://go.microsoft.com/fwlink/p/?LinkID=280676)
-
-Additionally, to stay on top of the latest updates to Windows and the development tools, become a Windows Insider by joining the Windows Insider Program.
-
-   [Become a Windows Insider](https://insider.windows.com/)
-
-## Win32 Desktop applications/tools
-
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 17763 for Windows 10.
-
-## .NetCore 3.0 Desktop applications/tools
-
-These samples require .NetCore 3.0 SDK and Visual Studio 2019 preview. (https://visualstudio.microsoft.com/vs/preview/)
+## Requirements
+	
+	This sample is built using Visual Studio 2017 and Windows SDK version 17763
 
 ## Using the samples
 
-The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio.
+The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio 2017.
 
    [Download the samples ZIP](../../archive/master.zip)
 
@@ -60,17 +41,4 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-
-## Samples
-<table>
- <tr>
-  <td><a href="Tools/Cam360">360-degree camera capture/record/preview</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/WMCConsole_winrtcpp">Win32 Desktop console application demonstrating use of Windows Media Capture APIs</a></td>
- </tr>
-</table>
 
