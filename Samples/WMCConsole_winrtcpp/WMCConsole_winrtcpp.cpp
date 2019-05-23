@@ -184,6 +184,9 @@ class CameraHelper
     }
 
 public:
+    //
+    // Constructs the CameraHelper class and initializes the members
+    //
     CameraHelper() :m_PreviewFrameReader(nullptr), m_SourceGroups(nullptr)
     {
 
@@ -262,6 +265,9 @@ public:
         return mediaCapture;
     }
 
+    //
+    // Stops and closes frame reader, closes Mediacapture 
+    //
     void DeInitCamera(MediaCapture &mediaCapture)
     {
         m_SourceGroups = nullptr;
