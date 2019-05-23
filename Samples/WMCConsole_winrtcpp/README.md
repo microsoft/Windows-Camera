@@ -8,11 +8,11 @@
 	This folder contains a sample application that demonstrates the Windows Media Capture API usage patterns for using the camera related features in Win32 Desktop applications for Windows 10. 
 ## About the sample
 	The sample demonstrates the following
-	### Listing/Enumerating camera source groups, frame sources, frame formats and filtering/selecting based on properties and user selection
-	### Triggering convergence of camera 3A by draining samples using Frame Reader API ( creation of a mock preview)
-	### MediaCapture settings and initialization
-	### Use of Photo capture APIs
-	### Post-processing captured photos using LowLightFusion API
+### Listing/Enumerating camera source groups, frame sources, frame formats and filtering/selecting based on properties and user selection
+### Triggering convergence of camera 3A by draining samples using Frame Reader API ( creation of a mock preview)
+### MediaCapture settings and initialization
+### Use of Photo capture APIs
+### Post-processing captured photos using LowLightFusion API
 	
 
 ## Requirements
