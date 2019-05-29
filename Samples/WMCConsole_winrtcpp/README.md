@@ -6,6 +6,14 @@
 # Win32 Desktop sample applications for using the [Windows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
 
 	This folder contains a sample application that demonstrates the Windows Media Capture API usage patterns for using the camera related features in Win32 Desktop applications for Windows 10. 
+## About the sample
+	The sample demonstrates the following:
+		1. Listing/Enumerating camera source groups, frame sources, frame formats and filtering/selecting based on properties and user selection
+		2. Triggering convergence of camera 3A by draining samples using Frame Reader API (creation of a mock preview)
+		3. MediaCapture settings and initialization
+		4. Use of Photo capture APIs
+		5. Post-processing captured photos using LowLightFusion API
+	
 
 ## Requirements
 	
@@ -21,8 +29,7 @@ The easiest way to use these samples without using Git is to download the zip fi
    * Before you unzip the archive, right-click it, select **Properties**, and then select **Unblock**.
    * Be sure to unzip the entire archive, and not just individual samples. The samples all depend on the SharedContent folder in the archive.   
    * In Visual Studio 2017, the platform target defaults to ARM, so be sure to change that to x64 or x86 if you want to test on a non-ARM device. 
-   
-The samples use Linked files in Visual Studio to reduce duplication of common files, including sample template files and image assets. These common files are stored in the SharedContent folder at the root of the repository, and are referred to in the project files using links.
+
 
 **Reminder:** If you unzip individual samples, they will not build due to references to other portions of the ZIP file that were not unzipped. You must unzip the entire archive if you intend to build the samples.
 
