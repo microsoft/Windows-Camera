@@ -73,4 +73,9 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
   <td><a href="Samples/WMCConsole_winrtcpp">Win32 Desktop console application demonstrating use of Windows Media Capture APIs</a></td>
  </tr>
 </table>
+<table>
+ <tr>
+  <td><a href="Samples/MediaCaptureSampleExtendedControl">WinRT application demonstrating use of custom KS Camera Extended Properties</a></td>
+ </tr>
+</table>
 
