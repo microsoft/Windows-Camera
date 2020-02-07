@@ -32,7 +32,6 @@ using namespace Windows::Media;
 using namespace Windows::Media::MediaProperties;
 using namespace Windows::Media::Capture;
 using namespace Windows::Storage::Streams;
-using namespace Windows::System;
 using namespace Windows::UI::Xaml::Media::Imaging;
 
 using namespace SDKSample::MediaCapture;
@@ -370,7 +369,6 @@ void BasicCapture::btnTakePhoto_Click(Platform::Object^ sender, Windows::UI::Xam
 
 void BasicCapture::StartRecord()
 {
-
     ShowStatusMessage("Starting Record");
     String ^fileName;
     fileName = VIDEO_FILE_NAME;

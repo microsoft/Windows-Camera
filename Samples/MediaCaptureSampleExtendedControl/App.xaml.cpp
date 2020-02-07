@@ -1,4 +1,5 @@
-﻿//
+﻿// Copyright (C) Microsoft Corporation. All rights reserved
+//
 // App.xaml.cpp
 // Implementation of the App class.
 //

@@ -23,7 +23,6 @@
     </Application>
   </Applications>
   <Capabilities>
-    <Capability Name="internetClient" />
     <uap:Capability Name="picturesLibrary" />
     <uap:Capability Name="videosLibrary" />
     <DeviceCapability Name="webcam" />

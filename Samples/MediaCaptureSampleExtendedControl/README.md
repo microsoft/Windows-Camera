@@ -15,7 +15,7 @@
 
 ## Requirements
 	
-	This sample is built using Visual Studio 2017 and Windows SDK version 17763
+	This sample is built using Visual Studio 2017 and Windows SDK version 19551
 
 ## Using the samples
 
