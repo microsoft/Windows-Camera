@@ -42,8 +42,6 @@ using namespace Windows::Storage::Streams;
 using namespace concurrency;
 using namespace CustomExtendedProperties;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 MainPage::MainPage()
 {
 	InitializeComponent();
@@ -152,7 +150,7 @@ void MainPage::btnStartDevice_Click(Platform::Object^ sender, Windows::UI::Xaml:
 					btnStartStopRecord1->IsEnabled = true;
 					btnTakePhoto1->IsEnabled = true;
 
-					ShowStatusMessage("Device initialized successful");
+					ShowStatusMessage("Device initialized successfully");
 
 					mediaCapture->RecordLimitationExceeded += ref new Windows::Media::Capture::RecordLimitationExceededEventHandler(this, &MainPage::RecordLimitationExceeded);
 					mediaCapture->Failed += ref new Windows::Media::Capture::MediaCaptureFailedEventHandler(this, &MainPage::Failed);
@@ -773,7 +771,7 @@ void MainPage::NotifyUser(Platform::String^ strMessage, NotifyType type)
 	}
 	StatusBlock->Text = strMessage;
 
-	//Collapse the StatusBlock if it hasno text to conserve real estate
+	//Collapse the StatusBlock if it has no text to conserve real estate
 	if (StatusBlock->Text != "")
 	{
 		StatusBlock->Visibility = Windows::UI::Xaml::Visibility::Visible;
