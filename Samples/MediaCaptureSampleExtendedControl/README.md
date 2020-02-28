@@ -1,8 +1,3 @@
-
-<!---
-  samplefwlink: TBD
---->
-
 # WinRT sample applications for using the [Windows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
 
 	This folder contains a sample application that demonstrates the Windows Media Capture API GetDeviceProperty/SetDeviceProperty with KSPROPERTYSETID_ExtendedCameraControl in Windows 10. 
