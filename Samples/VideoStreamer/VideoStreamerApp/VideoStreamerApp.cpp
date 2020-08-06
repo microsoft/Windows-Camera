@@ -23,6 +23,7 @@ using namespace Frames;
 using namespace Windows::Graphics::Imaging;
 using namespace Windows::Foundation;
 using namespace Windows::Devices::Enumeration;
+using namespace Windows::Media;
 using namespace Windows::Media::Devices;
 using namespace Windows::Media::MediaProperties;
 constexpr uint16_t ServerPort = 8554;
@@ -290,13 +291,9 @@ int main()
             if (selectedProp) break;
         }while(++prefSubType != preferredsubTypes.end());
         mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
-        auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Vga);
-        winrt::Windows::Media::IMediaExtension ime;
-        winrt::attach_abi(ime, streamers.begin()->second.as<ABI::Windows::Media::IMediaExtension>().detach());
-
-        ime.SetProperties(nullptr);
-        mc.StartRecordToCustomSinkAsync(me, ime).get();
-
+        auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto);
+        auto lowLagRec = mc.PrepareLowLagRecordToCustomSinkAsync(me, streamers.begin()->second.as<IMediaExtension>()).get();
+        lowLagRec.StartAsync().get();
 #endif
 
         std::cout << "\nStarted Capture and RTSP Server.\n";
@@ -317,7 +314,8 @@ int main()
 #ifdef USE_FR
         fr.StopAsync();
 #else
-        mc.StopRecordAsync().get();
+        lowLagRec.StopAsync().get();
+        lowLagRec.FinishAsync().get();
 #endif
     }
     catch (hresult_error const& ex)

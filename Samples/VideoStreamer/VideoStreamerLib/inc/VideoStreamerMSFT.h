@@ -3,7 +3,7 @@
 #include "VideoStreamerInternal.h"
 #include <winrt\Windows.Security.Cryptography.h>
 #include <winrt\Windows.Storage.Streams.h>
-
+#include <winrt\Windows.Media.h>
 constexpr BYTE h264payloadType = 96;
 constexpr size_t rtpHeaderSize = 12;
 constexpr size_t stapAtypeHeaderSize = 1;

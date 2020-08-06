@@ -1,5 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #include "VideoStreamerMSFT.h"
+
 TxContext::TxContext(std::string destination, winrt::delegate<BYTE*, size_t> packetHandler /*= nullptr*/)
     : m_u64StartTime(0)
     , m_packetHandler(packetHandler)
@@ -155,8 +156,7 @@ void RTPVideoStreamSink::SendPacket(BYTE* pOut, size_t sz, LONGLONG ts, bool bLa
     for (auto& ct : m_RtpStreamers)
     {
         auto ssrc = ct.second.m_ssrc;
-        if (ct.second.m_u64StartTime == 0) ct.second.m_u64StartTime = ts;
-        auto ts1 = ts - ct.second.m_u64StartTime;
+        auto ts1 = ts;
         pOut[4] = (BYTE)((ts1 & 0xFF000000) >> 24);   // each image gets a timestamp
         pOut[5] = (BYTE)((ts1 & 0x00FF0000) >> 16);
         pOut[6] = (BYTE)((ts1 & 0x0000FF00) >> 8);
@@ -170,6 +170,7 @@ void RTPVideoStreamSink::SendPacket(BYTE* pOut, size_t sz, LONGLONG ts, bool bLa
         ct.second.SendPacket(pOut, sz);
     }
 }
+
 void RTPVideoStreamSink::PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime)
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
@@ -318,12 +319,15 @@ void RTPVideoStreamSink::GenerateSDP(char* buf, size_t maxSize, std::string dest
         "c=IN IP4 " + destIP + "\n" //source
         "t=0 0\n"
         "m=video " + destPort + " RTP/AVP " + std::to_string(h264payloadType) + "\n"
-        "b=AS:" + std::to_string(m_bitrate / 1000) + "\n"
         "a=ts-refclk:ntp=time.windows.com\n"
         "a=rtpmap:" + std::to_string(h264payloadType) + " H264/90000\n"
-        "a=fmtp:" + std::to_string(h264payloadType) + " packetization-mode=" + std::to_string(m_packetizationMode) + "; sprop-parameter-sets="
-        + paramSets + "; profile-level-id=" + profileIdc + "\n";
-
+        "a=fmtp:" + std::to_string(h264payloadType) + " packetization-mode=" + std::to_string(m_packetizationMode);
+    if (!paramSets.empty())
+    {
+        sdp = sdp
+            + "; sprop-parameter-sets="
+            + paramSets + "; profile-level-id=" + profileIdc + "\n";
+    }
     memcpy_s(buf, maxSize, sdp.c_str(), sdp.size());
     buf[sdp.size()] = 0;
 }
@@ -372,24 +376,9 @@ INetworkMediaStreamSink* RTPVideoStreamSink::CreateInstance(IMFMediaType *pMedia
     pVS.attach(new RTPVideoStreamSink(pMediaType, pParent));
     return pVS.as<INetworkMediaStreamSink>().detach();
 }
-//// Create a new instance of the object.
-//INetworkMediaStreamSink* CreateMSFTVideoStreamer(GUID outVideoFormat, UINT32 width, UINT32 height, UINT32 bitrate, float framerate)
-//{
-//    winrt::com_ptr<IMFMediaType> spOutType;
-//    winrt::check_hresult(MFCreateMediaType(spOutType.put()));
-//    winrt::check_hresult(spOutType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-//    winrt::check_hresult(spOutType->SetGUID(MF_MT_SUBTYPE, outVideoFormat));
-//    winrt::check_hresult(spOutType->SetUINT32(MF_MT_AVG_BITRATE, bitrate));
-//
-//    winrt::check_hresult(spOutType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
-//    winrt::check_hresult(MFSetAttributeSize(spOutType.get(), MF_MT_FRAME_SIZE, width, height));
-//    winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, (int)(framerate * 100), 100));
-//
-//    return RTPVideoStreamSink::CreateInstance(spOutType.get(), );
-//}
 
-#if 1
-class RTPMediaSink : public IMFMediaSink, public IMFClockStateSink, ABI::Windows::Media::IMediaExtension
+class RTPMediaSink
+    : public winrt::implements<RTPMediaSink, winrt::Windows::Media::IMediaExtension, IMFMediaSink, IMFClockStateSink>
 {
 protected:
     long m_cRef;
@@ -402,8 +391,7 @@ protected:
         , m_cRef(1)
     {
         m_spStreamSinks.resize(streamMediaTypes.size());
-        //m_spStreamSink.copy_from(pStreamSink);
-        //m_spStreamSink.attach();
+
         for (DWORD i = 0; i < streamMediaTypes.size(); i++)
         {
             m_spStreamSinks[i].attach(RTPVideoStreamSink::CreateInstance(streamMediaTypes[i], this));
@@ -422,7 +410,8 @@ public:
             return nullptr;
         }
     }
-    /****************IMFMediaSink************/
+
+    //IMFMediaSink
     STDMETHODIMP GetCharacteristics(
         /* [out] */ __RPC__out DWORD* pdwCharacteristics)
     {
@@ -532,52 +521,11 @@ public:
 
     //IMediaExtension
     STDMETHODIMP SetProperties(
-        ABI::Windows::Foundation::Collections::IPropertySet* configuration
+        winrt::Windows::Foundation::Collections::IPropertySet const& configuration
     )
     {
         return S_OK;
     }
-
-    // IInspectable
-
-    STDMETHODIMP GetIids(
-        /* [out] */ __RPC__out ULONG* iidCount,
-        /* [size_is][size_is][out] */ __RPC__deref_out_ecount_full_opt(*iidCount) IID** iids)
-    {
-        if ((!iidCount) || (!iids))
-        {
-            return E_POINTER;
-        }
-        *iidCount = 3;
-        *iids = (IID*)CoTaskMemAlloc(sizeof(IID) * 3);
-
-        if (!(*iids)) return E_OUTOFMEMORY;
-
-        *iids[0] = __uuidof(IMFMediaSink);
-        *iids[1] = __uuidof(IMFClockStateSink);
-        *iids[2] = __uuidof(ABI::Windows::Media::IMediaExtension);
-
-        return S_OK;
-    }
-
-    STDMETHODIMP GetRuntimeClassName(
-        /* [out] */ __RPC__deref_out_opt HSTRING* className)
-    {
-        auto name = winrt::hstring(L"NetworkMediaStreamer.RTPSink");
-        return WindowsCreateString(name.c_str(), name.size(), className);
-    }
-
-    STDMETHODIMP GetTrustLevel(
-        /* [out] */ __RPC__out TrustLevel* trustLevel)
-    {
-        if (!trustLevel)
-        {
-            return E_POINTER;
-        }
-        *trustLevel = TrustLevel::BaseTrust;
-        return S_OK;
-    }
-    /****************************************/
 
     // IMFClockStateSink methods
     STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset)
@@ -616,39 +564,10 @@ public:
     {
         return S_OK;
     }
-
-    // IUnknown methods
-    STDMETHODIMP QueryInterface(REFIID riid, void** ppv)
-    {
-        static const QITAB qit[] =
-        {
-            QITABENT(RTPMediaSink, IMFMediaSink),
-            QITABENT(RTPMediaSink, IMFClockStateSink),
-            QITABENT(RTPMediaSink, ABI::Windows::Media::IMediaExtension),
-            { 0 }
-        };
-        return QISearch(this, qit, riid, ppv);
-    }
-
-    STDMETHODIMP_(ULONG) AddRef()
-    {
-        return InterlockedIncrement(&m_cRef);
-    }
-
-    STDMETHODIMP_(ULONG) Release()
-    {
-        ULONG cRef = InterlockedDecrement(&m_cRef);
-        if (cRef == 0)
-        {
-            delete this;
-        }
-        return cRef;
-
-    }
-
 };
+
 IMFMediaSink *CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes)
 {
     return RTPMediaSink::CreateInstance(mediaTypes);
 }
-#endif
+
