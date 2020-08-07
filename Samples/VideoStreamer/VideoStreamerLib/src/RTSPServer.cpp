@@ -129,9 +129,7 @@ STDMETHODIMP RTSPServer::QueryInterface(REFIID riid, void** ppv)
     static const QITAB qit[] =
     {
         QITABENT(RTSPServer, IRTSPServerControl),
-        QITABENT(RTSPServer, IMFMediaSink),
-        QITABENT(RTSPServer, IMFClockStateSink),
-        QITABENT(RTSPServer, ABI::Windows::Media::IMediaExtension),
+        QITABENT(RTSPServer, IUnknown),
         { 0 }
     };
     return QISearch(this, qit, riid, ppv);

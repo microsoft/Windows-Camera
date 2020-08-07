@@ -24,6 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VideoStreamer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <ProjectName>NetworkMediaStreamer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -176,19 +177,20 @@ kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\RTPMediaSink.cpp" />
     <ClCompile Include="..\src\RTSPServer.cpp" />
     <ClCompile Include="..\src\RtspSession.cpp" />
     <ClCompile Include="..\src\SocketWrapper.cpp" />
-    <ClCompile Include="..\src\VideoStreamer.cpp" />
-    <ClCompile Include="..\src\VideoStreamerMSFT.cpp" />
+    <ClCompile Include="..\src\NwMediaStreamSinkBase.cpp" />
+    <ClCompile Include="..\src\RTPStreamSink.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\RTSPServer.h" />
     <ClInclude Include="..\inc\RtspSession.h" />
     <ClInclude Include="..\inc\SocketWrapper.h" />
-    <ClInclude Include="..\inc\VideoStreamer.h" />
-    <ClInclude Include="..\inc\VideoStreamerInternal.h" />
-    <ClInclude Include="..\inc\VideoStreamerMSFT.h" />
+    <ClInclude Include="..\inc\NetworkMediaStreamer.h" />
+    <ClInclude Include="..\inc\NwMediaStreamSinkBase.h" />
+    <ClInclude Include="..\inc\RTPStreamSink.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

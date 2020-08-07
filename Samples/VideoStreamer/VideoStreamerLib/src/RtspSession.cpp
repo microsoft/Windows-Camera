@@ -15,15 +15,15 @@ RTSPSession::RTSPSession(
       CSocketWrapper* rtspClientSocket
     , streamerMapType streamers
     , winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers)
-    : m_pRtspClient(rtspClientSocket),
-    m_callBackHandle(nullptr),
-    m_RtspReadEvent(nullptr),
-    m_pTcpTxBuff(nullptr),
-    m_pTcpRxBuff(nullptr),
-    m_bStreamingStarted(false),
-    m_streamers(streamers),
-    m_spCurrentStreamer(nullptr),
-    m_pLoggerEvents(m_pLoggers)
+    : m_pRtspClient(rtspClientSocket)
+    , m_callBackHandle(nullptr)
+    , m_RtspReadEvent(nullptr)
+    , m_pTcpTxBuff(nullptr)
+    , m_pTcpRxBuff(nullptr)
+    , m_bStreamingStarted(false)
+    , m_streamers(streamers)
+    , m_spCurrentStreamer(nullptr)
+    , m_pLoggerEvents(m_pLoggers)
 {
     m_RtspSessionID = rand() << 16;         // create a session ID
     m_RtspSessionID |= rand();

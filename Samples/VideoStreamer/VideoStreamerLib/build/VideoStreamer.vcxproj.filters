@@ -24,10 +24,13 @@
     <ClCompile Include="..\src\SocketWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\VideoStreamer.cpp">
+    <ClCompile Include="..\src\RTPStreamSink.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\VideoStreamerMSFT.cpp">
+    <ClCompile Include="..\src\RTPMediaSink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\NwMediaStreamSinkBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,13 +44,13 @@
     <ClInclude Include="..\inc\SocketWrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\inc\VideoStreamer.h">
+    <ClInclude Include="..\inc\RTPStreamSink.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\inc\VideoStreamerInternal.h">
+    <ClInclude Include="..\inc\NwMediaStreamSinkBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\inc\VideoStreamerMSFT.h">
+    <ClInclude Include="..\inc\NetworkMediaStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

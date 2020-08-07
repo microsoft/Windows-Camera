@@ -1,6 +1,23 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include "VideoStreamerInternal.h"
+#ifndef UNICODE
+#define UNICODE
+#endif
+#define SECURITY_WIN32
+#include <WinSock2.h>
+#include <windows.h>
+#include <iostream>
+#include <mutex>
+
+#include <Security.h>
+#include <winternl.h>
+#define SCHANNEL_USE_BLACKLISTS
+#include <schnlsp.h>
+
+#include <ws2def.h>
+#include <mstcpip.h>
+#include <ws2tcpip.h>
+#include <winrt\base.h>
 
 constexpr LPWSTR g_lpPackageName = (LPWSTR)UNISP_NAME;
 #define CHECK_WIN32(result) {auto r = (result); if(r <0)  winrt::check_win32(r);}

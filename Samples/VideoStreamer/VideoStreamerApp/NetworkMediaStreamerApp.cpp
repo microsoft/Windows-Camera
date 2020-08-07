@@ -1,6 +1,6 @@
 // VideoStreamerApp.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-#include "..\VideoStreamerLib\inc\VideoStreamer.h"
+#include "..\VideoStreamerLib\inc\NetworkMediaStreamer.h"
 #include <iostream>
 #include <Mferror.h>
 #include <windows.media.h>
@@ -29,6 +29,8 @@ using namespace Windows::Media::MediaProperties;
 constexpr uint16_t ServerPort = 8554;
 constexpr uint16_t SecureServerPort = 6554;
 
+// Uncomment the following if you want to use FrameReader API instead of the Record-to-sink APIs
+//#define USE_FR 
 
 // sample test code to get localhost test certificate
 std::vector<PCCERT_CONTEXT> getServerCertificate()
@@ -91,7 +93,6 @@ std::map<std::string, std::vector<GUID>> streamMap =
     //{"/mpeg2",MFVideoFormat_MPEG2}
 };
 
-//#define USE_FR
 #ifdef USE_FR
 IMFSinkWriter* InitSinkWriter(IMFMediaSink *pMediaSink, MediaFrameFormat format)
 {
@@ -289,7 +290,7 @@ int main()
                 }
             }
             if (selectedProp) break;
-        }while(++prefSubType != preferredsubTypes.end());
+        } while(++prefSubType != preferredsubTypes.end());
         mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
         auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto);
         auto lowLagRec = mc.PrepareLowLagRecordToCustomSinkAsync(me, streamers.begin()->second.as<IMediaExtension>()).get();

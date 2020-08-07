@@ -1,11 +1,10 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include "VideoStreamerInternal.h"
+
 #include "SocketWrapper.h"
-
-
-#include <winrt\base.h>
-
+#include "NetworkMediaStreamer.h"
+#include <Shlwapi.h>
+#include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/windows.system.threading.h>
 typedef std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamerMapType;

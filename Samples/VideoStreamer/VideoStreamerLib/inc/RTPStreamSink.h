@@ -1,6 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include "VideoStreamerInternal.h"
+#include "NwMediaStreamSinkBase.h"
 #include <winrt\Windows.Security.Cryptography.h>
 #include <winrt\Windows.Storage.Streams.h>
 #include <winrt\Windows.Media.h>
@@ -23,7 +23,8 @@ public:
     uint64_t m_u64StartTime;
     uint32_t m_SequenceNumber;
 };
-class RTPVideoStreamSink sealed : public NwMediaStreamSinkBase
+
+class RTPVideoStreamSink  sealed : public NwMediaStreamSinkBase
 {
     std::mutex m_guardlock;
     std::map<std::string, TxContext> m_RtpStreamers;
@@ -31,8 +32,8 @@ class RTPVideoStreamSink sealed : public NwMediaStreamSinkBase
     size_t m_MTUSize;
     uint32_t m_packetizationMode;
     uint32_t m_SequenceNumber;
-    RTPVideoStreamSink(IMFMediaType *pMT, IMFMediaSink* pParent);
-    virtual ~RTPVideoStreamSink();
+    RTPVideoStreamSink(IMFMediaType *pMT, IMFMediaSink* pParent, DWORD dwStreamID);
+    virtual ~RTPVideoStreamSink ();
     BYTE* FindSC(BYTE* bufStart, BYTE* bufEnd);
     STDMETHODIMP PacketizeAndSend(IMFSample *pSample);
     void PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime);
@@ -40,7 +41,7 @@ class RTPVideoStreamSink sealed : public NwMediaStreamSinkBase
     void SendPacket(BYTE* pOut, size_t sz, LONGLONG ts, bool bLastNalOfFrame);
     void PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime);
 public:
-    static INetworkMediaStreamSink* CreateInstance(IMFMediaType *pMediaType, IMFMediaSink* pParent);
+    static INetworkMediaStreamSink* CreateInstance(IMFMediaType *pMediaType, IMFMediaSink* pParent, DWORD dwStreamID);
 
     void AddTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler, std::string protocol = "rtp", uint32_t ssrc = 0) override;
     void AddNetworkClient(std::string destination, std::string protocol = "rtp", uint32_t ssrc = 0) override;
