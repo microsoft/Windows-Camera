@@ -168,7 +168,7 @@
     <ClCompile Include="..\NetworkMediaStreamerApp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\VideoStreamerLib\build\VideoStreamer.vcxproj">
+    <ProjectReference Include="..\..\NetworkMediaStreamerLib\build\NetworkMediaStreamer.vcxproj">
       <Project>{58e4848e-b347-43fb-94c1-c5c85abfd6b0}</Project>
     </ProjectReference>
   </ItemGroup>

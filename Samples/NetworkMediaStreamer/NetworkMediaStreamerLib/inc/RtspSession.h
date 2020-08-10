@@ -12,12 +12,12 @@ typedef std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamerMapType;
 // supported command types
 enum class RTSP_CMD
 {
-   UNKNOWN =0,
-   OPTIONS,
-   DESCRIBE,
-   SETUP,
-   PLAY,
-   TEARDOWN
+    UNKNOWN = 0,
+    OPTIONS,
+    DESCRIBE,
+    SETUP,
+    PLAY,
+    TEARDOWN
 };
 #define RTP_DEFAULT_PORT 54554
 #define RTSP_BUFFER_SIZE       10000    // for incoming requests, and outgoing responses
@@ -26,53 +26,52 @@ class RTSPSession
 {
 public:
     RTSPSession(
-        CSocketWrapper* rtspClientSocket, 
+        CSocketWrapper* rtspClientSocket,
         streamerMapType streamers,
-        winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>> *m_pLoggers);
+        winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers);
     virtual ~RTSPSession();
 
-    RTSP_CMD HandleRequest(char const * aRequest, unsigned aRequestSize);
-    int            GetStreamID();
+    RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
+    int GetStreamID();
 
     void BeginSession(winrt::delegate<RTSPSession*> completed);
 private:
     void Init();
     void InitUDPTransport();
     void InitTCPTransport();
-    RTSP_CMD ParseRequest(char const * aRequest, unsigned aRequestSize);
-    char const * DateHeader();
+    RTSP_CMD ParseRequest(char const* aRequest, unsigned aRequestSize);
+    char const* DateHeader();
     std::string m_dest;
     // RTSP request command handlers
     void HandleCmdOPTIONS();
     void HandleCmdDESCRIBE();
-    void HandleCmdSETUP(); 
+    void HandleCmdSETUP();
     void HandleCmdPLAY();
     void HandleCmdTEARDOWN();
     void Handle_RtspPAUSE();
     void StopIfStreaming();
     void SendToClient(std::string Response);
-    // global session state parameters
+
     int            m_RtspSessionID;
     winrt::delegate<RTSPSession*> m_Completed;
     std::unique_ptr<CSocketWrapper> m_pRtspClient;
     std::string    m_RtspClientAddr;
-                                                              //int            m_StreamID;                                // number of simulated stream of that session
-    u_short        m_RtspPort;
-    u_short        m_LocalRTPPort;                           // client port for UDP based RTP transport
-    u_short        m_LocalRTCPPort;                          // client port for UDP based RTCP transport  
+    u_short  m_RtspPort;
+    u_short  m_LocalRTPPort;                           // client port for UDP based RTP transport
+    u_short  m_LocalRTCPPort;                          // client port for UDP based RTCP transport  
 
-    u_short        m_ClientRTPPort;                           // client port for UDP based RTP transport
-    u_short        m_ClientRTCPPort;                          // client port for UDP based RTCP transport  
-    bool           m_TcpTransport;                            // if Tcp based streaming was activated
-    uint32_t       m_ssrc;
-    streamerMapType m_streamers;//int strmCnt;
+    u_short  m_ClientRTPPort;                           // client port for UDP based RTP transport
+    u_short  m_ClientRTCPPort;                          // client port for UDP based RTCP transport  
+    bool     m_TcpTransport;                            // if Tcp based streaming was activated
+    uint32_t m_ssrc;
+    streamerMapType m_streamers;
     winrt::com_ptr<IMFStreamSink> m_spCurrentStreamer;
 
     // parameters of the last received RTSP request
     std::string           m_CSeq;             // RTSP command sequence number
-    std::string           m_URLHostPort;           // host:port part of the URL
+    std::string           m_URLHostPort;      // host:port part of the URL
     std::string           m_URLProto;
-                                                   //unsigned       m_ContentLength;                           // SDP string size
+
     WSAEVENT m_RtspReadEvent;
     HANDLE m_callBackHandle;
     winrt::delegate<BYTE*, size_t> m_packetHandler;

@@ -29,7 +29,6 @@ STDMETHODIMP NwMediaStreamSinkBase::QueryInterface(REFIID riid, void** ppv)
 {
     static const QITAB qit[] =
     {
-        QITABENT(NwMediaStreamSinkBase , IMFClockStateSink),
         QITABENT(NwMediaStreamSinkBase , IMFStreamSink),
         QITABENT(NwMediaStreamSinkBase , IMFMediaEventGenerator),
         QITABENT(NwMediaStreamSinkBase , INetworkMediaStreamSink),

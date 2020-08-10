@@ -1,6 +1,6 @@
 // VideoStreamerApp.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-#include "..\VideoStreamerLib\inc\NetworkMediaStreamer.h"
+#include "..\NetworkMediaStreamerLib\inc\NetworkMediaStreamer.h"
 #include <iostream>
 #include <Mferror.h>
 #include <windows.media.h>
