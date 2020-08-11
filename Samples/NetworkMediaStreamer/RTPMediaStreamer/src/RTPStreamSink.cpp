@@ -1,5 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #include "RTPStreamSink.h"
+#include <iostream>
 
 TxContext::TxContext(std::string destination, winrt::delegate<BYTE*, size_t> packetHandler /*= nullptr*/)
     : m_u64StartTime(0)
@@ -347,7 +348,8 @@ STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample)
         winrt::check_hresult(spMediaBuf->Lock(&pSampleBuffer, &maxLen, &dwSampleSize));
         winrt::check_hresult(pSample->GetSampleTime(&llSampleTime));
         winrt::check_hresult(pSample->GetSampleDuration(&llSampleDur));
-
+        MFTIME latency = MFGetSystemTime() - llSampleTime;
+        //std::cout << "\nlatency = " << latency / 10000;
         auto ts = ((llSampleTime) * 90) / 10000;
         if (m_packetizationMode == 1)
         {

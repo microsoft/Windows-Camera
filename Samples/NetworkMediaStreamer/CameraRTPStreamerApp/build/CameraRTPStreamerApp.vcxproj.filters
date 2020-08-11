@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\NetworkMediaStreamerApp.cpp">
+    <ClCompile Include="..\CameraRTPStreamerApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

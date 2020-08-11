@@ -1,6 +1,7 @@
 // VideoStreamerApp.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
-#include "..\NetworkMediaStreamerLib\inc\NetworkMediaStreamer.h"
+#include "..\Common\inc\RTPMediaStreamer.h"
+#include "..\Common\inc\RTSPServerControl.h"
 #include <iostream>
 #include <Mferror.h>
 #include <windows.media.h>
@@ -30,7 +31,7 @@ constexpr uint16_t ServerPort = 8554;
 constexpr uint16_t SecureServerPort = 6554;
 
 // Uncomment the following if you want to use FrameReader API instead of the Record-to-sink APIs
-//#define USE_FR 
+#define USE_FR 
 
 // sample test code to get localhost test certificate
 std::vector<PCCERT_CONTEXT> getServerCertificate()

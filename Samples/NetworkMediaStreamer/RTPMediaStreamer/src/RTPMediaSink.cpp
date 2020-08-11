@@ -190,7 +190,7 @@ public:
     }
 };
 
-IMFMediaSink* CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes)
+RTPMEDIASTREAMER_API IMFMediaSink* CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes)
 {
     return RTPMediaSink::CreateInstance(mediaTypes);
 }

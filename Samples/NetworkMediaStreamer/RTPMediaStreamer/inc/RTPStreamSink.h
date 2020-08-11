@@ -1,6 +1,7 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
 #include "NwMediaStreamSinkBase.h"
+#include "RTPMediaStreamer.h"
 #include <winrt\Windows.Security.Cryptography.h>
 #include <winrt\Windows.Storage.Streams.h>
 #include <winrt\Windows.Media.h>

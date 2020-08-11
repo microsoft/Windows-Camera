@@ -151,7 +151,7 @@ STDMETHODIMP_(ULONG) RTSPServer::Release()
 
 }
 
-VIDEOSTREAMER_API IRTSPServerControl* CreateRTSPServer(streamerMapType streamers, uint16_t socketPort, bool bSecure, std::vector<PCCERT_CONTEXT> serverCerts /*=empty*/)
+RTSPSERVER_API IRTSPServerControl* CreateRTSPServer(streamerMapType streamers, uint16_t socketPort, bool bSecure, std::vector<PCCERT_CONTEXT> serverCerts /*=empty*/)
 {
     if (bSecure && serverCerts.empty())
     {

@@ -2,7 +2,7 @@
 #pragma once
 
 #include "SocketWrapper.h"
-#include "NetworkMediaStreamer.h"
+#include "RTSPServerControl.h"
 #include <Shlwapi.h>
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
