@@ -3,6 +3,7 @@
 #include "..\Common\inc\RTPMediaStreamer.h"
 #include "..\Common\inc\RTSPServerControl.h"
 #include <iostream>
+#include <iomanip>
 #include <Mferror.h>
 #include <windows.media.h>
 #include<windows.media.core.interop.h>
@@ -31,7 +32,7 @@ constexpr uint16_t ServerPort = 8554;
 constexpr uint16_t SecureServerPort = 6554;
 
 // Uncomment the following if you want to use FrameReader API instead of the Record-to-sink APIs
-#define USE_FR 
+//#define USE_FR 
 
 // sample test code to get localhost test certificate
 std::vector<PCCERT_CONTEXT> getServerCertificate()
@@ -140,39 +141,54 @@ int main()
     std::cout << "VideoSteamer App \n";
     try
     {
-        GUID inFormat = MFVideoFormat_NV12;
         auto filteredDevices = DeviceInformation::FindAllAsync(DeviceClass::VideoCapture).get();
         if (!filteredDevices.Size())
         {
             throw_hresult(MF_E_NO_CAPTURE_DEVICES_AVAILABLE);
         }
+        int selection = 1;
         auto deviceIter = filteredDevices.First();
         while (deviceIter.HasCurrent())
         {
             auto device = deviceIter.Current();
-            std::wcout << std::endl << device.Name().c_str() << L":" << device.Id().c_str();
+            std::wcout << std::endl << selection++ << L". " << device.Name().c_str() << L":" << device.Id().c_str();
             deviceIter.MoveNext();
         }
-        int selection;
         std::cout << "\nEnter Selection:";
-        std::cin >> selection;
+        std::cin >> selection; selection--;
         auto mc = MediaCapture();
         auto s = MediaCaptureInitializationSettings();
         s.VideoDeviceId(filteredDevices.GetAt(selection).Id());
+#ifdef USE_FR
         s.MemoryPreference(MediaCaptureMemoryPreference::Cpu);
+#else
+        s.MemoryPreference(MediaCaptureMemoryPreference::Auto);
+#endif // USE_FR
+
         s.StreamingCaptureMode(StreamingCaptureMode::Video);
         mc.InitializeAsync(s).get();
         std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamers;
 
-        auto sz = BitmapSize();
-        std::cout << "Enter Resolution Width: ";
-        std::cin >> sz.Width;
-        std::cout << "Enter Resolution Height: ";
-        std::cin >> sz.Height;
-
+        auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
+        IMediaEncodingProperties selectedProp(nullptr);
+        uint32_t idx=1;
+        for (auto f : formats)
+        {
+            auto format = f.try_as<VideoEncodingProperties>();
+            float fr = (float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator();
+            std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << /*std::setprecision(2) <<*/ fr << L":" << format.Subtype().c_str();
+        }
+        std::cout << "Enter format choice: ";
+        std::cin >> idx; idx--;
+        selectedProp = formats.GetAt(idx);
+        mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
+        BitmapSize sz;
+        auto selectedFormat = mc.VideoDeviceController().GetMediaStreamProperties(MediaStreamType::VideoRecord).as<VideoEncodingProperties>(); //selectedProp.as<VideoEncodingProperties>();
+        sz.Height = selectedFormat.Height();
+        sz.Width = selectedFormat.Width();
+        MediaRatio frameRate = selectedFormat.FrameRate();
         for (auto strm : streamMap)
         {
-
             std::vector<IMFMediaType*> mediaTypes;
             winrt::com_ptr<IMFMediaType> spOutType;
             winrt::check_hresult(MFCreateMediaType(spOutType.put()));
@@ -182,7 +198,7 @@ int main()
 
             winrt::check_hresult(spOutType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
             winrt::check_hresult(MFSetAttributeSize(spOutType.get(), MF_MT_FRAME_SIZE, sz.Width, sz.Height));
-            winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, (int)(30 * 100), 100));
+            winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator()*100, frameRate.Denominator()*100));
             mediaTypes.push_back(spOutType.get());
             streamers[strm.first].attach(CreateRTPMediaSink(mediaTypes));
             mediaTypes.clear();
@@ -190,12 +206,24 @@ int main()
         }
 
         com_ptr<IRTSPServerControl> serverHandle, serverHandle1;
-        serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false));
+        com_ptr<IRTSPAuthProvider> m_spAuthProvider;
+        m_spAuthProvider.attach(CreateAuthProvider(AuthType::Both, L"RTSPServer"));
+
+        // add a default user for testing
+        m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
+
+        serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false,m_spAuthProvider.get()));
 #if 0
-        auto ServerCerts = getServerCertificate();
-        serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, true, ServerCerts));
-#else
-        serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, false));
+        try 
+        {
+            auto ServerCerts = getServerCertificate();
+            serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, true, ServerCerts));
+        }
+        catch (hresult_error const &ex)
+        {
+            std::wcout << L"\nError starting secure server: " << std::hex << ex.code() << std::dec << L":" << ex.message().c_str();
+            serverHandle1 = nullptr;
+        }
 #endif
         auto loggerdelegate = [](auto er, auto msg)
         {
@@ -205,45 +233,20 @@ int main()
         for (int i = 0; i < (int)LoggerType::LOGGER_MAX; i++)
         {
             serverHandle->AddLogHandler((LoggerType)i, loggerdelegate);
-            serverHandle1->AddLogHandler((LoggerType)i, loggerdelegate);
+            serverHandle1? serverHandle1->AddLogHandler((LoggerType)i, loggerdelegate) : event_token();
         }
         serverHandle->StartServer();
-        serverHandle1->StartServer();
+        serverHandle1? serverHandle1->StartServer() : void(0);
 #ifdef USE_FR
         auto fsources = mc.FrameSources();
         MediaFrameSource selectedFs(nullptr);
         std::vector<hstring> preferredsubTypes = { L"NV12", L"YUY2", L"IYUV", L"ARGB32" };
         for (auto fs : fsources)
         {
-            if (fs.Value().Controller().VideoDeviceController().Id() != s.VideoDeviceId()) continue;
-            auto prefSubType = preferredsubTypes.begin();
-            do
+            if (fs.Value().Controller().VideoDeviceController().Id() == s.VideoDeviceId())
             {
-                if ((fs.Value().Info().MediaStreamType() == MediaStreamType::VideoPreview)
-                    || (fs.Value().Info().MediaStreamType() == MediaStreamType::VideoRecord)
-                    )
-                {
-                    auto formats = fs.Value().SupportedFormats();
-                    //std::cout << fs.Value().Info().MediaStreamType();
-                    for (auto format : formats)
-                    {
-                        std::wcout << L"\n" << format.VideoFormat().Width() << L"x" << format.VideoFormat().Height() << L":" << format.Subtype().c_str();
-                        if ((format.VideoFormat().Height() == sz.Height)
-                            && (format.VideoFormat().Width() == sz.Width)
-                            && (((float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator()) > 24)
-                            && (format.Subtype() == *prefSubType)
-                            )
-                        {
-                            fs.Value().SetFormatAsync(format).get();
-                            selectedFs = fs.Value();
-                            break;
-                        }
-                    }
-                    if (selectedFs)
-                        break;
-                }
-                if (++prefSubType == preferredsubTypes.end()) break;
-            } while (!selectedFs);
+                selectedFs = fs.Value();
+            }
         }
         auto fr = mc.CreateFrameReaderAsync(selectedFs, selectedFs.CurrentFormat().Subtype(), sz).get();
         fr.AcquisitionMode(MediaFrameReaderAcquisitionMode::Realtime);
@@ -270,29 +273,7 @@ int main()
             });
         fr.StartAsync();
 #else
-        std::vector<hstring> preferredsubTypes = { L"NV12", L"YUY2", L"IYUV", L"ARGB32" };
-        auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
-        IMediaEncodingProperties selectedProp(nullptr);
-        auto prefSubType = preferredsubTypes.begin();
-        do
-        {
-            for (auto f : formats)
-            {
-                auto format = f.try_as<VideoEncodingProperties>();
-                std::wcout << L"\n" << format.Width() << L"x" << format.Height() << L":" << format.Subtype().c_str();
-                if ((format.Height() == sz.Height)
-                    && (format.Width() == sz.Width)
-                    && (((float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator()) > 24)
-                    && (format.Subtype() == *prefSubType)
-                    )
-                {
-                    selectedProp = f;
-                    break;
-                }
-            }
-            if (selectedProp) break;
-        } while(++prefSubType != preferredsubTypes.end());
-        mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
+
         auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto);
         auto lowLagRec = mc.PrepareLowLagRecordToCustomSinkAsync(me, streamers.begin()->second.as<IMediaExtension>()).get();
         lowLagRec.StartAsync().get();
@@ -309,19 +290,52 @@ int main()
                 std::wcout << L"rtsps://" << hname.DisplayName().c_str() << L":" << SecureServerPort << s.first.c_str() << std::endl;
             }
         }
-        std::cin.seekg(std::cin._Seekend);
-        std::cout << "Press any key to stop...";
-        std::cin.get();
 
+        char c = 1;
+        while (c != 0)
+        {
+            std::cout << "\n 1. Add User\n 2. Remove User \n 0. Quit\n You choice:" ;
+
+            std::cin >> c;
+            switch (c)
+            {
+            case '1':
+            {
+                std::string username, password;
+                std::cout << "\nEnter username :-  ";
+                std::cin >> username;
+                std::cout << "\nEnter new password :- ";
+                std::cin >> password;
+                m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username), winrt::to_hstring(password));
+            }
+                break;
+            case '2':
+            {
+                std::string username;
+                std::cout << "\nEnter username :-  ";
+                std::cin >> username;
+                m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username));
+            }
+                break;
+            case '0':
+                c = 0;
+                break;
+            default:
+                break;
+            }
+
+        } 
 #ifdef USE_FR
         fr.StopAsync();
 #else
         lowLagRec.StopAsync().get();
         lowLagRec.FinishAsync().get();
 #endif
+        m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(L"user");
     }
     catch (hresult_error const& ex)
     {
         std::wcout << L"Error: " << ex.code() << L":" << ex.message().c_str();
     }
+
 }

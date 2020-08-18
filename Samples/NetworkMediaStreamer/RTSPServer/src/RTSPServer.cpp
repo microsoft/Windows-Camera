@@ -7,6 +7,7 @@
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::System::Threading;
 
+
 void RTSPServer::StopServer()
 {
     if (m_callbackHandle)
@@ -107,7 +108,7 @@ void RTSPServer::StartServer()
                 pServer->m_LoggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
                 return;
             }
-            RTSPSession* pRtspSession = new RTSPSession(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_LoggerEvents);
+            RTSPSession* pRtspSession = new RTSPSession(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents);
             pServer->m_Sessions.insert({ pRtspSession, ClientSocket });
             pServer->m_SessionStatusEvents((uintptr_t)pRtspSession, SessionStatus::SessionStarted);
 
@@ -124,42 +125,15 @@ void RTSPServer::StartServer()
                 });
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD));
 }
-STDMETHODIMP RTSPServer::QueryInterface(REFIID riid, void** ppv)
-{
-    static const QITAB qit[] =
-    {
-        QITABENT(RTSPServer, IRTSPServerControl),
-        QITABENT(RTSPServer, IUnknown),
-        { 0 }
-    };
-    return QISearch(this, qit, riid, ppv);
-}
 
-STDMETHODIMP_(ULONG) RTSPServer::AddRef()
-{
-    return InterlockedIncrement(&m_cRef);
-}
-
-STDMETHODIMP_(ULONG) RTSPServer::Release()
-{
-    ULONG cRef = InterlockedDecrement(&m_cRef);
-    if (cRef == 0)
-    {
-        delete this;
-    }
-    return cRef;
-
-}
-
-RTSPSERVER_API IRTSPServerControl* CreateRTSPServer(streamerMapType streamers, uint16_t socketPort, bool bSecure, std::vector<PCCERT_CONTEXT> serverCerts /*=empty*/)
+RTSPSERVER_API IRTSPServerControl* CreateRTSPServer(streamerMapType streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, std::vector<PCCERT_CONTEXT> serverCerts /*=empty*/)
 {
     if (bSecure && serverCerts.empty())
     {
         winrt::check_hresult(SEC_E_NO_CREDENTIALS);
     }
     IRTSPServerControl* pRtspServerControl = nullptr;
-    auto pRTSPServer = new RTSPServer(streamers, socketPort, serverCerts);
+    auto pRTSPServer = new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts);
     winrt::check_hresult(pRTSPServer->QueryInterface(__uuidof(IRTSPServerControl),(void**)&pRtspServerControl));
     return pRtspServerControl;
 }
-

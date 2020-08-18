@@ -3,10 +3,10 @@
 #define DBGLEVEL 1
 #include "RtspSession.h"
 
-class RTSPServer : public IRTSPServerControl
+class RTSPServer : public winrt::implements<RTSPServer, IRTSPServerControl>
 {
 public:
-    RTSPServer(streamerMapType streamers, uint16_t socketPort, std::vector<PCCERT_CONTEXT> serverCerts)
+    RTSPServer(streamerMapType streamers, uint16_t socketPort, IRTSPAuthProvider *pAuthProvider, std::vector<PCCERT_CONTEXT> serverCerts)
         : m_acceptEvent(nullptr)
         , m_callbackHandle(nullptr)
         , m_socketPort(socketPort)
@@ -17,6 +17,7 @@ public:
         , MasterSocket(INVALID_SOCKET)
         , m_bIsShutdown(false)
     {
+        m_spAuthProvider.copy_from(pAuthProvider);
     }
     virtual  ~RTSPServer()
     {
@@ -44,15 +45,11 @@ public:
     void StartServer();
     void StopServer();
 
-    // IUnknown Methods
-    STDMETHOD_(HRESULT __stdcall, QueryInterface)(REFIID riid, void** ppv);
-    STDMETHOD_(ULONG __stdcall, AddRef)();
-    STDMETHOD_(ULONG __stdcall, Release)();
-
 private:
 
     streamerMapType m_streamers;
-    std::map <RTSPSession*, SOCKET> m_Sessions;
+
+    std::map<RTSPSession*, SOCKET> m_Sessions;
     SOCKET      MasterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
     WSAEVENT m_acceptEvent;
     HANDLE m_callbackHandle;
@@ -64,206 +61,5 @@ private:
     long m_cRef;
     winrt::com_ptr<IMFPresentationClock> m_spClock;
     bool m_bIsShutdown;
-public:
-#if 0
-    STDMETHODIMP GetCharacteristics(
-        /* [out] */ __RPC__out DWORD* pdwCharacteristics)
-    {
-        RETURNIFSHUTDOWN;
-        if (!pdwCharacteristics)
-        {
-            return E_POINTER;
-        }
-        *pdwCharacteristics = MEDIASINK_FIXED_STREAMS | MEDIASINK_RATELESS;
-        return S_OK;
-    }
-
-    STDMETHODIMP AddStreamSink(
-        /* [in] */ DWORD dwStreamSinkIdentifier,
-        /* [in] */ __RPC__in_opt IMFMediaType* pMediaType,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
-    {
-        RETURNIFSHUTDOWN;
-        return MF_E_STREAMSINKS_FIXED;
-    }
-
-    STDMETHODIMP RemoveStreamSink(
-        /* [in] */ DWORD dwStreamSinkIdentifier)
-    {
-        RETURNIFSHUTDOWN;
-        return MF_E_STREAMSINKS_FIXED;
-    }
-
-    STDMETHODIMP GetStreamSinkCount(
-        /* [out] */ __RPC__out DWORD* pcStreamSinkCount)
-    {
-        RETURNIFSHUTDOWN;
-        if (!pcStreamSinkCount)
-        {
-            return E_POINTER;
-        }
-        else
-        {
-            *pcStreamSinkCount = 1;
-            return S_OK;
-        }
-    }
-
-    STDMETHODIMP GetStreamSinkByIndex(
-        /* [in] */ DWORD dwIndex,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
-    {
-        RETURNIFSHUTDOWN;
-        if (!ppStreamSink) return E_POINTER;
-        if (dwIndex > 0)
-        {
-            return MF_E_INVALIDINDEX;
-        }
-        auto iter = m_streamers.begin();
-        for (DWORD i = 0; i < dwIndex; i++) iter++;
-        iter->second.as<IMFStreamSink>().copy_to(ppStreamSink);
-        //m_spStreamSink.as<IMFStreamSink>().copy_to(ppStreamSink);
-        return S_OK;
-    }
-
-    STDMETHODIMP GetStreamSinkById(
-        /* [in] */ DWORD dwStreamSinkIdentifier,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
-    {
-        RETURNIFSHUTDOWN;
-        if (dwStreamSinkIdentifier > m_streamers.size())
-        {
-            return MF_E_INVALIDSTREAMNUMBER;
-        }
-        else
-        {
-            auto iter = m_streamers.begin();
-            for (DWORD i = 0; i < dwStreamSinkIdentifier; i++) iter++;
-            iter->second.as<IMFStreamSink>().copy_to(ppStreamSink);
-            return S_OK;
-        }
-    }
-
-    STDMETHODIMP SetPresentationClock(
-        /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock)
-    {
-        RETURNIFSHUTDOWN;
-        if (m_spClock)
-        {
-            m_spClock->RemoveClockStateSink(this);
-            m_spClock = nullptr;
-        }
-        m_spClock.copy_from(pPresentationClock);
-        return m_spClock->AddClockStateSink(this);
-        //return //m_spStreamSink->SetPresentationClock(pPresentationClock);
-    }
-
-    STDMETHODIMP GetPresentationClock(
-        /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock)
-    {
-        RETURNIFSHUTDOWN;
-        if (!ppPresentationClock) return E_POINTER;
-        m_spClock.copy_to(ppPresentationClock);
-        return S_OK;
-    }
-
-    STDMETHODIMP Shutdown(void)
-    {
-        RETURNIFSHUTDOWN;
-        m_bIsShutdown = true;
-        for (auto s : m_streamers)
-        {
-            s.second->Shutdown();
-        }
-        return S_OK;
-    }
-
-    //IMediaExtension
-    STDMETHODIMP SetProperties(
-        ABI::Windows::Foundation::Collections::IPropertySet* configuration
-    )
-    {
-        return S_OK;
-    }
-
-    // IInspectable
-
-    STDMETHODIMP GetIids(
-        /* [out] */ __RPC__out ULONG* iidCount,
-        /* [size_is][size_is][out] */ __RPC__deref_out_ecount_full_opt(*iidCount) IID** iids)
-    {
-        if ((!iidCount) || (!iids))
-        {
-            return E_POINTER;
-        }
-        *iidCount = 4;
-        *iids = (IID*)CoTaskMemAlloc(sizeof(IID) * 4);
-
-        if (!(*iids)) return E_OUTOFMEMORY;
-
-        *iids[0] = __uuidof(IMFMediaSink);
-        *iids[1] = __uuidof(IMFClockStateSink);
-        *iids[2] = __uuidof(ABI::Windows::Media::IMediaExtension);
-        *iids[3] = __uuidof(IRTSPServerControl);
-
-        return S_OK;
-    }
-
-    STDMETHODIMP GetRuntimeClassName(
-        /* [out] */ __RPC__deref_out_opt HSTRING* className)
-    {
-        auto name = winrt::hstring(L"VideoStreamer.RTPSink");
-        return WindowsCreateString(name.c_str(), name.size(), className);
-    }
-
-    STDMETHODIMP GetTrustLevel(
-        /* [out] */ __RPC__out TrustLevel* trustLevel)
-    {
-        if (!trustLevel)
-        {
-            return E_POINTER;
-        }
-        *trustLevel = TrustLevel::FullTrust;
-        return S_OK;
-    }
-    /****************************************/
-
-    // IMFClockStateSink methods
-    STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset)
-    {
-        for (auto s : m_streamers)
-        {
-            s.second->Start(hnsSystemTime, llClockStartOffset);
-        }
-        return S_OK;
-    }
-    STDMETHODIMP OnClockStop(MFTIME hnsSystemTime)
-    {
-        for (auto s : m_streamers)
-        {
-            s.second->Stop(hnsSystemTime);
-        }
-        return S_OK;
-    }
-    STDMETHODIMP OnClockPause(MFTIME hnsSystemTime)
-    {
-        for (auto s : m_streamers)
-        {
-            s.second->Pause(hnsSystemTime);
-        }
-        return S_OK;
-    }
-    STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime)
-    {
-        for (auto s : m_streamers)
-        {
-            s.second->Start(hnsSystemTime, 0);
-        }
-        return S_OK;
-    }
-    STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate)
-    {
-        return S_OK;
-    }
-#endif
+    winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
 };

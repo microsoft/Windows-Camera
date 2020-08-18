@@ -18,6 +18,9 @@
     <ClCompile Include="..\src\SocketWrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\RTSPAuthProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\RTSPServer.h">

@@ -28,6 +28,7 @@ public:
     RTSPSession(
         CSocketWrapper* rtspClientSocket,
         streamerMapType streamers,
+        IRTSPAuthProvider* pAuthProvider,
         winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers);
     virtual ~RTSPSession();
 
@@ -71,11 +72,12 @@ private:
     std::string           m_CSeq;             // RTSP command sequence number
     std::string           m_URLHostPort;      // host:port part of the URL
     std::string           m_URLProto;
-
+    std::string           m_curAuthSessionMsg;
+    winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
     WSAEVENT m_RtspReadEvent;
     HANDLE m_callBackHandle;
     winrt::delegate<BYTE*, size_t> m_packetHandler;
-    bool m_bStreamingStarted;
+    bool m_bStreamingStarted,m_bTerminate, m_bAuthorizationReceived;
     std::unique_ptr<BYTE[]> m_pTcpTxBuff;
     std::unique_ptr<BYTE[]> m_pTcpRxBuff;
     std::string m_urlSuffix;

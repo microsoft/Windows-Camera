@@ -32,8 +32,9 @@ public:
     int Recv(BYTE* buf, int sz);
     int Send(BYTE* buf, int sz);
     SOCKET GetSocket() { return m_socket; }
-    bool IsClientAuthenticated() { return m_bIsAuthenticated; }
-    std::wstring GetClientUserName() { return m_clientUserName; }
+    bool IsClientCertAuthenticated() { return m_bIsAuthenticated; }
+    bool IsSecure() { return m_bIsSecure; }
+    std::wstring GetClientCertUserName() { return m_clientUserName; }
 private:
 
     static void ReadDelegate(PVOID arg, BOOLEAN flag);

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\RTSPAuthProvider.cpp" />
     <ClCompile Include="..\src\RTSPServer.cpp" />
     <ClCompile Include="..\src\RtspSession.cpp" />
     <ClCompile Include="..\src\SocketWrapper.cpp" />
