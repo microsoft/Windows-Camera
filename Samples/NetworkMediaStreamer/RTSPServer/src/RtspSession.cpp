@@ -14,6 +14,7 @@ using namespace winrt::Windows::Networking::Sockets;
 RTSPSession::RTSPSession(
       CSocketWrapper* rtspClientSocket
     , streamerMapType streamers
+    , IRTSPAuthProvider* pAuthProvider
     , winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers)
     : m_pRtspClient(rtspClientSocket)
     , m_callBackHandle(nullptr)
@@ -24,6 +25,8 @@ RTSPSession::RTSPSession(
     , m_streamers(streamers)
     , m_spCurrentStreamer(nullptr)
     , m_pLoggerEvents(m_pLoggers)
+    , m_bTerminate(false)
+    , m_bAuthorizationReceived(false)
 {
     m_RtspSessionID = rand() << 16;         // create a session ID
     m_RtspSessionID |= rand();
@@ -45,14 +48,15 @@ RTSPSession::RTSPSession(
     m_dest.clear();
     Init();
     m_pTcpRxBuff = std::make_unique<BYTE[]>(RTSP_BUFFER_SIZE);
-    if (m_pRtspClient->IsClientAuthenticated())
+    if (m_pRtspClient->IsClientCertAuthenticated())
     {
-        m_pLoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nClient Authenticated over TLS as user: " + winrt::hstring(m_pRtspClient->GetClientUserName()));
+        m_pLoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nClient Authenticated over TLS as user: " + winrt::hstring(m_pRtspClient->GetClientCertUserName()));
     }
     else
     {
         m_pLoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::hstring(L"\nClient  not Authenticated over TLS "));
     }
+    m_spAuthProvider.copy_from(pAuthProvider);
 }
 
 RTSPSession::~RTSPSession()
@@ -261,6 +265,14 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
         CSeqPos = curRequest.find_first_not_of(" \t", CSeqPos);
         m_CSeq = curRequest.substr(CSeqPos, curRequest.find_first_of("\r\n", CSeqPos) - CSeqPos);
     }
+
+    auto authpos = curRequest.find("Authorization:");
+    m_bAuthorizationReceived =(authpos != std::string::npos);
+    if (m_bAuthorizationReceived)
+    {
+        auto auth = curRequest.substr(authpos, curRequest.find_first_of("\r\n", authpos));
+        m_bAuthorizationReceived = m_spAuthProvider? m_spAuthProvider->Authorize(auth, m_curAuthSessionMsg, cmdName) : true;
+    }
     return rtspCmdType;
 }
 
@@ -292,19 +304,34 @@ void RTSPSession::HandleCmdOPTIONS()
 
 void RTSPSession::HandleCmdDESCRIBE()
 {
-    std::string   Response;// [1024] ;
+    std::string   Response;
     char   SDPBuf[1024];
+    if (m_pRtspClient.get()->IsClientCertAuthenticated() || m_bAuthorizationReceived)
+    {
+        std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_LocalRTPPort);
+        m_spCurrentStreamer.as<INetworkMediaStreamSink>()->GenerateSDP(SDPBuf, 1024, dest);
 
-    std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_LocalRTPPort);
-    m_spCurrentStreamer.as<INetworkMediaStreamSink>()->GenerateSDP(SDPBuf, 1024, dest);
+        Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
+            + DateHeader() + "\r\n"
+            + "Content-Base: " + m_URLProto + "://" + m_URLHostPort + "\r\n"
+            + "Content-Length: " + std::to_string(strlen(SDPBuf)) + "\r\n\r\n"
+            + SDPBuf;
+    }
+    else
+    {
+        Response = "RTSP/1.0 401 Unauthorized\r\n"
+            + std::string("CSeq: ") + m_CSeq + "\r\n";
+        if (m_spAuthProvider)
+        {
+            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            Response += m_curAuthSessionMsg;
+        }
+         Response += std::string("Server: NightKing\r\n")
+        + DateHeader() + "\r\n\r\n";
 
-    Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
-        + DateHeader() + "\r\n"
-        + "Content-Base: " + m_URLProto + "://" + m_URLHostPort + "\r\n"
-        + "Content-Length: " + std::to_string(strlen(SDPBuf)) + "\r\n\r\n"
-        + SDPBuf;
-
+    }
     SendToClient(Response);
+
 #if (DBGLEVEL == 1)
     m_pLoggerEvents[(int)LoggerType::RTSPMSGS](S_OK, winrt::to_hstring(__FUNCTION__) + L":Response:" + winrt::to_hstring(Response));
 #endif
@@ -314,26 +341,40 @@ void RTSPSession::HandleCmdSETUP()
 {
     std::string Response;// [1024] ;
     std::string Transport;// [255] ;
-
-    // simulate SETUP server response
-    if (m_TcpTransport)
+    if (m_pRtspClient.get()->IsClientCertAuthenticated() || m_bAuthorizationReceived)
     {
-        InitTCPTransport();
-        Transport = "RTP/AVP/TCP;unicast;interleaved=0-1";
+        // simulate SETUP server response
+        if (m_TcpTransport)
+        {
+            InitTCPTransport();
+            Transport = "RTP/AVP/TCP;unicast;interleaved=0-1";
+        }
+        else
+        {
+            InitUDPTransport();
+            Transport = "RTP/AVP;unicast;destination=" + m_RtspClientAddr + ";source=127.0.0.1;client_port="
+                + std::to_string(m_ClientRTPPort) + "-" + std::to_string(m_ClientRTCPPort)
+                + ";server_port=" + std::to_string(m_LocalRTPPort) + "-" + std::to_string(m_LocalRTCPPort);
+        }
+        Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
+            + DateHeader() + "\r\n"
+            + "Transport: " + Transport + "\r\n"
+            + "Session: " + std::to_string(m_RtspSessionID) + "\r\n\r\n";
     }
     else
     {
-        InitUDPTransport();
-        Transport = "RTP/AVP;unicast;destination=" + m_RtspClientAddr + ";source=127.0.0.1;client_port="
-            + std::to_string(m_ClientRTPPort) + "-" + std::to_string(m_ClientRTCPPort)
-            + ";server_port=" + std::to_string(m_LocalRTPPort) + "-" + std::to_string(m_LocalRTCPPort);
+        Response = "RTSP/1.0 401 Unauthorized\r\n"
+            + std::string("CSeq: ") + m_CSeq + "\r\n";
+        if (m_spAuthProvider)
+        {
+            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            Response += m_curAuthSessionMsg;
+        }
+        Response += std::string("Server: NightKing\r\n")
+            + DateHeader() + "\r\n\r\n";
     }
-    Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
-        + DateHeader() + "\r\n"
-        + "Transport: " + Transport + "\r\n"
-        + "Session: " + std::to_string(m_RtspSessionID) + "\r\n\r\n";
-
     SendToClient(Response);
+
 #if (DBGLEVEL == 1)
     m_pLoggerEvents[(int)LoggerType::RTSPMSGS](S_OK, winrt::to_hstring(__FUNCTION__) + L":Response:" + winrt::to_hstring(Response));
 #endif
@@ -357,35 +398,52 @@ void RTSPSession::StopIfStreaming()
 }
 void RTSPSession::HandleCmdPLAY()
 {
-    std::string   Response;// [1024] ;
-    Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
-        + DateHeader() + "\r\n"
-        + "Range: npt=0.000-\r\n"
-        + "Session: " + std::to_string(m_RtspSessionID) + "\r\n"
-        + "RTP-Info: url=" + m_URLProto + "://" + m_URLHostPort + "\r\n\r\n";
-
-    //send(m_RtspClient, Response.c_str(), (int)Response.length(), 0);
-    SendToClient(Response);
-    StopIfStreaming();
-    if (m_TcpTransport)
+    std::string   Response;
+    if (m_pRtspClient.get()->IsClientCertAuthenticated() || m_bAuthorizationReceived)
     {
-        m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddTransportHandler(m_packetHandler, "rtp", m_ssrc);
+        Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
+            + DateHeader() + "\r\n"
+            + "Range: npt=0.000-\r\n"
+            + "Session: " + std::to_string(m_RtspSessionID) + "\r\n"
+            + "RTP-Info: url=" + m_URLProto + "://" + m_URLHostPort + "\r\n\r\n";
+
+        SendToClient(Response);
+        StopIfStreaming();
+        if (m_TcpTransport)
+        {
+            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddTransportHandler(m_packetHandler, "rtp", m_ssrc);
+        }
+        else
+        {
+            std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_ClientRTPPort) + std::string("?localrtpport=") + std::to_string(m_LocalRTPPort);
+            m_dest = dest;
+            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddNetworkClient(dest, "rtp", m_ssrc);
+        }
+        m_bStreamingStarted = true;
+
+        std::string logstring = "\nAdding destination : ";
+        if (!m_dest.empty())
+            logstring += m_dest;
+        else
+            logstring += "tcp://" + m_RtspClientAddr;
+
+        m_pLoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::to_hstring(logstring));
     }
     else
     {
-        std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_ClientRTPPort) + std::string("?localrtpport=") + std::to_string(m_LocalRTPPort);
-        m_dest = dest;
-        m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddNetworkClient(dest, "rtp", m_ssrc);
+        Response = "RTSP/1.0 401 Unauthorized\r\n"
+        + std::string("CSeq: ") + m_CSeq + "\r\n";
+
+        if (m_spAuthProvider)
+        {
+            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            Response += m_curAuthSessionMsg;
+        }
+        Response += std::string("Server: NightKing\r\n")
+            + DateHeader() + "\r\n\r\n";
+
+        SendToClient(Response);
     }
-    m_bStreamingStarted = true;
-
-    std::string logstring = "\nAdding destination : ";
-    if (!m_dest.empty())
-        logstring += m_dest;
-    else
-        logstring += "tcp://" + m_RtspClientAddr;
-
-    m_pLoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::to_hstring(logstring));
 
     m_pLoggerEvents[(int)LoggerType::RTSPMSGS](S_OK, winrt::to_hstring(__FUNCTION__) + L":Response:" + winrt::to_hstring(Response));
 }
@@ -463,7 +521,7 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
                     }
                 }
 
-                if ((C == RTSP_CMD::TEARDOWN) || (res <= 0))
+                if ((C == RTSP_CMD::TEARDOWN) || (res <= 0) || pSession->m_bTerminate)
                 {
                     UnregisterWait(pSession->m_callBackHandle);
                     pSession->m_callBackHandle = nullptr;
