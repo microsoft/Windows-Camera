@@ -207,17 +207,17 @@ int main()
 
         com_ptr<IRTSPServerControl> serverHandle, serverHandle1;
         com_ptr<IRTSPAuthProvider> m_spAuthProvider;
-        m_spAuthProvider.attach(CreateAuthProvider(AuthType::Both, L"RTSPServer"));
-
+        m_spAuthProvider.attach(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer"));
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
-
-        serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false,m_spAuthProvider.get()));
-#if 0
+        serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false, m_spAuthProvider.get()));
+#if 1
         try 
         {
+            com_ptr<IRTSPAuthProvider> spBasicAuthProvider;
+            spBasicAuthProvider.attach(GetAuthProviderInstance(AuthType::Basic, L"RTSPServer"));
             auto ServerCerts = getServerCertificate();
-            serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, true, ServerCerts));
+            serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, true, spBasicAuthProvider.get(), ServerCerts));
         }
         catch (hresult_error const &ex)
         {
@@ -287,7 +287,10 @@ int main()
             for (auto s : streamers)
             {
                 std::wcout << L"rtsp://" << hname.DisplayName().c_str() << L":" << ServerPort << s.first.c_str() << std::endl;
-                std::wcout << L"rtsps://" << hname.DisplayName().c_str() << L":" << SecureServerPort << s.first.c_str() << std::endl;
+                if (serverHandle1)
+                {
+                    std::wcout << L"rtsps://" << hname.DisplayName().c_str() << L":" << SecureServerPort << s.first.c_str() << std::endl;
+                }
             }
         }
 

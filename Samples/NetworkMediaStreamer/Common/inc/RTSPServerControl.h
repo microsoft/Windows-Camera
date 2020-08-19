@@ -63,4 +63,4 @@ public:
 };
 
 RTSPSERVER_API IRTSPServerControl* CreateRTSPServer(std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, std::vector<PCCERT_CONTEXT> serverCerts = {});
-RTSPSERVER_API IRTSPAuthProvider* CreateAuthProvider(AuthType authType, winrt::hstring resourceName);
+RTSPSERVER_API IRTSPAuthProvider* GetAuthProviderInstance(AuthType authType, winrt::hstring resourceName);

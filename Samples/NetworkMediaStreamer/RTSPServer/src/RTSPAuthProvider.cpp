@@ -184,7 +184,7 @@ public:
 
     static IRTSPAuthProvider* CreateInstance(AuthType authtype, winrt::hstring resourceName)
     {
-        return new CAuthProvider(AuthType::Both, resourceName);
+        return new CAuthProvider(authtype, resourceName);
     }
 private:
 
@@ -206,7 +206,7 @@ private:
     CryptographicHash m_hashMD5, m_hashSHA256;
 };
 
-RTSPSERVER_API IRTSPAuthProvider* CreateAuthProvider(AuthType authType, winrt::hstring resourceName)
+RTSPSERVER_API IRTSPAuthProvider* GetAuthProviderInstance(AuthType authType, winrt::hstring resourceName)
 {
-    return CAuthProvider::CreateInstance(AuthType::Both, resourceName);
+    return CAuthProvider::CreateInstance(authType, resourceName);
 }
