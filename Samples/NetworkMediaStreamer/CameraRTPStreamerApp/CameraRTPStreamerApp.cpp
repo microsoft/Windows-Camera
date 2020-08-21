@@ -211,7 +211,7 @@ int main()
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
         serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false, m_spAuthProvider.get()));
-#if 1
+#ifndef  DISABLE_SECURE_RTSP
         try 
         {
             com_ptr<IRTSPAuthProvider> spBasicAuthProvider;

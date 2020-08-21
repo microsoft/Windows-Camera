@@ -162,11 +162,12 @@ void CSocketWrapper::InitilizeSecurity()
         winrt::check_win32(WSAGetLastError());
     }
 
+    std::mutex mutexDone;
+    std::unique_lock<std::mutex> lockDone(mutexDone);
+
     WSAEventSelect(m_socket, m_readEvent, FD_READ | FD_CLOSE);   // select socket read event
     RegisterWaitForSingleObject(&m_callBackHandle, m_readEvent, (WAITORTIMERCALLBACK)ReadDelegate, this, INFINITE, WT_EXECUTEONLYONCE);
 
-    std::mutex mutexDone;
-    std::unique_lock<std::mutex> lockDone(mutexDone);
     m_handshakeDone.wait(lockDone);
     UnregisterWait(m_callBackHandle);
     m_callBackHandle = nullptr;
