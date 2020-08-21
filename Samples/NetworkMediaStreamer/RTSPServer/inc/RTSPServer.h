@@ -13,7 +13,6 @@ public:
         , m_streamers(streamers)
         , m_bSecure(!serverCerts.empty())
         , m_serverCerts(serverCerts)
-        , m_cRef(0)
         , MasterSocket(INVALID_SOCKET)
         , m_bIsShutdown(false)
     {
@@ -22,6 +21,8 @@ public:
     virtual  ~RTSPServer()
     {
         StopServer();
+        // wait for pending delegates to exit
+        m_apiGuard.lock();
     }
 
     // IRTSPServerControl
@@ -58,8 +59,8 @@ private:
     std::vector<PCCERT_CONTEXT> m_serverCerts;
     winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>> m_LoggerEvents[(size_t)LoggerType::LOGGER_MAX];
     winrt::event<winrt::delegate<uint64_t, SessionStatus>> m_SessionStatusEvents;
-    long m_cRef;
     winrt::com_ptr<IMFPresentationClock> m_spClock;
     bool m_bIsShutdown;
+    std::mutex m_apiGuard;
     winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
 };

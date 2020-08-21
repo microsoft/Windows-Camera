@@ -81,5 +81,6 @@ private:
     std::unique_ptr<BYTE[]> m_pTcpTxBuff;
     std::unique_ptr<BYTE[]> m_pTcpRxBuff;
     std::string m_urlSuffix;
+    std::mutex m_readDelegateMutex;
     winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggerEvents;
 };

@@ -10,6 +10,7 @@ using namespace winrt::Windows::System::Threading;
 
 void RTSPServer::StopServer()
 {
+    auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
         UnregisterWait(m_callbackHandle);
@@ -29,6 +30,7 @@ void RTSPServer::StopServer()
 
 void RTSPServer::StartServer()
 {
+    auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
         //this means server is already started.
@@ -75,6 +77,12 @@ void RTSPServer::StartServer()
     winrt::check_bool(RegisterWaitForSingleObject(&m_callbackHandle, m_acceptEvent, [](PVOID arg, BOOLEAN flag)
         {
             auto pServer = (RTSPServer*)arg;
+            auto apiLock = std::lock_guard(pServer->m_apiGuard);
+            if (pServer->m_callbackHandle == NULL)
+            {
+                // Server stopped 
+                return;
+            }
             WSAResetEvent(pServer->m_acceptEvent);
             SOCKET      ClientSocket;                                 // RTSP socket to handle an client
             sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client

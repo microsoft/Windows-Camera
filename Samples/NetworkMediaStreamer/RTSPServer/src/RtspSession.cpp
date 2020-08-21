@@ -61,12 +61,16 @@ RTSPSession::RTSPSession(
 
 RTSPSession::~RTSPSession()
 {
+
     StopIfStreaming();
     if (m_callBackHandle)
     {
+        auto l = std::lock_guard(m_readDelegateMutex);
         UnregisterWait(m_callBackHandle);
         m_callBackHandle = nullptr;
     }
+    // make sure delegate has exited
+    m_readDelegateMutex.lock();
     if (m_RtspReadEvent)
     {
         WSACloseEvent(m_RtspReadEvent);
@@ -497,6 +501,12 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
         {
             auto pSession = (RTSPSession*)arg;
             WSAResetEvent(pSession->m_RtspReadEvent);
+            auto l = std::lock_guard(pSession->m_readDelegateMutex);
+            if (pSession->m_callBackHandle == NULL)
+            {
+                //Session stopped
+                return;
+            }
             {
                 char* pRecvBuf = (char*)pSession->m_pTcpRxBuff.get();
 
@@ -525,7 +535,12 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
                 {
                     UnregisterWait(pSession->m_callBackHandle);
                     pSession->m_callBackHandle = nullptr;
-                    pSession->m_Completed(pSession);
+                    // run the completion delegate on a separate thread
+                    winrt::Windows::System::Threading::ThreadPool::RunAsync
+                    ([pSession](winrt::Windows::Foundation::IAsyncAction)
+                        {
+                            pSession->m_Completed(pSession);
+                        });
                 }
 
             }
