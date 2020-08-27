@@ -69,8 +69,8 @@ private:
     std::string           m_URLProto;
     std::string           m_curAuthSessionMsg;
     winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
-    WSAEVENT m_RtspReadEvent;
-    HANDLE m_callBackHandle;
+    winrt::handle m_RtspReadEvent;
+    winrt::handle m_callBackHandle;
     winrt::delegate<BYTE*, size_t> m_packetHandler;
     bool m_bStreamingStarted,m_bTerminate, m_bAuthorizationReceived;
     std::unique_ptr<BYTE[]> m_pTcpTxBuff;

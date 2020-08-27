@@ -150,7 +150,7 @@ void CSocketWrapper::InitilizeSecurity()
         &Lifetime));
 
     m_readEvent.attach(WSACreateEvent());      // create READ wait event for our RTSP client socket
-    if (m_readEvent) // == WSA_INVALID_EVENT)
+    if (!m_readEvent) // == WSA_INVALID_EVENT)
     {
         winrt::check_win32(WSAGetLastError());
     }

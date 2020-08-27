@@ -5,8 +5,7 @@
 using namespace winrt;
 
 NwMediaStreamSinkBase::NwMediaStreamSinkBase(IMFMediaType* pMediaType, IMFMediaSink* pParent, DWORD dwStreamID)
-    : m_cRef(1)
-    , m_pVideoHeader(nullptr)
+    : m_pVideoHeader(nullptr)
     , m_VideoHeaderSize(0)
     , m_bIsShutdown(false)
     , m_pParentSink(pParent) // to avoid circular reference never Add-Ref to pParent unless giving ownership to another class
@@ -26,39 +25,8 @@ NwMediaStreamSinkBase ::~NwMediaStreamSinkBase()
     }
 }
 
-STDMETHODIMP NwMediaStreamSinkBase::QueryInterface(REFIID riid, void** ppv)
-{
-    static const QITAB qit[] =
-    {
-        QITABENT(NwMediaStreamSinkBase , IMFStreamSink),
-        QITABENT(NwMediaStreamSinkBase , IMFMediaEventGenerator),
-        QITABENT(NwMediaStreamSinkBase , INetworkMediaStreamSink),
-        QITABENT(NwMediaStreamSinkBase , IUnknown),
-        { 0 }
-    };
-    return QISearch(this, qit, riid, ppv);
-}
-
-STDMETHODIMP_(ULONG) NwMediaStreamSinkBase::AddRef()
-{
-    return InterlockedIncrement(&m_cRef);
-}
-
-STDMETHODIMP_(ULONG) NwMediaStreamSinkBase::Release(void)
-{
-    ULONG cRef = InterlockedDecrement(&m_cRef);
-    if (cRef == 0)
-    {
-        delete this;
-    }
-    return cRef;
-
-}
 
 // IMFClockStateSink methods.
-
-// In these example, the IMFClockStateSink methods do not perform any actions. 
-// You can use these methods to track the state of the sample grabber sink.
 
 STDMETHODIMP NwMediaStreamSinkBase::Start(MFTIME hnsSystemTime, LONGLONG llClockStartOffset)
 {

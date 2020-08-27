@@ -63,8 +63,8 @@ private:
 
     std::map<RTSPSession*, SOCKET> m_Sessions;
     SOCKET      m_masterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
-    WSAEVENT m_acceptEvent;
-    HANDLE m_callbackHandle;
+    winrt::handle m_acceptEvent;
+    winrt::handle m_callbackHandle;
     uint16_t m_socketPort;
     bool m_bSecure;
     winrt::com_array<PCCERT_CONTEXT> m_serverCerts;

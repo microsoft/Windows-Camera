@@ -7,10 +7,9 @@
 #define HRESULT_EXCEPTION_BOUNDARY_START HRESULT hr = S_OK; try {
 #define HRESULT_EXCEPTION_BOUNDARY_END }catch(...) { hr = winrt::to_hresult();} return hr;
 
-class NwMediaStreamSinkBase  : public INetworkMediaStreamSink
+class NwMediaStreamSinkBase  : public winrt::implements<NwMediaStreamSinkBase, INetworkMediaStreamSink, IMFStreamSink, IMFMediaEventGenerator>
 {
 protected:
-    long m_cRef;;
     uint8_t* m_pVideoHeader;
     uint32_t m_VideoHeaderSize;
     bool m_bIsShutdown;
@@ -25,10 +24,6 @@ protected:
     virtual STDMETHODIMP PacketizeAndSend(IMFSample* pSample) = 0;
 
 public:
-    // IUnknown methods
-    STDMETHODIMP QueryInterface(REFIID iid, void** ppv) override;
-    STDMETHODIMP_(ULONG) AddRef() override;
-    STDMETHODIMP_(ULONG) Release() override;
 
     // INetworkStreamSink
     STDMETHODIMP Start(MFTIME hnsSystemTime, LONGLONG llClockStartOffset);

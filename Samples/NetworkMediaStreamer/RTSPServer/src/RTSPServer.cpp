@@ -10,10 +10,9 @@ STDMETHODIMP RTSPServer::StopServer()
     auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
-        UnregisterWait(m_callbackHandle);
-        m_callbackHandle = NULL;
+        UnregisterWait(m_callbackHandle.detach());
     }
-    WSACloseEvent(m_acceptEvent);
+    WSACloseEvent(m_acceptEvent.detach());
 
     for (auto& session : m_Sessions)
     {
@@ -64,26 +63,26 @@ STDMETHODIMP RTSPServer::StartServer()
     {
         winrt::check_win32(WSAGetLastError());
     }
-    m_acceptEvent = WSACreateEvent();
-    if (WSA_INVALID_EVENT == m_acceptEvent)
+    m_acceptEvent.attach(WSACreateEvent());
+    if (!m_acceptEvent)
     {
         winrt::check_win32(WSAGetLastError());
     }
 
-    if (WSAEventSelect(m_masterSocket, m_acceptEvent, FD_ACCEPT) != 0)
+    if (WSAEventSelect(m_masterSocket, m_acceptEvent.get(), FD_ACCEPT) != 0)
     {
         winrt::check_win32(WSAGetLastError());
     }
-    winrt::check_bool(RegisterWaitForSingleObject(&m_callbackHandle, m_acceptEvent, [](PVOID arg, BOOLEAN flag)
+    winrt::check_bool(RegisterWaitForSingleObject(m_callbackHandle.put(), m_acceptEvent.get(), [](PVOID arg, BOOLEAN flag)
         {
             auto pServer = (RTSPServer*)arg;
             auto apiLock = std::lock_guard(pServer->m_apiGuard);
-            if (pServer->m_callbackHandle == NULL)
+            if (!pServer->m_callbackHandle)
             {
                 // Server stopped 
                 return;
             }
-            WSAResetEvent(pServer->m_acceptEvent);
+            WSAResetEvent(pServer->m_acceptEvent.get());
             SOCKET      ClientSocket;                                 // RTSP socket to handle an client
             sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
             int         ClientAddrLen = sizeof(ClientAddr);

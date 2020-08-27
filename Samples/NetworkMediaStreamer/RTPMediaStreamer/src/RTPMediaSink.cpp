@@ -6,14 +6,12 @@ class RTPMediaSink
     : public winrt::implements<RTPMediaSink, winrt::Windows::Media::IMediaExtension, IMFMediaSink, IMFClockStateSink>
 {
 protected:
-    long m_cRef;
     bool m_bIsShutdown;
     std::vector<winrt::com_ptr<INetworkMediaStreamSink>> m_spStreamSinks;
     winrt::com_ptr<IMFPresentationClock> m_spClock;
 
     RTPMediaSink(std::vector<IMFMediaType*> streamMediaTypes)
         :m_bIsShutdown(false)
-        , m_cRef(1)
     {
         m_spStreamSinks.resize(streamMediaTypes.size());
 
