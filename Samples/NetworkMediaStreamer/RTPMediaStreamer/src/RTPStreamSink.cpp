@@ -1,6 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
+#include <pch.h>
 #include "RTPStreamSink.h"
-#include <iostream>
 
 TxContext::TxContext(std::string destination, winrt::delegate<BYTE*, size_t> packetHandler /*= nullptr*/)
     : m_u64StartTime(0)
@@ -92,12 +92,12 @@ RTPVideoStreamSink::RTPVideoStreamSink(IMFMediaType* pMediaType, IMFMediaSink* p
         //TODO: find a way to control encoder's max NAL size and edit this param to a better value
         m_MTUSize = 65535; // max size to allow any size NAL into one packet
     }
-    m_pTxBuf = new BYTE[m_MTUSize];
+    m_pTxBuf = std::make_unique<BYTE[]>(m_MTUSize);//new BYTE[m_MTUSize];
 
 }
 RTPVideoStreamSink ::~RTPVideoStreamSink()
 {
-    delete[] m_pTxBuf;
+    //delete[] m_pTxBuf;
 }
 BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 {
@@ -118,7 +118,7 @@ BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 void RTPVideoStreamSink::PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime)
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
-    BYTE* pOut = m_pTxBuf;
+    //BYTE* pOut = m_pTxBuf;
     size_t szOut = m_MTUSize;
     while (sc < (bufIn + szIn))
     {
@@ -129,8 +129,8 @@ void RTPVideoStreamSink::PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSam
         while (nalsz)
         {
             auto szToSend = __min(nalsz, szOut);
-            memcpy(&pOut[rtpHeaderSize], nalStart, szToSend);
-            SendPacket(pOut, szToSend + rtpHeaderSize, llSampleTime, sc1 == (bufIn + szIn));
+            memcpy(&m_pTxBuf[rtpHeaderSize], nalStart, szToSend);
+            SendPacket(m_pTxBuf.get(), szToSend + rtpHeaderSize, llSampleTime, sc1 == (bufIn + szIn));
             nalStart += szToSend;
             nalsz -= szToSend;
         }
@@ -175,7 +175,7 @@ void RTPVideoStreamSink::SendPacket(BYTE* pOut, size_t sz, LONGLONG ts, bool bLa
 void RTPVideoStreamSink::PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime)
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
-    BYTE* pOut = m_pTxBuf;
+    BYTE* pOut = m_pTxBuf.get();
     size_t szOut = m_MTUSize;
     BYTE* pOutEnd = pOut + szOut;
     BYTE* sc1 = sc;
@@ -248,35 +248,50 @@ void RTPVideoStreamSink::PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSam
 
 }
 
-void RTPVideoStreamSink::AddTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler, std::string protocol /*= "rtp"*/, uint32_t ssrc /*= 0*/)
+STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler, winrt::hstring protocol /*= L"rtp"*/, uint32_t ssrc /*= 0*/)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     std::string destination = std::to_string((intptr_t)packetHandler.as<IUnknown>().get());
     m_RtpStreamers.insert({ destination, TxContext(destination,packetHandler) });
     m_RtpStreamers.at(destination).m_ssrc = ssrc;
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
-void RTPVideoStreamSink::AddNetworkClient(std::string destination, std::string protocol /*= "rtp"*/, uint32_t ssrc /*= 0*/)
+
+STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(winrt::hstring destination, winrt::hstring protocol /*= L"rtp"*/, uint32_t ssrc /*= 0*/)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
-    m_RtpStreamers.insert({ destination, TxContext(destination) });
-    m_RtpStreamers.at(destination).m_ssrc = ssrc;
+    auto dest = winrt::to_string(destination);
+    m_RtpStreamers.insert({ dest, TxContext(dest) });
+    m_RtpStreamers.at(dest).m_ssrc = ssrc;
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
-void RTPVideoStreamSink::RemoveNetworkClient(std::string destination)
+
+STDMETHODIMP RTPVideoStreamSink::RemoveNetworkClient(winrt::hstring destination)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
-    m_RtpStreamers.erase(destination);
+    auto dest = winrt::to_string(destination);
+    m_RtpStreamers.erase(dest);
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
-void RTPVideoStreamSink::RemoveTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler)
+
+STDMETHODIMP RTPVideoStreamSink::RemoveTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     std::string destination = std::to_string((intptr_t)packetHandler.as<IUnknown>().get());
     m_RtpStreamers.erase(destination);
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
-void RTPVideoStreamSink::GenerateSDP(char* buf, size_t maxSize, std::string destination)
+STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, winrt::hstring dest)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     std::string paramSets;
     std::string profileIdc;
+    auto destination = winrt::to_string(dest);
     if (m_pVideoHeader)
     {
         auto vend = m_pVideoHeader + m_VideoHeaderSize;
@@ -331,6 +346,7 @@ void RTPVideoStreamSink::GenerateSDP(char* buf, size_t maxSize, std::string dest
     }
     memcpy_s(buf, maxSize, sdp.c_str(), sdp.size());
     buf[sdp.size()] = 0;
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
 //IMFSampleGrabberCallback
@@ -374,7 +390,7 @@ STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample)
 
 INetworkMediaStreamSink* RTPVideoStreamSink::CreateInstance(IMFMediaType* pMediaType, IMFMediaSink* pParent, DWORD dwStreamID)
 {
-    winrt::com_ptr<RTPVideoStreamSink > pVS;
+    winrt::com_ptr<RTPVideoStreamSink> pVS;
     pVS.attach(new RTPVideoStreamSink(pMediaType, pParent, dwStreamID));
     return pVS.as<INetworkMediaStreamSink>().detach();
 }

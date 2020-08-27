@@ -1,9 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
-
+#include <pch.h>
 #include "RTSPServerControl.h"
-#include <winrt\Windows.Security.Cryptography.h>
-#include <winrt\Windows.Security.Cryptography.Core.h>
-#include <winrt\Windows.Security.Credentials.h>
 
 using namespace winrt::Windows::Security;
 using namespace winrt::Windows::Security::Credentials;
@@ -12,26 +9,6 @@ using namespace Cryptography;
 
 class CAuthProvider : public winrt::implements<CAuthProvider, IRTSPAuthProvider, IRTSPAuthProviderCredStore>
 {
-public:
-
-    std::string GetNewAuthSessionMessage()
-    {
-        std::string authString;
-        if ((m_authType == AuthType::Both) || (m_authType == AuthType::Basic))
-        {
-            authString = "WWW-Authenticate: Basic realm=\"BeyondTheWall\", charset=\"UTF-8\"\r\n";
-        }
-        auto buf = Cryptography::CryptographicBuffer::GenerateRandom(24);
-        *((uint64_t*)(buf.data() + 16)) = MFGetSystemTime();
-        auto nonce = Cryptography::CryptographicBuffer::EncodeToHexString(buf);
-        if ((m_authType == AuthType::Both) || (m_authType == AuthType::Digest))
-        {
-            authString += "WWW-Authenticate: Digest realm=\"BeyondTheWall\", nonce=\"" + winrt::to_string(nonce) + "\", algorithm=SHA-256, charset=\"UTF-8\", stale=FALSE\r\n";
-            authString += "WWW-Authenticate: Digest realm=\"BeyondTheWall\", nonce=\"" + winrt::to_string(nonce) + "\", algorithm=MD5, charset=\"UTF-8\", stale=FALSE\r\n";
-        }
-        return authString;
-    }
-
     std::string GetValueForParam(std::string message, std::string param)
     {
         auto idx = message.find(param);
@@ -46,9 +23,37 @@ public:
         return val;
 
     }
-    bool Authorize(std::string authResponse, std::string authSessionMessage, std::string method)
+public:
+
+    STDMETHODIMP GetNewAuthSessionMessage(winrt::hstring& authSessionMessage)
     {
+        HRESULT_EXCEPTION_BOUNDARY_START;
+        std::string authString;
+        if ((m_authType == AuthType::Both) || (m_authType == AuthType::Basic))
+        {
+            authString = "WWW-Authenticate: Basic realm=\"BeyondTheWall\", charset=\"UTF-8\"\r\n";
+        }
+        auto buf = Cryptography::CryptographicBuffer::GenerateRandom(24);
+        *((uint64_t*)(buf.data() + 16)) = MFGetSystemTime();
+        auto nonce = Cryptography::CryptographicBuffer::EncodeToHexString(buf);
+        if ((m_authType == AuthType::Both) || (m_authType == AuthType::Digest))
+        {
+            authString += "WWW-Authenticate: Digest realm=\"BeyondTheWall\", nonce=\"" + winrt::to_string(nonce) + "\", algorithm=SHA-256, charset=\"UTF-8\", stale=FALSE\r\n";
+            authString += "WWW-Authenticate: Digest realm=\"BeyondTheWall\", nonce=\"" + winrt::to_string(nonce) + "\", algorithm=MD5, charset=\"UTF-8\", stale=FALSE\r\n";
+        }
+
+        authSessionMessage = winrt::to_hstring(authString);
+        HRESULT_EXCEPTION_BOUNDARY_END;
+    }
+
+
+    STDMETHODIMP Authorize(winrt::hstring authResp, winrt::hstring authSesMsg, winrt::hstring mthd)
+    {
+        HRESULT_EXCEPTION_BOUNDARY_START;
         bool result = true;
+        auto authResponse = winrt::to_string(authResp);
+        auto authSessionMessage = winrt::to_string(authSesMsg);
+        auto method = winrt::to_string(mthd);
         std::vector<std::string> paramsResponce = { "Authorization: ","realm=","nonce=", "username=", "response=", "algorithm=", "uri=" };
         std::vector<std::string> paramsSent = { "realm=","nonce=" };
         std::map<std::string, std::string> paramMapResponse, paramMap;
@@ -79,15 +84,11 @@ public:
             auto username = paramMapResponse["username="];
             std::string password;
             auto vault = PasswordVault();
+            
             PasswordCredential cred;
-            try
+            if (!username.empty())
             {
                 cred = vault.Retrieve(m_resourceName, winrt::to_hstring(username));
-            }
-            catch (winrt::hresult_error const& ex) // ugly hack- vault.Retreive throws if user is not found.
-            {
-                (ex);
-                cred = nullptr;
             }
             if (cred)
             {
@@ -157,18 +158,25 @@ public:
             }
             result &= match;
         }
-        return result;
+
+        if (!result)
+        {
+            winrt::check_win32(ERROR_INVALID_PASSWORD);
+        }
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
 
-    bool AddUser(winrt::hstring userName, winrt::hstring password)
+    STDMETHODIMP AddUser(winrt::hstring userName, winrt::hstring password)
     {
+        HRESULT_EXCEPTION_BOUNDARY_START;
         auto vault = PasswordVault();
         auto cr = PasswordCredential(m_resourceName, userName, winrt::hstring(password));
         vault.Add(cr);
-        return true;
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    bool RemoveUser(winrt::hstring userName)
+    STDMETHODIMP RemoveUser(winrt::hstring userName)
     {
+        HRESULT_EXCEPTION_BOUNDARY_START;
         auto vault = PasswordVault();
         auto creds = vault.FindAllByUserName(userName);
         for (auto cred : creds)
@@ -179,7 +187,7 @@ public:
                 break;
             }
         }
-        return true;
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
 
     static IRTSPAuthProvider* CreateInstance(AuthType authtype, winrt::hstring resourceName)
@@ -206,7 +214,10 @@ private:
     CryptographicHash m_hashMD5, m_hashSHA256;
 };
 
-RTSPSERVER_API IRTSPAuthProvider* GetAuthProviderInstance(AuthType authType, winrt::hstring resourceName)
+RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, winrt::hstring resourceName, IRTSPAuthProvider** ppRTSPAuthProvider)
 {
-    return CAuthProvider::CreateInstance(authType, resourceName);
+    HRESULT_EXCEPTION_BOUNDARY_START;
+    winrt::check_pointer(ppRTSPAuthProvider);
+    *ppRTSPAuthProvider = CAuthProvider::CreateInstance(authType, resourceName);
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }

@@ -1,62 +1,73 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
 #define DBGLEVEL 1
+#include "RTSPServerControl.h"
 #include "RtspSession.h"
 
 class RTSPServer : public winrt::implements<RTSPServer, IRTSPServerControl>
 {
 public:
-    RTSPServer(streamerMapType streamers, uint16_t socketPort, IRTSPAuthProvider *pAuthProvider, std::vector<PCCERT_CONTEXT> serverCerts)
+    RTSPServer(RTSPSuffixSinkMapView streamers, uint16_t socketPort, IRTSPAuthProvider *pAuthProvider, winrt::array_view<PCCERT_CONTEXT> serverCerts)
         : m_acceptEvent(nullptr)
         , m_callbackHandle(nullptr)
         , m_socketPort(socketPort)
         , m_streamers(streamers)
         , m_bSecure(!serverCerts.empty())
-        , m_serverCerts(serverCerts)
-        , MasterSocket(INVALID_SOCKET)
+        , m_masterSocket(INVALID_SOCKET)
         , m_bIsShutdown(false)
     {
+        m_serverCerts = winrt::com_array<PCCERT_CONTEXT>(serverCerts.size());
+        for (uint32_t i=0; i < serverCerts.size(); i++)
+        {
+            m_serverCerts[i] = CertDuplicateCertificateContext(serverCerts[i]);
+        }
         m_spAuthProvider.copy_from(pAuthProvider);
     }
     virtual  ~RTSPServer()
     {
         StopServer();
-        // wait for pending delegates to exit
-        m_apiGuard.lock();
     }
 
     // IRTSPServerControl
-    winrt::event_token AddLogHandler(LoggerType type, winrt::delegate < winrt::hresult, winrt::hstring> handler)
+    STDMETHODIMP AddLogHandler(LoggerType type, winrt::delegate < winrt::hresult, winrt::hstring> handler, winrt::event_token & token)
     {
-        return m_LoggerEvents[(int)type].add(handler);
+        HRESULT_EXCEPTION_BOUNDARY_START;
+        token = m_LoggerEvents[(int)type].add(handler);
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    void RemoveLogHandler(LoggerType type, winrt::event_token token)
+    STDMETHODIMP RemoveLogHandler(LoggerType type, winrt::event_token token)
     {
+        HRESULT_EXCEPTION_BOUNDARY_START;
         m_LoggerEvents[(int)type].remove(token);
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
 
-    winrt::event_token AddSessionStatusHandler(LoggerType type, winrt::delegate <uint64_t,SessionStatus> handler)
+    STDMETHODIMP AddSessionStatusHandler(LoggerType type, winrt::delegate <uint64_t,SessionStatus> handler, winrt::event_token & token)
     {
-        return m_SessionStatusEvents.add(handler);
+        HRESULT_EXCEPTION_BOUNDARY_START;
+        token = m_SessionStatusEvents.add(handler);
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    void RemoveSessionStatusHandler(LoggerType type, winrt::event_token token)
+    STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, winrt::event_token token)
     {
+        HRESULT_EXCEPTION_BOUNDARY_START;
         m_SessionStatusEvents.remove(token);
+        HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    void StartServer();
-    void StopServer();
+    STDMETHODIMP StartServer();
+    STDMETHODIMP StopServer();
 
 private:
 
-    streamerMapType m_streamers;
+    RTSPSuffixSinkMapView m_streamers;
 
     std::map<RTSPSession*, SOCKET> m_Sessions;
-    SOCKET      MasterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
+    SOCKET      m_masterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
     WSAEVENT m_acceptEvent;
     HANDLE m_callbackHandle;
     uint16_t m_socketPort;
     bool m_bSecure;
-    std::vector<PCCERT_CONTEXT> m_serverCerts;
+    winrt::com_array<PCCERT_CONTEXT> m_serverCerts;
     winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>> m_LoggerEvents[(size_t)LoggerType::LOGGER_MAX];
     winrt::event<winrt::delegate<uint64_t, SessionStatus>> m_SessionStatusEvents;
     winrt::com_ptr<IMFPresentationClock> m_spClock;

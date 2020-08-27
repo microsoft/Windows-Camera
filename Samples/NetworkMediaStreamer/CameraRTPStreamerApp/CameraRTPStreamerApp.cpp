@@ -1,13 +1,14 @@
-// VideoStreamerApp.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+
 #include "..\Common\inc\RTPMediaStreamer.h"
 #include "..\Common\inc\RTSPServerControl.h"
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <Mferror.h>
 #include <windows.media.h>
-#include<windows.media.core.interop.h>
-#include<winrt\base.h>
+#include <windows.media.core.interop.h>
+#include <winrt\base.h>
 #include <winrt\Windows.Media.Capture.h>
 #include <winrt\Windows.Media.Capture.Frames.h>
 #include <winrt\Windows.Graphics.Imaging.h>
@@ -17,7 +18,7 @@
 #include <winrt\Windows.Media.MediaProperties.h>
 #include <winrt\Windows.Networking.Connectivity.h>
 #include <mfreadwrite.h>
-
+#include <mfapi.h>
 using namespace winrt;
 using namespace Windows;
 using namespace Media::Capture;
@@ -85,12 +86,12 @@ cleanup:
     {
         CertCloseStore(hMyCertStore, 0);
     }
-    return aCertContext;
+    return aCertContext;// .data(), aCertContext.data() + aCertContext.size() - 1);
 }
 
-std::map<std::string, std::vector<GUID>> streamMap =
+std::map<winrt::hstring, std::vector<GUID>> streamMap =
 {
-    {"/h264", {MFVideoFormat_H264}},
+    {L"/h264", {MFVideoFormat_H264}},
     //{"/hevc",MFVideoFormat_HEVC},
     //{"/mpeg2",MFVideoFormat_MPEG2}
 };
@@ -136,12 +137,62 @@ IMFSinkWriter* InitSinkWriter(IMFMediaSink *pMediaSink, MediaFrameFormat format)
     return spSinkWriter.detach();
 }
 #endif
+
+PROCESS_INFORMATION StartLoggerConsole(std::wstring filename)
+{
+        STARTUPINFO si,si1;
+        PROCESS_INFORMATION pi;
+        GetStartupInfo(&si1);
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        ZeroMemory(&pi, sizeof(pi));
+        std::wstring cmdline = L"powershell Get-Content " + filename + L" -Wait ";
+        std::wstring title = L"RTSPServer Log Console";
+        si.lpTitle = (LPWSTR)title.c_str();
+        
+        si.dwX = si1.dwX + 500;
+        si.dwY = si1.dwY;
+        si.dwXCountChars = 40;
+        si.dwYCountChars = 10;
+        si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USEPOSITION | STARTF_PREVENTPINNING | STARTF_USECOUNTCHARS;
+        si.wShowWindow = SW_SHOWNOACTIVATE;// | SW_HIDE;
+        // Start the child process. 
+        if (!CreateProcess(NULL,   // No module name (use command line)
+            (LPWSTR)cmdline.c_str(),        // Command line
+            NULL,           // Process handle not inheritable
+            NULL,           // Thread handle not inheritable
+            FALSE,          // Set handle inheritance to FALSE
+            CREATE_NEW_CONSOLE,              // No creation flags
+            NULL,           // Use parent's environment block
+            NULL,           // Use parent's starting directory 
+            &si,            // Pointer to STARTUPINFO structure
+            &pi)           // Pointer to PROCESS_INFORMATION structure
+            )
+        {
+            check_win32(GetLastError());
+        }
+        return pi;
+    
+}
+
+void StopLoggerConsole(PROCESS_INFORMATION pi)
+{
+    TerminateProcess(pi.hProcess, 0);
+    // Close process and thread handles. 
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+}
 int main()
 {
     std::cout << "VideoSteamer App \n";
+    PROCESS_INFORMATION loggerConsole;
     try
     {
         auto filteredDevices = DeviceInformation::FindAllAsync(DeviceClass::VideoCapture).get();
+        std::wofstream fileLogger("log.txt");
+        fileLogger << L"StartLogging..";
+        loggerConsole = StartLoggerConsole(L"log.txt");
+
         if (!filteredDevices.Size())
         {
             throw_hresult(MF_E_NO_CAPTURE_DEVICES_AVAILABLE);
@@ -167,11 +218,11 @@ int main()
 
         s.StreamingCaptureMode(StreamingCaptureMode::Video);
         mc.InitializeAsync(s).get();
-        std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamers;
+        auto streamers = winrt::single_threaded_map<winrt::hstring, IMediaExtension>();
 
         auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
         IMediaEncodingProperties selectedProp(nullptr);
-        uint32_t idx=1;
+        uint32_t idx = 1;
         for (auto f : formats)
         {
             auto format = f.try_as<VideoEncodingProperties>();
@@ -198,45 +249,60 @@ int main()
 
             winrt::check_hresult(spOutType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive));
             winrt::check_hresult(MFSetAttributeSize(spOutType.get(), MF_MT_FRAME_SIZE, sz.Width, sz.Height));
-            winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator()*100, frameRate.Denominator()*100));
+            winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator() * 100, frameRate.Denominator() * 100));
             mediaTypes.push_back(spOutType.get());
-            streamers[strm.first].attach(CreateRTPMediaSink(mediaTypes));
+            IMediaExtension mediaExtSink;
+            //winrt::com_ptr<IMFMediaSink> spMediaSink;
+            winrt::check_hresult(CreateRTPMediaSink(mediaTypes, (IMFMediaSink**)put_abi(mediaExtSink)));
+
+            //winrt::copy_from_abi(mediaExtSink, spMediaSink.get());
+            streamers.Insert(winrt::hstring(strm.first), mediaExtSink);
             mediaTypes.clear();
             spOutType = nullptr;
         }
 
-        com_ptr<IRTSPServerControl> serverHandle, serverHandle1;
+        com_ptr<IRTSPServerControl> serverHandle, serverHandleSecure;
         com_ptr<IRTSPAuthProvider> m_spAuthProvider;
-        m_spAuthProvider.attach(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer"));
+        check_hresult(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer", m_spAuthProvider.put()));
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
-        serverHandle.attach(CreateRTSPServer(streamers, ServerPort, false, m_spAuthProvider.get()));
+        check_hresult(CreateRTSPServer(streamers.GetView(), ServerPort, false, m_spAuthProvider.get(), {}, serverHandle.put()));
 #ifndef  DISABLE_SECURE_RTSP
-        try 
+        try
         {
             com_ptr<IRTSPAuthProvider> spBasicAuthProvider;
-            spBasicAuthProvider.attach(GetAuthProviderInstance(AuthType::Basic, L"RTSPServer"));
-            auto ServerCerts = getServerCertificate();
-            serverHandle1.attach(CreateRTSPServer(streamers, SecureServerPort, true, spBasicAuthProvider.get(), ServerCerts));
+            check_hresult(GetAuthProviderInstance(AuthType::Basic, L"RTSPServer", spBasicAuthProvider.put()));
+
+            auto serverCerts = getServerCertificate();
+            auto certs{ winrt::com_array<PCCERT_CONTEXT>(serverCerts.begin(), serverCerts.end()) };
+            check_hresult(CreateRTSPServer(streamers.GetView(), SecureServerPort, true, spBasicAuthProvider.get(),certs, serverHandleSecure.put()));
         }
-        catch (hresult_error const &ex)
+        catch (hresult_error const& ex)
         {
             std::wcout << L"\nError starting secure server: " << std::hex << ex.code() << std::dec << L":" << ex.message().c_str();
-            serverHandle1 = nullptr;
+            serverHandleSecure = nullptr;
         }
 #endif
-        auto loggerdelegate = [](auto er, auto msg)
+        auto loggerdelegate = [&fileLogger](auto er, auto msg)
         {
-            std::wcout << msg.c_str();
-            if (er) std::wcout << L" ErrCode:" << std::hex << er;
+            fileLogger << msg.c_str();
+            if (er)
+            {
+                fileLogger << L" ErrCode:" << std::hex << er;
+                std::wcout << msg.c_str();
+                std::wcout << L" ErrCode:" << std::hex << er;
+            }
+            fileLogger.flush();
+
         };
         for (int i = 0; i < (int)LoggerType::LOGGER_MAX; i++)
         {
-            serverHandle->AddLogHandler((LoggerType)i, loggerdelegate);
-            serverHandle1? serverHandle1->AddLogHandler((LoggerType)i, loggerdelegate) : event_token();
+            winrt::event_token t1, t2;
+            winrt::check_hresult(serverHandle->AddLogHandler((LoggerType)i, loggerdelegate, t1));
+            serverHandleSecure ? winrt::check_hresult(serverHandleSecure->AddLogHandler((LoggerType)i, loggerdelegate, t2)) : void(0);
         }
-        serverHandle->StartServer();
-        serverHandle1? serverHandle1->StartServer() : void(0);
+        winrt::check_hresult(serverHandle->StartServer());
+        serverHandleSecure ? winrt::check_hresult(serverHandleSecure->StartServer()) : void(0);
 #ifdef USE_FR
         auto fsources = mc.FrameSources();
         MediaFrameSource selectedFs(nullptr);
@@ -251,9 +317,15 @@ int main()
         auto fr = mc.CreateFrameReaderAsync(selectedFs, selectedFs.CurrentFormat().Subtype(), sz).get();
         fr.AcquisitionMode(MediaFrameReaderAcquisitionMode::Realtime);
         slim_mutex m;
-        com_ptr<IMFSinkWriter> spSinkWriter; 
-        spSinkWriter.attach(InitSinkWriter(streamers.begin()->second.get(), selectedFs.CurrentFormat()));
-
+        std::vector<com_ptr<IMFSinkWriter>> spSinkWriters;
+        auto strmIter = streamers.First();
+        for (uint32_t i = 0; i < streamers.Size(); i++)
+        {
+            winrt::com_ptr<IMFSinkWriter> spSW;
+            spSW.attach(InitSinkWriter(strmIter.Current().Value().as<IMFMediaSink>().get(), selectedFs.CurrentFormat()));
+            spSinkWriters.push_back(spSW);
+            strmIter.MoveNext();
+        }
         fr.FrameArrived([&](MediaFrameReader mfr, MediaFrameArrivedEventArgs args)
             {
                 slim_lock_guard g(m);
@@ -265,17 +337,16 @@ int main()
                 if (!vf) return;
                 winrt::com_ptr<IMFSample> spSample;
                 vf.as<IVideoFrameNative>()->GetData(__uuidof(IMFSample), spSample.put_void());
-                for (DWORD i = 0; i < streamers.size(); i++)
+                for (uint32_t i = 0; i < spSinkWriters.size(); i++)
                 {
-                    spSinkWriter->WriteSample(i, spSample.get());
+                    spSinkWriters[i]->WriteSample(0, spSample.get());
                 }
-                
             });
         fr.StartAsync();
 #else
 
         auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto);
-        auto lowLagRec = mc.PrepareLowLagRecordToCustomSinkAsync(me, streamers.begin()->second.as<IMediaExtension>()).get();
+        auto lowLagRec = mc.PrepareLowLagRecordToCustomSinkAsync(me, streamers.First().Current().Value().as<IMediaExtension>()).get();
         lowLagRec.StartAsync().get();
 #endif
 
@@ -286,10 +357,10 @@ int main()
         {
             for (auto s : streamers)
             {
-                std::wcout << L"rtsp://" << hname.DisplayName().c_str() << L":" << ServerPort << s.first.c_str() << std::endl;
-                if (serverHandle1)
+                std::wcout << L"rtsp://" << hname.DisplayName().c_str() << L":" << ServerPort << s.Key().c_str() << std::endl;
+                if (serverHandleSecure)
                 {
-                    std::wcout << L"rtsps://" << hname.DisplayName().c_str() << L":" << SecureServerPort << s.first.c_str() << std::endl;
+                    std::wcout << L"rtsps://" << hname.DisplayName().c_str() << L":" << SecureServerPort << s.Key().c_str() << std::endl;
                 }
             }
         }
@@ -309,7 +380,7 @@ int main()
                 std::cin >> username;
                 std::cout << "\nEnter new password :- ";
                 std::cin >> password;
-                m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username), winrt::to_hstring(password));
+                check_hresult( m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username), winrt::to_hstring(password)));
             }
                 break;
             case '2':
@@ -317,7 +388,7 @@ int main()
                 std::string username;
                 std::cout << "\nEnter username :-  ";
                 std::cin >> username;
-                m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username));
+                check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username)));
             }
                 break;
             case '0':
@@ -334,11 +405,14 @@ int main()
         lowLagRec.StopAsync().get();
         lowLagRec.FinishAsync().get();
 #endif
-        m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(L"user");
+        check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(L"user"));
+        
     }
     catch (hresult_error const& ex)
     {
         std::wcout << L"Error: " << ex.code() << L":" << ex.message().c_str();
     }
+
+    StopLoggerConsole(loggerConsole);
 
 }

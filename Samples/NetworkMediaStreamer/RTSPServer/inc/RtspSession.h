@@ -3,11 +3,6 @@
 
 #include "SocketWrapper.h"
 #include "RTSPServerControl.h"
-#include <Shlwapi.h>
-#include <winrt/base.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/windows.system.threading.h>
-typedef std::map<std::string, winrt::com_ptr<IMFMediaSink>> streamerMapType;
 
 // supported command types
 enum class RTSP_CMD
@@ -27,7 +22,7 @@ class RTSPSession
 public:
     RTSPSession(
         CSocketWrapper* rtspClientSocket,
-        streamerMapType streamers,
+        RTSPSuffixSinkMapView streamers,
         IRTSPAuthProvider* pAuthProvider,
         winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers);
     virtual ~RTSPSession();
@@ -65,7 +60,7 @@ private:
     u_short  m_ClientRTCPPort;                          // client port for UDP based RTCP transport  
     bool     m_TcpTransport;                            // if Tcp based streaming was activated
     uint32_t m_ssrc;
-    streamerMapType m_streamers;
+    RTSPSuffixSinkMapView m_streamers;
     winrt::com_ptr<IMFStreamSink> m_spCurrentStreamer;
 
     // parameters of the last received RTSP request

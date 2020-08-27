@@ -1,19 +1,12 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
-#include <stdio.h>
-#include <time.h>
-
-#include<iostream>
+#include <pch.h>
 #include <sstream>
-#include <ppltasks.h>
-#include <thread>
 #include "RtspSession.h"
-#include "RTSPServer.h"
+#include "NetworkMediaStreamer.h"
 
-using namespace winrt::Windows::Storage::Streams;
-using namespace winrt::Windows::Networking::Sockets;
 RTSPSession::RTSPSession(
       CSocketWrapper* rtspClientSocket
-    , streamerMapType streamers
+    , RTSPSuffixSinkMapView streamers
     , IRTSPAuthProvider* pAuthProvider
     , winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers)
     : m_pRtspClient(rtspClientSocket)
@@ -61,16 +54,13 @@ RTSPSession::RTSPSession(
 
 RTSPSession::~RTSPSession()
 {
-
+    auto l = std::lock_guard(m_readDelegateMutex);
     StopIfStreaming();
     if (m_callBackHandle)
     {
-        auto l = std::lock_guard(m_readDelegateMutex);
         UnregisterWait(m_callBackHandle);
         m_callBackHandle = nullptr;
     }
-    // make sure delegate has exited
-    m_readDelegateMutex.lock();
     if (m_RtspReadEvent)
     {
         WSACloseEvent(m_RtspReadEvent);
@@ -243,16 +233,15 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
             {
                 m_urlSuffix = curRequest.substr(urlPos, curRequest.find_first_of(" \t\r\n", urlPos) - urlPos);
             }
-
-            if (m_streamers.find(m_urlSuffix) != m_streamers.end())
+            auto suffixKey = winrt::to_hstring(m_urlSuffix);
+            if (m_streamers.HasKey(suffixKey))
             {
-                
-                m_streamers[m_urlSuffix]->GetStreamSinkByIndex(0, m_spCurrentStreamer.put());
+                m_streamers.Lookup(suffixKey).as<IMFMediaSink>()->GetStreamSinkByIndex(0, m_spCurrentStreamer.put());
             }
             else
             {
                 //if no url suffix matched videostreamer list
-                m_streamers.begin()->second->GetStreamSinkByIndex(0, m_spCurrentStreamer.put());
+                m_streamers.First().Current().Value().as<IMFMediaSink>()->GetStreamSinkByIndex(0, m_spCurrentStreamer.put());
             }
         }
     }
@@ -260,6 +249,11 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
     auto CSeqPos = curRequest.find("CSeq:", bURLFound ? urlPos : cmdPos);
     if (CSeqPos == std::string::npos)
     {
+        if (m_CSeq.empty())
+        {
+            m_CSeq = "0";
+        }
+
         //if no CSeq found in request then increment
         m_CSeq = std::to_string(std::stoi(m_CSeq) + 1);
     }
@@ -275,7 +269,7 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
     if (m_bAuthorizationReceived)
     {
         auto auth = curRequest.substr(authpos, curRequest.find_first_of("\r\n", authpos));
-        m_bAuthorizationReceived = m_spAuthProvider? m_spAuthProvider->Authorize(auth, m_curAuthSessionMsg, cmdName) : true;
+        m_bAuthorizationReceived = m_spAuthProvider? SUCCEEDED(m_spAuthProvider->Authorize(winrt::to_hstring(auth), winrt::to_hstring(m_curAuthSessionMsg), winrt::to_hstring(cmdName))) : true;
     }
     return rtspCmdType;
 }
@@ -313,7 +307,7 @@ void RTSPSession::HandleCmdDESCRIBE()
     if (m_pRtspClient.get()->IsClientCertAuthenticated() || m_bAuthorizationReceived)
     {
         std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_LocalRTPPort);
-        m_spCurrentStreamer.as<INetworkMediaStreamSink>()->GenerateSDP(SDPBuf, 1024, dest);
+        m_spCurrentStreamer.as<INetworkMediaStreamSink>()->GenerateSDP((uint8_t*)SDPBuf, 1024, winrt::to_hstring(dest));
 
         Response = "RTSP/1.0 200 OK\r\nCSeq: " + m_CSeq + "\r\n"
             + DateHeader() + "\r\n"
@@ -327,7 +321,9 @@ void RTSPSession::HandleCmdDESCRIBE()
             + std::string("CSeq: ") + m_CSeq + "\r\n";
         if (m_spAuthProvider)
         {
-            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            winrt::hstring curAuthSessionMsg;
+            winrt::check_hresult(m_spAuthProvider->GetNewAuthSessionMessage(curAuthSessionMsg));
+            m_curAuthSessionMsg =  winrt::to_string(curAuthSessionMsg);
             Response += m_curAuthSessionMsg;
         }
          Response += std::string("Server: NightKing\r\n")
@@ -371,7 +367,10 @@ void RTSPSession::HandleCmdSETUP()
             + std::string("CSeq: ") + m_CSeq + "\r\n";
         if (m_spAuthProvider)
         {
-            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            winrt::hstring curAuthSessionMsg;
+            winrt::check_hresult(m_spAuthProvider->GetNewAuthSessionMessage(curAuthSessionMsg));
+            m_curAuthSessionMsg = winrt::to_string(curAuthSessionMsg);
+
             Response += m_curAuthSessionMsg;
         }
         Response += std::string("Server: NightKing\r\n")
@@ -389,7 +388,7 @@ void RTSPSession::StopIfStreaming()
     {
         if (!m_dest.empty())
         {
-            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->RemoveNetworkClient(m_dest);
+            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->RemoveNetworkClient(winrt::to_hstring(m_dest));
             m_dest.clear();
         }
         else if (m_packetHandler)
@@ -415,13 +414,13 @@ void RTSPSession::HandleCmdPLAY()
         StopIfStreaming();
         if (m_TcpTransport)
         {
-            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddTransportHandler(m_packetHandler, "rtp", m_ssrc);
+            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddTransportHandler(m_packetHandler, L"rtp", m_ssrc);
         }
         else
         {
             std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_ClientRTPPort) + std::string("?localrtpport=") + std::to_string(m_LocalRTPPort);
             m_dest = dest;
-            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddNetworkClient(dest, "rtp", m_ssrc);
+            m_spCurrentStreamer.as<INetworkMediaStreamSink>()->AddNetworkClient(winrt::to_hstring(dest), L"rtp", m_ssrc);
         }
         m_bStreamingStarted = true;
 
@@ -440,7 +439,9 @@ void RTSPSession::HandleCmdPLAY()
 
         if (m_spAuthProvider)
         {
-            m_curAuthSessionMsg = m_spAuthProvider->GetNewAuthSessionMessage();
+            winrt::hstring curAuthSessionMsg;
+            winrt::check_hresult(m_spAuthProvider->GetNewAuthSessionMessage(curAuthSessionMsg));
+            m_curAuthSessionMsg = winrt::to_string(curAuthSessionMsg);
             Response += m_curAuthSessionMsg;
         }
         Response += std::string("Server: NightKing\r\n")

@@ -26,5 +26,8 @@
     <ClInclude Include="..\..\Common\inc\NetworkMediaStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\inc\pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

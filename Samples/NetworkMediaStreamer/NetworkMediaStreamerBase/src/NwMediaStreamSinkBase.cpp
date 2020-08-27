@@ -1,4 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
+#include <pch.h>
 #include "NwMediaStreamSinkBase.h"
 
 using namespace winrt;
@@ -139,7 +140,7 @@ STDMETHODIMP NwMediaStreamSinkBase::GetMediaSink(IMFMediaSink** ppMediaSink)
     }
 }
 
-STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::GetIdentifier(DWORD* pdwIdentifier)
+STDMETHODIMP NwMediaStreamSinkBase::GetIdentifier(DWORD* pdwIdentifier)
 {
     RETURNIFSHUTDOWN;
     if (!pdwIdentifier)
@@ -151,7 +152,7 @@ STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::GetIdentifier(DWORD* pdw
     return S_OK;
 }
 
-STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::GetMediaTypeHandler(IMFMediaTypeHandler** ppHandler)
+STDMETHODIMP NwMediaStreamSinkBase::GetMediaTypeHandler(IMFMediaTypeHandler** ppHandler)
 {
     RETURNIFSHUTDOWN;
     if (!ppHandler) return E_POINTER;
@@ -159,7 +160,7 @@ STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::GetMediaTypeHandler(IMFM
     return S_OK;
 }
 
-STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::ProcessSample(IMFSample* pSample)
+STDMETHODIMP NwMediaStreamSinkBase::ProcessSample(IMFSample* pSample)
 {
     RETURNIFSHUTDOWN;
     auto hr = PacketizeAndSend(pSample);
@@ -171,13 +172,13 @@ STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::ProcessSample(IMFSample*
     return hr;
 }
 
-STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarkerType, const PROPVARIANT* pvarMarkerValue, const PROPVARIANT* pvarContextValue)
+STDMETHODIMP NwMediaStreamSinkBase::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarkerType, const PROPVARIANT* pvarMarkerValue, const PROPVARIANT* pvarContextValue)
 {
     RETURNIFSHUTDOWN;
     return QueueEvent(MEStreamSinkMarker, GUID_NULL, S_OK, pvarContextValue);
 }
 
-STDMETHODIMP_(HRESULT __stdcall) NwMediaStreamSinkBase::Flush(void)
+STDMETHODIMP NwMediaStreamSinkBase::Flush(void)
 {
     RETURNIFSHUTDOWN;
     return S_OK;

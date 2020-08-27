@@ -1,4 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
+#include <pch.h>
 #include "RTPStreamSink.h"
 
 class RTPMediaSink
@@ -37,7 +38,7 @@ public:
 
     //IMFMediaSink
     STDMETHODIMP GetCharacteristics(
-        /* [out] */ __RPC__out DWORD* pdwCharacteristics)
+        /* [out] */ __RPC__out DWORD* pdwCharacteristics) noexcept
     {
         RETURNIFSHUTDOWN;
         if (!pdwCharacteristics)
@@ -51,21 +52,21 @@ public:
     STDMETHODIMP AddStreamSink(
         /* [in] */ DWORD dwStreamSinkIdentifier,
         /* [in] */ __RPC__in_opt IMFMediaType* pMediaType,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
     {
         RETURNIFSHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP RemoveStreamSink(
-        /* [in] */ DWORD dwStreamSinkIdentifier)
+        /* [in] */ DWORD dwStreamSinkIdentifier) noexcept
     {
         RETURNIFSHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP GetStreamSinkCount(
-        /* [out] */ __RPC__out DWORD* pcStreamSinkCount)
+        /* [out] */ __RPC__out DWORD* pcStreamSinkCount) noexcept
     {
         RETURNIFSHUTDOWN;
         if (!pcStreamSinkCount)
@@ -81,7 +82,7 @@ public:
 
     STDMETHODIMP GetStreamSinkByIndex(
         /* [in] */ DWORD dwIndex,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
     {
         RETURNIFSHUTDOWN;
         if (!ppStreamSink) return E_POINTER;
@@ -95,7 +96,7 @@ public:
 
     STDMETHODIMP GetStreamSinkById(
         /* [in] */ DWORD dwStreamSinkIdentifier,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink)
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
     {
         RETURNIFSHUTDOWN;
         if (dwStreamSinkIdentifier > m_spStreamSinks.size())
@@ -110,7 +111,7 @@ public:
     }
 
     STDMETHODIMP SetPresentationClock(
-        /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock)
+        /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock) noexcept
     {
         RETURNIFSHUTDOWN;
         if (m_spClock)
@@ -124,7 +125,7 @@ public:
     }
 
     STDMETHODIMP GetPresentationClock(
-        /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock)
+        /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock) noexcept
     {
         RETURNIFSHUTDOWN;
         if (!ppPresentationClock) return E_POINTER;
@@ -132,65 +133,77 @@ public:
         return S_OK;
     }
 
-    STDMETHODIMP Shutdown(void)
+    STDMETHODIMP Shutdown(void) noexcept
     {
         RETURNIFSHUTDOWN;
+        HRESULT hr = S_OK;
         m_bIsShutdown = true;
         for (auto strm : m_spStreamSinks)
         {
-            strm->Shutdown();
+            auto hr1 = strm->Shutdown();
+            hr = FAILED(hr1)? hr1: hr;
         }
-        return S_OK;
+        return hr;
     }
 
     //IMediaExtension
     STDMETHODIMP SetProperties(
-        winrt::Windows::Foundation::Collections::IPropertySet const& configuration
-    )
+        winrt::Windows::Foundation::Collections::IPropertySet const& configuration) noexcept
     {
         return S_OK;
     }
 
     // IMFClockStateSink methods
-    STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset)
+    STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset) noexcept
     {
+        HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
         {
-            strm->Start(hnsSystemTime, llClockStartOffset);
+            auto hr1 = strm->Start(hnsSystemTime, llClockStartOffset);
+            hr = FAILED(hr1) ? hr1 : hr;
         }
-        return S_OK;
+        return hr;
     }
-    STDMETHODIMP OnClockStop(MFTIME hnsSystemTime)
+    STDMETHODIMP OnClockStop(MFTIME hnsSystemTime) noexcept
     {
+        HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
         {
-            strm->Stop(hnsSystemTime);
+            auto hr1 = strm->Stop(hnsSystemTime);
+            hr = FAILED(hr1) ? hr1 : hr;
         }
-        return S_OK;
+        return hr;
     }
-    STDMETHODIMP OnClockPause(MFTIME hnsSystemTime)
+    STDMETHODIMP OnClockPause(MFTIME hnsSystemTime) noexcept
     {
+        HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
         {
-            strm->Pause(hnsSystemTime);
+            auto hr1 = strm->Pause(hnsSystemTime);
+            hr = FAILED(hr1) ? hr1 : hr;
         }
-        return S_OK;
+        return hr;
     }
-    STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime)
+    STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime) noexcept
     {
+        HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
         {
-            strm->Start(hnsSystemTime, 0);
+            auto hr1 = strm->Start(hnsSystemTime, 0);
+            hr = FAILED(hr1) ? hr1 : hr;
         }
-        return S_OK;
+        return hr;
     }
-    STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate)
+    STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate) noexcept
     {
         return S_OK;
     }
 };
 
-RTPMEDIASTREAMER_API IMFMediaSink* CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes)
+RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes, IMFMediaSink** ppMediaSink)
 {
-    return RTPMediaSink::CreateInstance(mediaTypes);
+    HRESULT_EXCEPTION_BOUNDARY_START;
+    winrt::check_pointer(ppMediaSink);
+    *ppMediaSink = RTPMediaSink::CreateInstance(mediaTypes);
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }

@@ -1,8 +1,8 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
-
+#include <pch.h>
 #include"SocketWrapper.h"
 
-CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, std::vector<PCCERT_CONTEXT> aCertContext /*= empty vector*/)
+CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_CONTEXT> aCertContext /*= empty vector*/)
     : m_bIsSecure(!aCertContext.empty())
     , m_socket(connectedSocket)
     , m_hCred({ 0 })
@@ -16,30 +16,24 @@ CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, std::vector<PCCERT_CONTEX
 {
     if (m_bIsSecure)
     {
-        try
-        {
-            InitilizeSecurity();
 
-            CHECK_WIN32(QueryContextAttributes(
-                &m_hCtxt,
-                SECPKG_ATTR_STREAM_SIZES,
-                &m_secPkgContextStrmSizes));
-            auto newBufsz = m_secPkgContextStrmSizes.cbHeader + m_secPkgContextStrmSizes.cbMaximumMessage + m_secPkgContextStrmSizes.cbTrailer;
-            if (newBufsz > m_bufSz)
-            {
-                m_bufSz = newBufsz;
-                m_pInBuf.reset(std::make_unique<BYTE[]>(m_bufSz).release());
-                m_pOutBuf.reset(std::make_unique<BYTE[]>(m_bufSz).release());
-            }
+        InitilizeSecurity();
 
-            // if TLS authentication fails, the rtsp session will ask for username/password digest auth
-            m_bIsAuthenticated = AuthenticateClient();
-        }
-        catch (winrt::hresult_error const& ex)
+        CHECK_WIN32(QueryContextAttributes(
+            &m_hCtxt,
+            SECPKG_ATTR_STREAM_SIZES,
+            &m_secPkgContextStrmSizes));
+        auto newBufsz = m_secPkgContextStrmSizes.cbHeader + m_secPkgContextStrmSizes.cbMaximumMessage + m_secPkgContextStrmSizes.cbTrailer;
+        if (newBufsz > m_bufSz)
         {
-            m_socket = INVALID_SOCKET;
-            throw(ex);
+            m_bufSz = newBufsz;
+            m_pInBuf.reset(std::make_unique<BYTE[]>(m_bufSz).release());
+            m_pOutBuf.reset(std::make_unique<BYTE[]>(m_bufSz).release());
         }
+
+        // if TLS authentication fails, the rtsp session will ask for username/password digest auth
+        m_bIsAuthenticated = AuthenticateClient();
+
     }
 }
 CSocketWrapper::~CSocketWrapper()
@@ -50,7 +44,7 @@ CSocketWrapper::~CSocketWrapper()
 void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
 {
     auto pSock = (CSocketWrapper*)arg;
-    WSAResetEvent(pSock->m_readEvent);
+    WSAResetEvent(pSock->m_readEvent.get());
 
     SECURITY_STATUS ss = SEC_I_CONTINUE_NEEDED;
     
@@ -113,9 +107,8 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
     if (((SEC_I_CONTINUE_NEEDED == ss)
         || (SEC_I_COMPLETE_AND_CONTINUE == ss)))
     {
-        UnregisterWait(pSock->m_callBackHandle);
-        pSock->m_callBackHandle = nullptr;
-        RegisterWaitForSingleObject(&pSock->m_callBackHandle, pSock->m_readEvent, (WAITORTIMERCALLBACK)ReadDelegate, pSock, INFINITE, WT_EXECUTEONLYONCE);
+        UnregisterWait(pSock->m_callBackHandle.detach());
+        RegisterWaitForSingleObject(pSock->m_callBackHandle.put(), pSock->m_readEvent.get(), (WAITORTIMERCALLBACK)ReadDelegate, pSock, INFINITE, WT_EXECUTEONLYONCE);
     }
     else
     {
@@ -156,8 +149,8 @@ void CSocketWrapper::InitilizeSecurity()
         &m_hCred,
         &Lifetime));
 
-    m_readEvent = WSACreateEvent();      // create READ wait event for our RTSP client socket
-    if (m_readEvent == WSA_INVALID_EVENT)
+    m_readEvent.attach(WSACreateEvent());      // create READ wait event for our RTSP client socket
+    if (m_readEvent) // == WSA_INVALID_EVENT)
     {
         winrt::check_win32(WSAGetLastError());
     }
@@ -165,13 +158,13 @@ void CSocketWrapper::InitilizeSecurity()
     std::mutex mutexDone;
     std::unique_lock<std::mutex> lockDone(mutexDone);
 
-    WSAEventSelect(m_socket, m_readEvent, FD_READ | FD_CLOSE);   // select socket read event
-    RegisterWaitForSingleObject(&m_callBackHandle, m_readEvent, (WAITORTIMERCALLBACK)ReadDelegate, this, INFINITE, WT_EXECUTEONLYONCE);
+    WSAEventSelect(m_socket, m_readEvent.get(), FD_READ | FD_CLOSE);   // select socket read event
+    RegisterWaitForSingleObject(m_callBackHandle.put(), m_readEvent.get(), (WAITORTIMERCALLBACK)ReadDelegate, this, INFINITE, WT_EXECUTEONLYONCE);
 
     m_handshakeDone.wait(lockDone);
-    UnregisterWait(m_callBackHandle);
-    m_callBackHandle = nullptr;
-    WSACloseEvent(m_readEvent);
+    UnregisterWait(m_callBackHandle.detach());
+
+    WSACloseEvent(m_readEvent.detach());
 }
 
 int  CSocketWrapper::Recv(BYTE* buf, int sz)

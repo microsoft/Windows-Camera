@@ -15,6 +15,9 @@
     <ClInclude Include="..\..\Common\inc\RTPMediaStreamer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\inc\pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\RTPMediaSink.cpp">

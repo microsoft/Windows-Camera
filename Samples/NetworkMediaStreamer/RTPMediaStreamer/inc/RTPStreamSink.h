@@ -2,9 +2,7 @@
 #pragma once
 #include "NwMediaStreamSinkBase.h"
 #include "RTPMediaStreamer.h"
-#include <winrt\Windows.Security.Cryptography.h>
-#include <winrt\Windows.Storage.Streams.h>
-#include <winrt\Windows.Media.h>
+
 constexpr BYTE h264payloadType = 96;
 constexpr size_t rtpHeaderSize = 12;
 constexpr size_t stapAtypeHeaderSize = 1;
@@ -29,7 +27,7 @@ class RTPVideoStreamSink  sealed : public NwMediaStreamSinkBase
 {
     std::mutex m_guardlock;
     std::map<std::string, TxContext> m_RtpStreamers;
-    BYTE* m_pTxBuf;
+    std::unique_ptr<BYTE[]> m_pTxBuf;
     size_t m_MTUSize;
     uint32_t m_packetizationMode;
     uint32_t m_SequenceNumber;
@@ -44,11 +42,11 @@ class RTPVideoStreamSink  sealed : public NwMediaStreamSinkBase
 public:
     static INetworkMediaStreamSink* CreateInstance(IMFMediaType *pMediaType, IMFMediaSink* pParent, DWORD dwStreamID);
 
-    void AddTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler, std::string protocol = "rtp", uint32_t ssrc = 0) override;
-    void AddNetworkClient(std::string destination, std::string protocol = "rtp", uint32_t ssrc = 0) override;
-    void RemoveNetworkClient(std::string destination) override;
-    void RemoveTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler) override;
-    void GenerateSDP(char* buf, size_t maxSize, std::string destination) override;
+    STDMETHODIMP AddTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler, winrt::hstring protocol = L"rtp", uint32_t ssrc = 0) override;
+    STDMETHODIMP AddNetworkClient(winrt::hstring destination, winrt::hstring protocol = L"rtp", uint32_t ssrc = 0) override;
+    STDMETHODIMP RemoveNetworkClient(winrt::hstring destination) override;
+    STDMETHODIMP RemoveTransportHandler(winrt::delegate<BYTE*, size_t> packetHandler) override;
+    STDMETHODIMP GenerateSDP(uint8_t* buf, size_t maxSize, winrt::hstring destination) override;
 
 };
 

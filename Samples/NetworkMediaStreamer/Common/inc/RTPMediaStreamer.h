@@ -9,4 +9,4 @@
 #define RTPMEDIASTREAMER_API __declspec(dllimport)
 #endif
 
-RTPMEDIASTREAMER_API IMFMediaSink* CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes);
+RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes, IMFMediaSink** ppMediaSink);

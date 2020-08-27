@@ -1,15 +1,11 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include <ws2tcpip.h>
-#include <mfapi.h>
-#include <mfidl.h>
-#include <mfreadwrite.h>
-#include <mferror.h>
-#include <Shlwapi.h>
-#include <windows.media.h>
 #include "NetworkMediaStreamer.h"
 
 #define RETURNIFSHUTDOWN if(m_bIsShutdown) return MF_E_SHUTDOWN;
+
+#define HRESULT_EXCEPTION_BOUNDARY_START HRESULT hr = S_OK; try {
+#define HRESULT_EXCEPTION_BOUNDARY_END }catch(...) { hr = winrt::to_hresult();} return hr;
 
 class NwMediaStreamSinkBase  : public INetworkMediaStreamSink
 {
@@ -52,22 +48,18 @@ public:
         HRESULT hrStatus, const PROPVARIANT* pvValue);
 
     // IMFStreamSink
-    STDMETHODIMP GetMediaSink(
-        /* [out] */ __RPC__deref_out_opt IMFMediaSink** ppMediaSink);
+    STDMETHODIMP GetMediaSink(IMFMediaSink** ppMediaSink);
 
-    STDMETHODIMP GetIdentifier(
-        /* [out] */ __RPC__out DWORD* pdwIdentifier);
+    STDMETHODIMP GetIdentifier(DWORD* pdwIdentifier);
 
-    STDMETHODIMP GetMediaTypeHandler(
-        /* [out] */ __RPC__deref_out_opt IMFMediaTypeHandler** ppHandler);
+    STDMETHODIMP GetMediaTypeHandler(IMFMediaTypeHandler** ppHandler);
 
-    STDMETHODIMP ProcessSample(
-        /* [in] */ __RPC__in_opt IMFSample* pSample);
+    STDMETHODIMP ProcessSample(IMFSample* pSample);
 
     STDMETHODIMP PlaceMarker(
-        /* [in] */ MFSTREAMSINK_MARKER_TYPE eMarkerType,
-        /* [in] */ __RPC__in const PROPVARIANT* pvarMarkerValue,
-        /* [in] */ __RPC__in const PROPVARIANT* pvarContextValue);
+        MFSTREAMSINK_MARKER_TYPE eMarkerType,
+        const PROPVARIANT* pvarMarkerValue,
+        const PROPVARIANT* pvarContextValue);
 
     STDMETHODIMP Flush(void);
 

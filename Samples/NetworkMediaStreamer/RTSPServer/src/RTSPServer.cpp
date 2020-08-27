@@ -1,15 +1,12 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
 #pragma comment(lib, "Ws2_32.lib")
-
+#include <pch.h>
 #include "RTSPServer.h"
 
-using namespace winrt::Windows::Foundation;
-using namespace winrt::Windows::System::Threading;
-
-
-void RTSPServer::StopServer()
+STDMETHODIMP RTSPServer::StopServer()
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
@@ -24,17 +21,20 @@ void RTSPServer::StopServer()
     }
     m_Sessions.clear();
 
-    closesocket(MasterSocket);
+    closesocket(m_masterSocket);
     WSACleanup();
+
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
-void RTSPServer::StartServer()
+STDMETHODIMP RTSPServer::StartServer()
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
     auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
         //this means server is already started.
-        return;
+        return S_OK;
     }
 
     sockaddr_in ServerAddr;                                   // server address parameters
@@ -50,17 +50,17 @@ void RTSPServer::StartServer()
     ServerAddr.sin_addr.s_addr = INADDR_ANY;
     ServerAddr.sin_port = htons(m_socketPort);                 // listen on RTSP port
 
-    MasterSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, 0);
-    if (MasterSocket == INVALID_SOCKET)
+    m_masterSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, 0);
+    if (m_masterSocket == INVALID_SOCKET)
     {
         winrt::check_win32(WSAGetLastError());
     }
     // bind our master socket to the RTSP port and listen for a client connection
-    if (bind(MasterSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)) != 0)
+    if (bind(m_masterSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)) != 0)
     {
         winrt::check_win32(WSAGetLastError());
     }
-    if (listen(MasterSocket, 5) != 0)
+    if (listen(m_masterSocket, 5) != 0)
     {
         winrt::check_win32(WSAGetLastError());
     }
@@ -70,7 +70,7 @@ void RTSPServer::StartServer()
         winrt::check_win32(WSAGetLastError());
     }
 
-    if (WSAEventSelect(MasterSocket, m_acceptEvent, FD_ACCEPT) != 0)
+    if (WSAEventSelect(m_masterSocket, m_acceptEvent, FD_ACCEPT) != 0)
     {
         winrt::check_win32(WSAGetLastError());
     }
@@ -90,7 +90,7 @@ void RTSPServer::StartServer()
             char addr[INET_ADDRSTRLEN];
 
             // loop forever to accept client connections
-            ClientSocket = WSAAccept(pServer->MasterSocket, (struct sockaddr*) & ClientAddr, &ClientAddrLen, nullptr, NULL);
+            ClientSocket = WSAAccept(pServer->m_masterSocket, (struct sockaddr*) & ClientAddr, &ClientAddrLen, nullptr, NULL);
             if (ClientSocket == INVALID_SOCKET)
             {
                 pServer->m_LoggerEvents[(int)LoggerType::ERRORS](E_HANDLE, L"\nInvalid client socket returned by WSAAccept");
@@ -132,16 +132,23 @@ void RTSPServer::StartServer()
 
                 });
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD));
+
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
-RTSPSERVER_API IRTSPServerControl* CreateRTSPServer(streamerMapType streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, std::vector<PCCERT_CONTEXT> serverCerts /*=empty*/)
+RTSPSERVER_API STDMETHODIMP CreateRTSPServer(RTSPSuffixSinkMapView streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, winrt::array_view<PCCERT_CONTEXT> serverCerts, IRTSPServerControl** ppRTSPServerControl /*=empty*/)
 {
+    HRESULT_EXCEPTION_BOUNDARY_START;
+    
+    winrt::check_pointer(ppRTSPServerControl);
     if (bSecure && serverCerts.empty())
     {
         winrt::check_hresult(SEC_E_NO_CREDENTIALS);
     }
-    IRTSPServerControl* pRtspServerControl = nullptr;
-    auto pRTSPServer = new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts);
-    winrt::check_hresult(pRTSPServer->QueryInterface(__uuidof(IRTSPServerControl),(void**)&pRtspServerControl));
-    return pRtspServerControl;
+    winrt::com_ptr<RTSPServer> spRTSPServer;
+    spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts));
+    *ppRTSPServerControl  = spRTSPServer.as<IRTSPServerControl>().detach();
+
+    HRESULT_EXCEPTION_BOUNDARY_END;
 }
+
