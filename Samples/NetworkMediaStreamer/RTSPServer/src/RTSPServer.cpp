@@ -76,60 +76,77 @@ STDMETHODIMP RTSPServer::StartServer()
     winrt::check_bool(RegisterWaitForSingleObject(m_callbackHandle.put(), m_acceptEvent.get(), [](PVOID arg, BOOLEAN flag)
         {
             auto pServer = (RTSPServer*)arg;
-            auto apiLock = std::lock_guard(pServer->m_apiGuard);
-            if (!pServer->m_callbackHandle)
-            {
-                // Server stopped 
-                return;
-            }
-            WSAResetEvent(pServer->m_acceptEvent.get());
-            SOCKET      ClientSocket;                                 // RTSP socket to handle an client
-            sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
-            int         ClientAddrLen = sizeof(ClientAddr);
-            char addr[INET_ADDRSTRLEN];
-
-            // loop forever to accept client connections
-            ClientSocket = WSAAccept(pServer->m_masterSocket, (struct sockaddr*) & ClientAddr, &ClientAddrLen, nullptr, NULL);
-            if (ClientSocket == INVALID_SOCKET)
-            {
-                pServer->m_LoggerEvents[(int)LoggerType::ERRORS](E_HANDLE, L"\nInvalid client socket returned by WSAAccept");
-                return;
-            }
-            inet_ntop(AF_INET, &(ClientAddr.sin_addr), addr, INET_ADDRSTRLEN);
-
-            pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::hstring(L"\nConnected to client with address: ") + winrt::to_hstring(addr));
-            std::unique_ptr<CSocketWrapper> pClientSocketWrapper;
+            SOCKET      clientSocket;                                 // RTSP socket to handle an client
             try
-            { // TODO: use a factory to return errors instead of try-throw-catch here
-                if (pServer->m_bSecure)
-                {
-                    pClientSocketWrapper = std::make_unique<CSocketWrapper>(ClientSocket, pServer->m_serverCerts);
-                }
-                else
-                {
-                    pClientSocketWrapper = std::make_unique<CSocketWrapper>(ClientSocket);
-                }
-            }
-            catch (winrt::hresult_error const& ex)
             {
-                pServer->m_LoggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
-                return;
-            }
-            RTSPSession* pRtspSession = new RTSPSession(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents);
-            pServer->m_Sessions.insert({ pRtspSession, ClientSocket });
-            pServer->m_SessionStatusEvents((uintptr_t)pRtspSession, SessionStatus::SessionStarted);
-
-            pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring((uintptr_t)pRtspSession));
-
-            pRtspSession->BeginSession([pServer](RTSPSession* pSession)
+                auto apiLock = std::lock_guard(pServer->m_apiGuard);
+                if (!pServer->m_callbackHandle)
                 {
-                    pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring((uintptr_t)pSession));
+                    // Server stopped 
+                    return;
+                }
+                WSAResetEvent(pServer->m_acceptEvent.get());
+                
+                sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
+                int         ClientAddrLen = sizeof(ClientAddr);
+                char addr[INET_ADDRSTRLEN];
 
-                    pServer->m_Sessions.erase(pSession);
-                    pServer->m_SessionStatusEvents((uintptr_t)pSession, SessionStatus::SessionEnded);
-                    delete pSession;
+                // loop forever to accept client connections
+                clientSocket = WSAAccept(pServer->m_masterSocket, (struct sockaddr*)&ClientAddr, &ClientAddrLen, nullptr, NULL);
+                if (clientSocket == INVALID_SOCKET)
+                {
+                    pServer->m_LoggerEvents[(int)LoggerType::ERRORS](E_HANDLE, L"\nInvalid client socket returned by WSAAccept");
+                    return;
+                }
+                inet_ntop(AF_INET, &(ClientAddr.sin_addr), addr, INET_ADDRSTRLEN);
 
-                });
+                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::hstring(L"\nConnected to client with address: ") + winrt::to_hstring(addr));
+                std::unique_ptr<CSocketWrapper> pClientSocketWrapper;
+                try
+                { // TODO: use a factory to return errors instead of try-throw-catch here
+                    if (pServer->m_bSecure)
+                    {
+                        pClientSocketWrapper = std::make_unique<CSocketWrapper>(clientSocket, pServer->m_serverCerts);
+                    }
+                    else
+                    {
+                        pClientSocketWrapper = std::make_unique<CSocketWrapper>(clientSocket);
+                    }
+                }
+                catch (winrt::hresult_error const& ex)
+                {
+                    if (clientSocket != INVALID_SOCKET)
+                    {
+                        closesocket(clientSocket);
+                    }
+                    pServer->m_LoggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
+                    return;
+                }
+                RTSPSession* pRtspSession = new RTSPSession(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents);
+                pServer->m_Sessions.insert({ pRtspSession, clientSocket });
+                pServer->m_SessionStatusEvents((uintptr_t)pRtspSession, SessionStatus::SessionStarted);
+
+                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring((uintptr_t)pRtspSession));
+
+                pRtspSession->BeginSession([pServer](RTSPSession* pSession)
+                    {
+                        pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring((uintptr_t)pSession));
+
+                        pServer->m_Sessions.erase(pSession);
+                        pServer->m_SessionStatusEvents((uintptr_t)pSession, SessionStatus::SessionEnded);
+                        delete pSession;
+
+                    });
+            }
+            catch (...)
+            {
+                auto hr = winrt::to_hresult();
+                if (clientSocket != INVALID_SOCKET)
+                {
+                    closesocket(clientSocket);
+                }
+                pServer->m_LoggerEvents[(int)LoggerType::ERRORS](hr, L"\nFailed to Create Session");
+            }
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD));
 
     HRESULT_EXCEPTION_BOUNDARY_END;

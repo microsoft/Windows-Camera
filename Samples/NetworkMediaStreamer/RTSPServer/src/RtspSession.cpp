@@ -499,14 +499,16 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
     RegisterWaitForSingleObject(m_callBackHandle.put(), m_RtspReadEvent.get(), [](PVOID arg, BOOLEAN flag)
         {
             auto pSession = (RTSPSession*)arg;
-            WSAResetEvent(pSession->m_RtspReadEvent.get());
-            auto l = std::lock_guard(pSession->m_readDelegateMutex);
-            if (!pSession->m_callBackHandle)
+            try
             {
-                //Session stopped
-                return;
-            }
-            {
+                WSAResetEvent(pSession->m_RtspReadEvent.get());
+                auto l = std::lock_guard(pSession->m_readDelegateMutex);
+                if (!pSession->m_callBackHandle)
+                {
+                    //Session stopped
+                    return;
+                }
+
                 char* pRecvBuf = (char*)pSession->m_pTcpRxBuff.get();
 
                 RTSP_CMD C = RTSP_CMD::UNKNOWN;
@@ -530,19 +532,26 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
                     }
                 }
 
-                if ((C == RTSP_CMD::TEARDOWN) || (res <= 0) || pSession->m_bTerminate)
-                {
-                    UnregisterWait(pSession->m_callBackHandle.detach());
-
-                    // run the completion delegate on a separate thread
-                    winrt::Windows::System::Threading::ThreadPool::RunAsync
-                    ([pSession](winrt::Windows::Foundation::IAsyncAction)
-                        {
-                            pSession->m_Completed(pSession);
-                        });
-                }
+                pSession->m_bTerminate = (C == RTSP_CMD::TEARDOWN) || (res <= 0);
 
             }
+            catch (...)
+            {
+                pSession->m_bTerminate = true;
+            }
+
+            if (pSession->m_bTerminate)
+            {
+                UnregisterWait(pSession->m_callBackHandle.detach());
+
+                // run the completion delegate on a separate thread
+                winrt::Windows::System::Threading::ThreadPool::RunAsync
+                ([pSession](winrt::Windows::Foundation::IAsyncAction)
+                    {
+                        pSession->m_Completed(pSession);
+                    });
+            }
+
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD);
 
 }

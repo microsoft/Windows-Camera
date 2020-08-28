@@ -2,7 +2,7 @@
 #pragma once
 
 constexpr LPWSTR g_lpPackageName = (LPWSTR)UNISP_NAME;
-#define CHECK_WIN32(result) {auto r = (result); if(r <0)  winrt::check_win32(r);}
+
 #define SEC_SUCCESS(Status) ((Status) >= 0)
 
 class CSocketWrapper
@@ -28,7 +28,7 @@ private:
 
     CredHandle m_hCred;
     struct _SecHandle  m_hCtxt;
-
+    SECURITY_STATUS m_SecurityStatus;
     std::unique_ptr<BYTE[]> m_pInBuf;
     std::unique_ptr<BYTE[]> m_pOutBuf;
     DWORD m_bufSz;

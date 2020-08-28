@@ -19,7 +19,7 @@ CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_
 
         InitilizeSecurity();
 
-        CHECK_WIN32(QueryContextAttributes(
+        winrt::check_hresult(QueryContextAttributes(
             &m_hCtxt,
             SECPKG_ATTR_STREAM_SIZES,
             &m_secPkgContextStrmSizes));
@@ -44,68 +44,70 @@ CSocketWrapper::~CSocketWrapper()
 void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
 {
     auto pSock = (CSocketWrapper*)arg;
-    WSAResetEvent(pSock->m_readEvent.get());
-
-    SECURITY_STATUS ss = SEC_I_CONTINUE_NEEDED;
-    
-    auto numRead = recv(pSock->m_socket, (char*)pSock->m_pInBuf.get() , pSock->m_bufSz , 0);
-    if (numRead > 0)
+    pSock->m_SecurityStatus  = SEC_E_INVALID_HANDLE;
+    try 
     {
-        TimeStamp         tokenLifetime;
-        SecBufferDesc     OutBuffDesc;
-        SecBuffer         OutSecBuff;
-        SecBufferDesc     InBuffDesc;
-        SecBuffer         InSecBuff[2];
-        ULONG             Attribs = ASC_REQ_MUTUAL_AUTH;
+        WSAResetEvent(pSock->m_readEvent.get());
 
-        OutBuffDesc.ulVersion = 0;
-        OutBuffDesc.cBuffers = 1;
-        OutBuffDesc.pBuffers = &OutSecBuff;
-
-        OutSecBuff.cbBuffer = pSock->m_bufSz;
-        OutSecBuff.BufferType = SECBUFFER_TOKEN;
-        OutSecBuff.pvBuffer = pSock->m_pOutBuf.get();
-
-        InBuffDesc.ulVersion = 0;
-        InBuffDesc.cBuffers = 2;
-        InBuffDesc.pBuffers = InSecBuff;
-
-        InSecBuff[0].cbBuffer = numRead;
-        InSecBuff[0].BufferType = SECBUFFER_TOKEN;
-        InSecBuff[0].pvBuffer = pSock->m_pInBuf.get();
-
-        InSecBuff[1].cbBuffer = 0;
-        InSecBuff[1].BufferType = SECBUFFER_EMPTY;
-        InSecBuff[1].pvBuffer = nullptr;
-        bool bFirstHandshake = !(pSock->m_hCtxt.dwLower || pSock->m_hCtxt.dwUpper);
-        ss = AcceptSecurityContext(
-            &pSock->m_hCred,
-            bFirstHandshake ? NULL : &pSock->m_hCtxt,
-            &InBuffDesc,
-            Attribs,
-            SECURITY_NETWORK_DREP,
-            bFirstHandshake ? &pSock->m_hCtxt : NULL,
-            &OutBuffDesc,
-            &Attribs,
-            &tokenLifetime);
-
-        if (InSecBuff[1].BufferType == SECBUFFER_EXTRA)
+        auto numRead = recv(pSock->m_socket, (char*)pSock->m_pInBuf.get(), pSock->m_bufSz, 0);
+        if (numRead > 0)
         {
-            //TODO: handle this case
+            TimeStamp         tokenLifetime;
+            SecBufferDesc     OutBuffDesc;
+            SecBuffer         OutSecBuff;
+            SecBufferDesc     InBuffDesc;
+            SecBuffer         InSecBuff[2];
+            ULONG             Attribs = ASC_REQ_MUTUAL_AUTH;
+
+            OutBuffDesc.ulVersion = 0;
+            OutBuffDesc.cBuffers = 1;
+            OutBuffDesc.pBuffers = &OutSecBuff;
+
+            OutSecBuff.cbBuffer = pSock->m_bufSz;
+            OutSecBuff.BufferType = SECBUFFER_TOKEN;
+            OutSecBuff.pvBuffer = pSock->m_pOutBuf.get();
+
+            InBuffDesc.ulVersion = 0;
+            InBuffDesc.cBuffers = 2;
+            InBuffDesc.pBuffers = InSecBuff;
+
+            InSecBuff[0].cbBuffer = numRead;
+            InSecBuff[0].BufferType = SECBUFFER_TOKEN;
+            InSecBuff[0].pvBuffer = pSock->m_pInBuf.get();
+
+            InSecBuff[1].cbBuffer = 0;
+            InSecBuff[1].BufferType = SECBUFFER_EMPTY;
+            InSecBuff[1].pvBuffer = nullptr;
+            bool bFirstHandshake = !(pSock->m_hCtxt.dwLower || pSock->m_hCtxt.dwUpper);
+            pSock->m_SecurityStatus = AcceptSecurityContext(
+                &pSock->m_hCred,
+                bFirstHandshake ? NULL : &pSock->m_hCtxt,
+                &InBuffDesc,
+                Attribs,
+                SECURITY_NETWORK_DREP,
+                bFirstHandshake ? &pSock->m_hCtxt : NULL,
+                &OutBuffDesc,
+                &Attribs,
+                &tokenLifetime);
+
+            if (InSecBuff[1].BufferType == SECBUFFER_EXTRA)
+            {
+                //TODO: handle this case
+            }
+
+            winrt::check_hresult(pSock->m_SecurityStatus);
+            send(pSock->m_socket, (char*)OutSecBuff.pvBuffer, OutSecBuff.cbBuffer, 0);
         }
-        CHECK_WIN32(ss);
-        send(pSock->m_socket, (char*)OutSecBuff.pvBuffer, OutSecBuff.cbBuffer, 0);
+
     }
-    else
+    catch(...)
     {
-        if (numRead < 0)
-        {
-            //TODO: Contructor needs to be called from factory method which can signal failure to caller.
-            winrt::check_win32(WSAGetLastError());
-        }
+        pSock->m_SecurityStatus = winrt::to_hresult();
+        pSock->m_hCtxt.dwLower = pSock->m_hCtxt.dwLower = 0;
     }
-    if (((SEC_I_CONTINUE_NEEDED == ss)
-        || (SEC_I_COMPLETE_AND_CONTINUE == ss)))
+
+    if (((SEC_I_CONTINUE_NEEDED == pSock->m_SecurityStatus)
+        || (SEC_I_COMPLETE_AND_CONTINUE == pSock->m_SecurityStatus)))
     {
         UnregisterWait(pSock->m_callBackHandle.detach());
         RegisterWaitForSingleObject(pSock->m_callBackHandle.put(), pSock->m_readEvent.get(), (WAITORTIMERCALLBACK)ReadDelegate, pSock, INFINITE, WT_EXECUTEONLYONCE);
@@ -114,15 +116,14 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
     {
         pSock->m_handshakeDone.notify_all();
     }
+
 }
 
 void CSocketWrapper::InitilizeSecurity()
 {
     TimeStamp         Lifetime;
     PSecPkgInfo pPkgInfo = nullptr;
-    CHECK_WIN32(QuerySecurityPackageInfo(
-        (LPWSTR)g_lpPackageName,
-        &pPkgInfo));
+    winrt::check_hresult(QuerySecurityPackageInfo((LPWSTR)g_lpPackageName, &pPkgInfo));
 
     auto maxTokenSz = pPkgInfo->cbMaxToken;
     m_bufSz = pPkgInfo->cbMaxToken;
@@ -138,7 +139,7 @@ void CSocketWrapper::InitilizeSecurity()
     credData.cCreds = (DWORD)m_aCertContext.size();
     credData.paCred = m_aCertContext.data();
 
-    CHECK_WIN32(AcquireCredentialsHandle(
+    winrt::check_hresult(AcquireCredentialsHandle(
         NULL,
         g_lpPackageName,
         SECPKG_CRED_INBOUND,
@@ -163,8 +164,9 @@ void CSocketWrapper::InitilizeSecurity()
 
     m_handshakeDone.wait(lockDone);
     UnregisterWait(m_callBackHandle.detach());
-
     WSACloseEvent(m_readEvent.detach());
+
+    winrt::check_hresult(m_SecurityStatus);
 }
 
 int  CSocketWrapper::Recv(BYTE* buf, int sz)
@@ -200,7 +202,7 @@ int  CSocketWrapper::Recv(BYTE* buf, int sz)
         SecBuff[3].BufferType = SECBUFFER_EMPTY;
         SecBuff[3].pvBuffer = nullptr;
 
-        CHECK_WIN32(DecryptMessage(&m_hCtxt, &BuffDesc, 0, &ulQop));
+        winrt::check_hresult(DecryptMessage(&m_hCtxt, &BuffDesc, 0, &ulQop));
 
         for (int i = 0; i < 4; i++)
         {
@@ -284,9 +286,7 @@ bool CSocketWrapper::AuthenticateClient()
         return false;
     }
 
-    if (!GetUserName(
-        pUserName,
-        &cbUserName))
+    if (!GetUserName(pUserName, &cbUserName))
     {
         return false;
     }
