@@ -18,8 +18,8 @@ RTSPSession::RTSPSession(
     , m_bTerminate(false)
     , m_bAuthorizationReceived(false)
 {
-    m_RtspSessionID = rand() << 16;         // create a session ID
-    m_RtspSessionID |= rand();
+    auto time = MFGetSystemTime();
+    m_RtspSessionID = (time>>32)^((uint32_t)time);         // create a session ID
     m_RtspSessionID |= 0x80000000;
     m_ssrc = 0;
     m_ClientRTPPort = RTP_DEFAULT_PORT;
