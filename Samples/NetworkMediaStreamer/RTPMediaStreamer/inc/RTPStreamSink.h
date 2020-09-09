@@ -1,7 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include "NwMediaStreamSinkBase.h"
-#include "RTPMediaStreamer.h"
 
 constexpr BYTE h264payloadType = 96;
 constexpr size_t rtpHeaderSize = 12;
@@ -22,7 +20,7 @@ public:
     uint64_t m_u64StartTime;
     uint32_t m_SequenceNumber;
 };
-#include <winrt\Windows.Storage.Streams.h>
+
 class RTPVideoStreamSink  sealed : public NwMediaStreamSinkBase
 {
     std::mutex m_guardlock;

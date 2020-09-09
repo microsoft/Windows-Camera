@@ -11,4 +11,6 @@
 #include <winrt\Windows.Media.h>
 #include <winrt\Windows.Foundation.h>
 #include "NetworkMediaStreamer.h"
+#include "NwMediaStreamSinkBase.h"
+#include "RTPMediaStreamer.h"
 #include "RTPStreamSink.h"
