@@ -21,7 +21,7 @@ public:
     uint32_t m_SequenceNumber;
 };
 
-class RTPVideoStreamSink  sealed : public NwMediaStreamSinkBase
+class RTPVideoStreamSink  final : public NwMediaStreamSinkBase
 {
     std::mutex m_guardlock;
     std::map<std::string, TxContext> m_RtpStreamers;

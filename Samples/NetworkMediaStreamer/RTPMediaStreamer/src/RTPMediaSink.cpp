@@ -9,19 +9,19 @@ protected:
     std::vector<winrt::com_ptr<INetworkMediaStreamSink>> m_spStreamSinks;
     winrt::com_ptr<IMFPresentationClock> m_spClock;
 
-    RTPMediaSink(std::vector<IMFMediaType*> streamMediaTypes)
+    RTPMediaSink(std::vector<winrt::com_ptr<IMFMediaType>> streamMediaTypes)
         :m_bIsShutdown(false)
     {
         m_spStreamSinks.resize(streamMediaTypes.size());
 
         for (DWORD i = 0; i < streamMediaTypes.size(); i++)
         {
-            m_spStreamSinks[i].attach(RTPVideoStreamSink::CreateInstance(streamMediaTypes[i], this, i));
+            m_spStreamSinks[i].attach(RTPVideoStreamSink::CreateInstance(streamMediaTypes[i].get(), this, i));
         }
     }
     virtual ~RTPMediaSink() = default;
 public:
-    static IMFMediaSink* CreateInstance(std::vector<IMFMediaType*> streamMediaTypes)
+    static IMFMediaSink* CreateInstance(std::vector<winrt::com_ptr<IMFMediaType>> streamMediaTypes)
     {
         if (streamMediaTypes.size())
         {
@@ -197,10 +197,15 @@ public:
     }
 };
 
-RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(std::vector<IMFMediaType*> mediaTypes, IMFMediaSink** ppMediaSink)
+RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(IMFMediaType** apMediaTypes, DWORD dwMediaTypeCount, IMFMediaSink** ppMediaSink)
 {
     HRESULT_EXCEPTION_BOUNDARY_START;
     winrt::check_pointer(ppMediaSink);
+    std::vector<winrt::com_ptr<IMFMediaType>> mediaTypes(dwMediaTypeCount);
+    for (DWORD i = 0; i < dwMediaTypeCount; i++)
+    {
+        mediaTypes[i].copy_from(apMediaTypes[i]);
+    }
     *ppMediaSink = RTPMediaSink::CreateInstance(mediaTypes);
     HRESULT_EXCEPTION_BOUNDARY_END;
 }

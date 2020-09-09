@@ -257,7 +257,7 @@ int main()
             winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator() * 100, frameRate.Denominator() * 100));
             mediaTypes.push_back(spOutType.get());
             IMediaExtension mediaExtSink;
-            winrt::check_hresult(CreateRTPMediaSink(mediaTypes, (IMFMediaSink**)put_abi(mediaExtSink)));
+            winrt::check_hresult(CreateRTPMediaSink(mediaTypes.data(), mediaTypes.size(), (IMFMediaSink**)put_abi(mediaExtSink)));
             streamers.Insert(winrt::hstring(strm.first), mediaExtSink);
             mediaTypes.clear();
             spOutType = nullptr;
