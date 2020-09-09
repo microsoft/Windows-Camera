@@ -1,6 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #include <pch.h>
-#include"SocketWrapper.h"
 
 CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_CONTEXT> aCertContext /*= empty vector*/)
     : m_bIsSecure(!aCertContext.empty())

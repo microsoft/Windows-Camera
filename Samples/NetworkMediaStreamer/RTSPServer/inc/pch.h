@@ -18,14 +18,22 @@
 #include <mstcpip.h>
 #include <ws2tcpip.h>
 #include <mfidl.h>
-
+#include <windows.foundation.h>
+#include <windows.Storage.streams.h>
+#include <sstream>
 #include <winrt\base.h>
-#include <Shlwapi.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/windows.system.threading.h>
+#include <winrt\Windows.Foundation.h>
+#include <winrt\windows.system.threading.h>
 #include <winrt\Windows.Security.Cryptography.h>
 #include <winrt\Windows.Security.Cryptography.Core.h>
 #include <winrt\Windows.Security.Credentials.h>
-
+#include <winrt\Windows.Storage.Streams.h>
 #define HRESULT_EXCEPTION_BOUNDARY_START HRESULT hr = S_OK; try {
 #define HRESULT_EXCEPTION_BOUNDARY_END }catch(...) { hr = winrt::to_hresult();} return hr;
+#include "NetworkMediaStreamer.h"
+#include "RTSPServerControl.h"
+#include "SocketWrapper.h"
+#include "RtspSession.h"
+#include "RTSPServer.h"
+
+

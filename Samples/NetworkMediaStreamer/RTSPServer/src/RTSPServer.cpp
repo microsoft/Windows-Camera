@@ -2,7 +2,6 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 #include <pch.h>
-#include "RTSPServer.h"
 
 STDMETHODIMP RTSPServer::StopServer()
 {
@@ -86,7 +85,7 @@ STDMETHODIMP RTSPServer::StartServer()
                     return;
                 }
                 WSAResetEvent(pServer->m_acceptEvent.get());
-                
+
                 sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
                 int         ClientAddrLen = sizeof(ClientAddr);
                 char addr[INET_ADDRSTRLEN];
@@ -152,18 +151,18 @@ STDMETHODIMP RTSPServer::StartServer()
     HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
-RTSPSERVER_API STDMETHODIMP CreateRTSPServer(RTSPSuffixSinkMapView streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, winrt::array_view<PCCERT_CONTEXT> serverCerts, IRTSPServerControl** ppRTSPServerControl /*=empty*/)
+RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl /*=empty*/)
 {
     HRESULT_EXCEPTION_BOUNDARY_START;
-    
+
     winrt::check_pointer(ppRTSPServerControl);
-    if (bSecure && serverCerts.empty())
+    if (bSecure && !uCertCount)
     {
         winrt::check_hresult(SEC_E_NO_CREDENTIALS);
     }
     winrt::com_ptr<RTSPServer> spRTSPServer;
-    spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts));
-    *ppRTSPServerControl  = spRTSPServer.as<IRTSPServerControl>().detach();
+    spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts,uCertCount));
+    *ppRTSPServerControl = spRTSPServer.as<IRTSPServerControl>().detach();
 
     HRESULT_EXCEPTION_BOUNDARY_END;
 }

@@ -1,13 +1,17 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 
-#include "..\Common\inc\RTPMediaStreamer.h"
-#include "..\Common\inc\RTSPServerControl.h"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <Mferror.h>
+#include <mfidl.h>
+#include <mfreadwrite.h>
+#include <mfapi.h>
 #include <windows.media.h>
 #include <windows.media.core.interop.h>
+#include <windows.foundation.h>
+#include <windows.Storage.streams.h>
 #include <winrt\base.h>
 #include <winrt\Windows.Media.Capture.h>
 #include <winrt\Windows.Media.Capture.Frames.h>
@@ -17,8 +21,11 @@
 #include <winrt\Windows.Media.Devices.h>
 #include <winrt\Windows.Media.MediaProperties.h>
 #include <winrt\Windows.Networking.Connectivity.h>
-#include <mfreadwrite.h>
-#include <mfapi.h>
+#include <winrt\Windows.storage.streams.h>
+
+#include "..\Common\inc\NetworkMediaStreamer.h"
+#include "..\Common\inc\RTPMediaStreamer.h"
+#include "..\Common\inc\RTSPServerControl.h"
 using namespace winrt;
 using namespace Windows;
 using namespace Media::Capture;
@@ -79,14 +86,13 @@ std::vector<PCCERT_CONTEXT> getServerCertificate()
     if (aCertContext.empty())
     {
         printf("Error retrieving server certificate.");
-        //goto cleanup;
     }
 cleanup:
     if (hMyCertStore)
     {
         CertCloseStore(hMyCertStore, 0);
     }
-    return aCertContext;// .data(), aCertContext.data() + aCertContext.size() - 1);
+    return aCertContext;
 }
 
 std::map<winrt::hstring, std::vector<GUID>> streamMap =
@@ -218,8 +224,7 @@ int main()
 
         s.StreamingCaptureMode(StreamingCaptureMode::Video);
         mc.InitializeAsync(s).get();
-        auto streamers = winrt::single_threaded_map<winrt::hstring, IMediaExtension>();
-
+        auto streamers = winrt::RTSPSuffixSinkMap();
         auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
         IMediaEncodingProperties selectedProp(nullptr);
         uint32_t idx = 1;
@@ -252,10 +257,7 @@ int main()
             winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator() * 100, frameRate.Denominator() * 100));
             mediaTypes.push_back(spOutType.get());
             IMediaExtension mediaExtSink;
-            //winrt::com_ptr<IMFMediaSink> spMediaSink;
             winrt::check_hresult(CreateRTPMediaSink(mediaTypes, (IMFMediaSink**)put_abi(mediaExtSink)));
-
-            //winrt::copy_from_abi(mediaExtSink, spMediaSink.get());
             streamers.Insert(winrt::hstring(strm.first), mediaExtSink);
             mediaTypes.clear();
             spOutType = nullptr;
@@ -266,7 +268,7 @@ int main()
         check_hresult(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer", m_spAuthProvider.put()));
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
-        check_hresult(CreateRTSPServer(streamers.GetView(), ServerPort, false, m_spAuthProvider.get(), {}, serverHandle.put()));
+        check_hresult(CreateRTSPServer(streamers.as<ABI::RTSPSuffixSinkMap>().get(), ServerPort, false, m_spAuthProvider.get(),{},0, serverHandle.put() ));
 #ifndef  DISABLE_SECURE_RTSP
         try
         {
@@ -274,8 +276,7 @@ int main()
             check_hresult(GetAuthProviderInstance(AuthType::Basic, L"RTSPServer", spBasicAuthProvider.put()));
 
             auto serverCerts = getServerCertificate();
-            auto certs{ winrt::com_array<PCCERT_CONTEXT>(serverCerts.begin(), serverCerts.end()) };
-            check_hresult(CreateRTSPServer(streamers.GetView(), SecureServerPort, true, spBasicAuthProvider.get(),certs, serverHandleSecure.put()));
+            check_hresult(CreateRTSPServer(streamers.as<ABI::RTSPSuffixSinkMap>().get(), SecureServerPort, true, spBasicAuthProvider.get(), serverCerts.data(), serverCerts.size(), serverHandleSecure.put()));
         }
         catch (hresult_error const& ex)
         {
@@ -283,7 +284,7 @@ int main()
             serverHandleSecure = nullptr;
         }
 #endif
-        auto loggerdelegate = [&fileLogger](auto er, auto msg)
+        auto loggerdelegate = winrt::LogHandler([&fileLogger](auto er, auto msg)
         {
             fileLogger << msg.c_str();
             if (er)
@@ -294,12 +295,12 @@ int main()
             }
             fileLogger.flush();
 
-        };
+        });
         for (int i = 0; i < (int)LoggerType::LOGGER_MAX; i++)
         {
-            winrt::event_token t1, t2;
-            winrt::check_hresult(serverHandle->AddLogHandler((LoggerType)i, loggerdelegate, t1));
-            serverHandleSecure ? winrt::check_hresult(serverHandleSecure->AddLogHandler((LoggerType)i, loggerdelegate, t2)) : void(0);
+            EventRegistrationToken t1, t2;
+            winrt::check_hresult(serverHandle->AddLogHandler((LoggerType)i, loggerdelegate.as<ABI::LogHandler>().get(), &t1));
+            serverHandleSecure ? winrt::check_hresult(serverHandleSecure->AddLogHandler((LoggerType)i, loggerdelegate.as<ABI::LogHandler>().get(), &t2)) : void(0);
         }
         winrt::check_hresult(serverHandle->StartServer());
         serverHandleSecure ? winrt::check_hresult(serverHandleSecure->StartServer()) : void(0);
@@ -380,7 +381,7 @@ int main()
                 std::cin >> username;
                 std::cout << "\nEnter new password :- ";
                 std::cin >> password;
-                check_hresult( m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username), winrt::to_hstring(password)));
+                check_hresult( m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username).c_str(), winrt::to_hstring(password).c_str()));
             }
                 break;
             case '2':
@@ -388,7 +389,7 @@ int main()
                 std::string username;
                 std::cout << "\nEnter username :-  ";
                 std::cin >> username;
-                check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username)));
+                check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username).c_str()));
             }
                 break;
             case '0':

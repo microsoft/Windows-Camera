@@ -1,6 +1,5 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
-#include "NetworkMediaStreamer.h"
 
 #define RETURNIFSHUTDOWN if(m_bIsShutdown) return MF_E_SHUTDOWN;
 

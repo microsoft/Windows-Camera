@@ -1,9 +1,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
 
-#include "SocketWrapper.h"
-#include "RTSPServerControl.h"
-
 // supported command types
 enum class RTSP_CMD
 {
@@ -22,9 +19,9 @@ class RTSPSession
 public:
     RTSPSession(
         CSocketWrapper* rtspClientSocket,
-        RTSPSuffixSinkMapView streamers,
+        winrt::Windows::Foundation::Collections::PropertySet streamers,
         IRTSPAuthProvider* pAuthProvider,
-        winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggers);
+        winrt::event<winrt::LogHandler>* m_pLoggers);
     virtual ~RTSPSession();
 
     RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
@@ -60,7 +57,7 @@ private:
     u_short  m_ClientRTCPPort;                          // client port for UDP based RTCP transport  
     bool     m_TcpTransport;                            // if Tcp based streaming was activated
     uint32_t m_ssrc;
-    RTSPSuffixSinkMapView m_streamers;
+    winrt::Windows::Foundation::Collections::PropertySet m_streamers;
     winrt::com_ptr<IMFStreamSink> m_spCurrentStreamer;
 
     // parameters of the last received RTSP request
@@ -71,11 +68,11 @@ private:
     winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
     winrt::handle m_RtspReadEvent;
     winrt::handle m_callBackHandle;
-    winrt::delegate<BYTE*, size_t> m_packetHandler;
+    winrt::PacketHandler m_packetHandler;
     bool m_bStreamingStarted,m_bTerminate, m_bAuthorizationReceived;
     std::unique_ptr<BYTE[]> m_pTcpTxBuff;
     std::unique_ptr<BYTE[]> m_pTcpRxBuff;
     std::string m_urlSuffix;
     std::mutex m_readDelegateMutex;
-    winrt::event<winrt::delegate<winrt::hresult, winrt::hstring>>* m_pLoggerEvents;
+    winrt::event<winrt::LogHandler>* m_pLoggerEvents;
 };
