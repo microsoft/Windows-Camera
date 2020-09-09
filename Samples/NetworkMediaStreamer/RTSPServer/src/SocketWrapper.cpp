@@ -102,7 +102,7 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
     catch(...)
     {
         pSock->m_SecurityStatus = winrt::to_hresult();
-        pSock->m_hCtxt.dwLower = pSock->m_hCtxt.dwLower = 0;
+        pSock->m_hCtxt.dwUpper = pSock->m_hCtxt.dwLower = 0;
     }
 
     if (((SEC_I_CONTINUE_NEEDED == pSock->m_SecurityStatus)
