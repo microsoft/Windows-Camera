@@ -195,9 +195,9 @@ int main()
     try
     {
         auto filteredDevices = DeviceInformation::FindAllAsync(DeviceClass::VideoCapture).get();
-        std::wofstream fileLogger("log.txt");
-        fileLogger << L"StartLogging..";
-        loggerConsole = StartLoggerConsole(L"log.txt");
+        std::wofstream fileLogger("RTSPServer.log");
+        fileLogger << L"StartLogging..\n";
+        loggerConsole = StartLoggerConsole(L"RTSPServer.log");
 
         if (!filteredDevices.Size())
         {
@@ -286,12 +286,12 @@ int main()
 #endif
         auto loggerdelegate = winrt::LogHandler([&fileLogger](auto er, auto msg)
         {
-            fileLogger << msg.c_str();
+            fileLogger << msg.c_str() << "\n";
             if (er)
             {
-                fileLogger << L" ErrCode:" << std::hex << er;
+                fileLogger << L" ErrCode:" << std::hex << er <<"\n" << std::dec;
                 std::wcout << msg.c_str();
-                std::wcout << L" ErrCode:" << std::hex << er;
+                std::wcout << L" ErrCode:" << std::hex << er << "\n" << std::dec;
             }
             fileLogger.flush();
 

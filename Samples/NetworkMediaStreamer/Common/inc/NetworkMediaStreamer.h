@@ -37,11 +37,11 @@ MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DA")
 INetworkMediaStreamSink : public IMFStreamSink
 {
 public:
-    virtual STDMETHODIMP AddTransportHandler (ABI::PacketHandler* packethandler, LPCWSTR protocol = L"rtp", LPCWSTR param = L"") = 0;
-    virtual STDMETHODIMP AddNetworkClient(LPCWSTR destination, LPCWSTR protocol = L"rtp", LPCWSTR params = L"") = 0;
-    virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR destination) = 0;
-    virtual STDMETHODIMP RemoveTransportHandler(ABI::PacketHandler* packetHandler) = 0;
-    virtual STDMETHODIMP GenerateSDP(uint8_t* buf, size_t maxSize, LPCWSTR destination) = 0;
+    virtual STDMETHODIMP AddTransportHandler (ABI::PacketHandler* pPackethandler, LPCWSTR pProtocol = L"rtp", LPCWSTR pParam = L"") = 0;
+    virtual STDMETHODIMP RemoveTransportHandler(ABI::PacketHandler* pPacketHandler) = 0;
+    virtual STDMETHODIMP AddNetworkClient(LPCWSTR pDestination, LPCWSTR pProtocol = L"rtp", LPCWSTR pParams = L"") = 0;
+    virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR pDestination) = 0;
+    virtual STDMETHODIMP GenerateSDP(uint8_t* pBuf, size_t maxSize, LPCWSTR pDestination) = 0;
     virtual STDMETHODIMP Start(MFTIME hnsSystemTime, LONGLONG llClockStartOffset) = 0;
     virtual STDMETHODIMP Stop(MFTIME hnsSystemTime) = 0;
     virtual STDMETHODIMP Pause(MFTIME hnsSystemTime) = 0;

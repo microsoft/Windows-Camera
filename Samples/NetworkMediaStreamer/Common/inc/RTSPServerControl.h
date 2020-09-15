@@ -50,15 +50,15 @@ MIDL_INTERFACE("BC710897-4727-4154-B085-52C5F5A4047C")
 IRTSPAuthProvider : public ::IUnknown
 {
     virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) = 0;
-    virtual STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd) = 0;
+    virtual STDMETHODIMP Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod) = 0;
 };
 
 //EXTERN_C const IID IID_IRTSPAuthProviderCredStore;
 MIDL_INTERFACE("E155C9EF-66BF-48E8-BBF7-888C914AB453")
 IRTSPAuthProviderCredStore : public ::IUnknown
 {
-    virtual STDMETHODIMP AddUser(LPCWSTR userName, LPCWSTR password) = 0;
-    virtual STDMETHODIMP RemoveUser(LPCWSTR userName) = 0;
+    virtual STDMETHODIMP AddUser(LPCWSTR pUserName, LPCWSTR pPassword) = 0;
+    virtual STDMETHODIMP RemoveUser(LPCWSTR pUserName) = 0;
 };
 
 namespace ABI
@@ -95,11 +95,11 @@ IRTSPServerControl : public ::IUnknown
 public:
     virtual STDMETHODIMP StartServer() = 0;
     virtual STDMETHODIMP StopServer() = 0;
-    virtual STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler* handler, EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler* pHandler, EventRegistrationToken* pToken) = 0;
     virtual STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token) = 0;
-    virtual STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler* handler, EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler* pHandler, EventRegistrationToken* pToken) = 0;
     virtual STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, EventRegistrationToken token) = 0;
 };
 
-RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap *streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl);
-RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, LPCWSTR resourceName, IRTSPAuthProvider** ppRTSPAuthProvider);
+RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap *pStreamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* aServerCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl);
+RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, LPCWSTR pResourceName, IRTSPAuthProvider** ppRTSPAuthProvider);

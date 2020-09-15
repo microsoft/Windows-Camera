@@ -56,7 +56,7 @@ An instance of RTSP Server can be created by using the factory method-
 ---
 ```
  HRESULT CreateRTSPServer(
-    ABI::RTSPSuffixSinkMap *streamers,
+    ABI::RTSPSuffixSinkMap *pStreamers,
     uint16_t socketPort,
     bool bSecure,
     IRTSPAuthProvider* pAuthProvider,
@@ -68,7 +68,7 @@ An instance of RTSP Server can be created by using the factory method-
 ### Arguments  
 |  |  |
 | ----------- | ----------- |
-| streamers | Input map of MediaSink objects as IMediaExtention interface and the corrosponsing url suffix. |
+| pStreamers | Input map of MediaSink objects as IMediaExtention interface and the corrosponsing url suffix. |
 | socketPort | Input socket port on which the Server wil listen for RTSP requests. |
 | bSecure | Input bool flag indicating if the server uses secure tcp connection |  
 | pAuthProvider | Input pointer to the IRTSPAuthProvider interface to the authentication provider to be used by the server |
@@ -163,10 +163,20 @@ IRTSPServerControl : public ::IUnknown
 public:
     virtual STDMETHODIMP StartServer() = 0;
     virtual STDMETHODIMP StopServer() = 0;
-    virtual STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler* pHandler, EventRegistrationToken* pToken) = 0;
-    virtual STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token) = 0;
-    virtual STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler* handler, EventRegistrationToken* pToken) = 0;
-    virtual STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, EventRegistrationToken token) = 0;
+    virtual STDMETHODIMP AddLogHandler(
+        LoggerType type,
+        ABI::LogHandler* pHandler,
+        EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP RemoveLogHandler(
+        LoggerType type,
+        EventRegistrationToken token) = 0;
+    virtual STDMETHODIMP AddSessionStatusHandler(
+        LoggerType type, 
+        ABI::SessionStatusHandler* handler,
+        EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP RemoveSessionStatusHandler(
+        LoggerType type,
+        EventRegistrationToken token) = 0;
 };
 ```
 `IRTSPServerControl::StartServer()`  
@@ -180,7 +190,7 @@ Adds a handler delegate to capture logs from the server
 | | | |
 | ----------- | ----------- | -------- |
 | type | Enum LoggerType specifying which category of logs to be handled by the delegate | `LoggerType::ERRORS , LoggerType::WARNINGS,   LoggerType::RTSPMSGS, LoggerType::OTHER`|
-| pHandler | TypedHandler delegate taking HRESULT and HSTRING arguments | `auto handler = winrt::LogHandler([](HRESULT hr, HSTRING msg){ /* handle the logging*/});` `pHandler = hanlder.as<ABI::LogHandler>().get()` |
+| pHandler | TypedEventHandler delegate taking HRESULT and HSTRING arguments | `auto handler = winrt::LogHandler([](HRESULT hr, HSTRING msg){ /* handle the logging*/});` `pHandler = handler.as<ABI::LogHandler>().get()` |
 | pToken | token representing the delegate registration| See `RemoveLogHandler` |
 |
 
@@ -196,16 +206,93 @@ Removes the handler delegate that was added to capture logs from the server
 INetworkMediaStreamSink : public IMFStreamSink
 {
 public:
-    virtual STDMETHODIMP AddTransportHandler (ABI::PacketHandler* packethandler, LPCWSTR protocol = L"rtp", LPCWSTR param = L"") = 0;
-    virtual STDMETHODIMP AddNetworkClient(LPCWSTR destination, LPCWSTR protocol = L"rtp", LPCWSTR params = L"") = 0;
+    virtual STDMETHODIMP AddTransportHandler (
+        ABI::PacketHandler* packethandler,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR param = L"") = 0;
+    virtual STDMETHODIMP RemoveTransportHandler(
+        ABI::PacketHandler* packetHandler) = 0;
+    virtual STDMETHODIMP AddNetworkClient(
+        LPCWSTR destination,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR params = L"") = 0;
     virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR destination) = 0;
-    virtual STDMETHODIMP RemoveTransportHandler(ABI::PacketHandler* packetHandler) = 0;
-    virtual STDMETHODIMP GenerateSDP(uint8_t* buf, size_t maxSize, LPCWSTR destination) = 0;
-    virtual STDMETHODIMP Start(MFTIME hnsSystemTime, LONGLONG llClockStartOffset) = 0;
+    virtual STDMETHODIMP GenerateSDP(
+        uint8_t* buf,
+        size_t maxSize,
+        LPCWSTR destination) = 0;
+    virtual STDMETHODIMP Start(
+        MFTIME hnsSystemTime,
+        LONGLONG llClockStartOffset) = 0;
     virtual STDMETHODIMP Stop(MFTIME hnsSystemTime) = 0;
     virtual STDMETHODIMP Pause(MFTIME hnsSystemTime) = 0;
     virtual STDMETHODIMP Shutdown() = 0;
 };
 ```  
->TODO: Add details
+`INetworkMediaStreamSink::AddNetworkClient(
+        LPCWSTR pDestination,
+        LPCWSTR pProtocol = L"rtp",
+        LPCWSTR pParams = L"")`  
+Adds a UDP client destination to stream RTP packets and starts streaming to the specified destination
+| | | |
+| ----------- | ----------- | -------- |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+| pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+|
+
+`INetworkMediaStreamSink::RemoveNetworkClient(LPCWSTR pDestination)`  
+Stops streaming to the specified destination and removes the client destination.
+| | | |
+| ----------- | ----------- | -------- |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+|
+
+`INetworkMediaStreamSink::AddTransportHandler (
+        ABI::PacketHandler* pPackethandler,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR param = L"")`  
+Adds a custom packet transport handler delegate and starts calling the delegate everytime a packet is ready to be sent. This is used by RTSP server to handle RTP media packet delivery over TCP connections.
+| | | |
+| ----------- | ----------- | -------- |
+| pPackethandler | Input pointer to ABI interface of EventHandler delegate that takes IBuffer pointer as an argument.| e.g. `auto handler = winrt::PacketHandler([](IInspectable sender, IBuffer args){ /*handle the rtp packet- send it over tcp etc.*/});` `pPacketHandler = handler.as<ABI::PacketHandler>().get()`|
+| pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+|
+
+`INetworkMediaStreamSink::RemoveTransportHandler(
+        ABI::PacketHandler* pPacketHandler)`
+Removed the specified custom transport handler delegate and stops calling the specified delegate for future packets.
+| | | |
+| ----------- | ----------- | -------- |
+| pPackethandler | Input pointer to ABI interface of EventHandler delegate to be removed.| see: `INetworkMediaStreamSink::AddTransportHandler`|
+|
+
+
+`INetworkMediaStreamSink::GenerateSDP(
+        uint8_t* pBuf,
+        size_t maxSize,
+        LPCWSTR pDestination)`  
+Generated a Session Description Protocol buffer as per [RFC4566](https://tools.ietf.org/html/rfc4566)
+| | | |
+| ----------- | ----------- | -------- |
+| pBuf | Input pointer to the start of an allocated buffer to receive the SDP payload ||
+| maxSize | Input allocated size of the buffer pointed by pBuf| |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+|
+
+`INetworkMediaStreamSink::Start(
+        MFTIME hnsSystemTime,
+        LONGLONG llClockStartOffset)`    
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockStart](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockstart)
+
+`INetworkMediaStreamSink::Stop(MFTIME hnsSystemTime)`  
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockStop](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockstop)
+
+`INetworkMediaStreamSink::Pause(MFTIME hnsSystemTime)`  
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockPause](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockpause)
+
+`INetworkMediaStreamSink::Shutdown()`  
+This is used by the Sink to manage streaming clock states. Refer to [IMFMediaSink::Shutdown](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfmediasink-shutdown)
+
 ---
