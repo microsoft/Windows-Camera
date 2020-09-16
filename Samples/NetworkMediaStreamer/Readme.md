@@ -37,8 +37,8 @@ The RTPSink instance can be created using the factory method
 | dwMediaTypeCount | Input number of Media types in the array (number of streams to be created) |
 | ppMediaSink | Output pointer to the instance of the RTP MediaSink |
 ---
-### Return  
-HRESULT 
+### Return
+>HRESULT 
 : S_OK if succeeded. HRESULT error if failed. 
 ---
 
