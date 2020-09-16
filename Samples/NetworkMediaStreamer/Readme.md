@@ -239,14 +239,14 @@ Adds a UDP client destination to stream RTP packets and starts streaming to the 
 | pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
 | pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
 | pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
-|
+
 
 `INetworkMediaStreamSink::RemoveNetworkClient(LPCWSTR pDestination)`  
 Stops streaming to the specified destination and removes the client destination.
 | | | |
 | ----------- | ----------- | -------- |
 | pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
-|
+
 
 `INetworkMediaStreamSink::AddTransportHandler (
         ABI::PacketHandler* pPackethandler,
@@ -258,7 +258,7 @@ Adds a custom packet transport handler delegate and starts calling the delegate 
 | pPackethandler | Input pointer to ABI interface of EventHandler delegate that takes IBuffer pointer as an argument.| e.g. `auto handler = winrt::PacketHandler([](IInspectable sender, IBuffer args){ /*handle the rtp packet- send it over tcp etc.*/});` `pPacketHandler = handler.as<ABI::PacketHandler>().get()`|
 | pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
 | pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
-|
+
 
 `INetworkMediaStreamSink::RemoveTransportHandler(
         ABI::PacketHandler* pPacketHandler)`
@@ -266,7 +266,7 @@ Removed the specified custom transport handler delegate and stops calling the sp
 | | | |
 | ----------- | ----------- | -------- |
 | pPackethandler | Input pointer to ABI interface of EventHandler delegate to be removed.| see: `INetworkMediaStreamSink::AddTransportHandler`|
-|
+
 
 
 `INetworkMediaStreamSink::GenerateSDP(
@@ -279,7 +279,7 @@ Generated a Session Description Protocol buffer as per [RFC4566](https://tools.i
 | pBuf | Input pointer to the start of an allocated buffer to receive the SDP payload ||
 | maxSize | Input allocated size of the buffer pointed by pBuf| |
 | pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
-|
+
 
 `INetworkMediaStreamSink::Start(
         MFTIME hnsSystemTime,
