@@ -16,7 +16,7 @@ RTSPSession::RTSPSession(
     , m_spCurrentStreamer(nullptr)
     , m_pLoggerEvents(m_pLoggers)
     , m_bTerminate(false)
-    , m_bAuthorizationReceived(false)
+    , m_bAuthorizationReceived(!pAuthProvider)
 {
     auto time = MFGetSystemTime();
     m_RtspSessionID = (time>>32)^((uint32_t)time);         // create a session ID
@@ -261,16 +261,16 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
         CSeqPos = curRequest.find_first_not_of(" \t", CSeqPos);
         m_CSeq = curRequest.substr(CSeqPos, curRequest.find_first_of("\r\n", CSeqPos) - CSeqPos);
     }
-
-    auto authpos = curRequest.find("Authorization:");
-    m_bAuthorizationReceived =(authpos != std::string::npos);
-    if (m_bAuthorizationReceived)
+    if (m_spAuthProvider)
     {
-        auto auth = curRequest.substr(authpos, curRequest.find_first_of("\r\n", authpos));
-        m_bAuthorizationReceived = m_spAuthProvider? 
-            SUCCEEDED(m_spAuthProvider->Authorize( winrt::to_hstring(auth).c_str(), winrt::to_hstring(m_curAuthSessionMsg).c_str(), winrt::to_hstring(cmdName).c_str()))
-            : true;
+        auto authpos = curRequest.find("Authorization:");
+        if (authpos != std::string::npos)
+        {
+            auto auth = curRequest.substr(authpos, curRequest.find_first_of("\r\n", authpos));
+            m_bAuthorizationReceived = SUCCEEDED(m_spAuthProvider->Authorize(winrt::to_hstring(auth).c_str(), winrt::to_hstring(m_curAuthSessionMsg).c_str(), winrt::to_hstring(cmdName).c_str()));
+        }
     }
+
     return rtspCmdType;
 }
 
