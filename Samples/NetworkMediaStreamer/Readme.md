@@ -9,7 +9,7 @@ The NetworkMediaStreamer is a set of basic implementations of RTP streaming and 
  1. Using Windows APIs for network to implement RTP video streaming and RTSP server , and using [Schannel APIs](https://docs.microsoft.com/en-us/windows/win32/com/schannel) for secure RTSP.
  2. Using credential store using [PasswordVault APIs](https://docs.microsoft.com/en-us/uwp/api/windows.security.credentials.passwordvault?view=winrt-19041) 
 
- This base implementation suports H264 RTP via RTSP . The code can be extended very easily to support more RTP payloads and other protocols as well. Refer to this figure to understand the interaction between various components.
+ This base implementation supports H264 RTP via RTSP . The code can be extended very easily to support more RTP payloads and other protocols as well. Refer to this figure to understand the interaction between various components.
 
 ![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)
  ## RTPSink
@@ -18,7 +18,7 @@ The NetworkMediaStreamer is a set of basic implementations of RTP streaming and 
     - negotiating/setting media types and streaming states
     - supplying encoded samples to the sink.
  2. [INetworkMediaStreamSink](###INetworkMediaStreamSink)
-    - adding network desitnation end points for streaming
+    - adding network destination end points for streaming
     - adding custom packet transport handlers
 
 The RTPSink instance can be created using the factory method
