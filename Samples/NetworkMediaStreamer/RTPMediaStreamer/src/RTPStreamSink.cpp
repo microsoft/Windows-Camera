@@ -41,37 +41,54 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
         {
             m_localRTPPort = 6970;
         }
-        //else
+
+        sockaddr_in Server;
+        Server.sin_family = AF_INET;
+        Server.sin_addr.s_addr = INADDR_ANY;
+        for (u_short P = m_localRTPPort; P < 0xFFFE; P += 2)
         {
-            sockaddr_in Server;
-            Server.sin_family = AF_INET;
-            Server.sin_addr.s_addr = INADDR_ANY;
-            for (u_short P = m_localRTPPort; P < 0xFFFE; P += 2)
-            {
-                m_RtpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-                Server.sin_port = htons(P);
-                if (bind(m_RtpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
-                {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
-                    m_RtcpSocket = socket(AF_INET, SOCK_DGRAM, 0);
-                    Server.sin_port = htons(P + 1);
-                    if (bind(m_RtcpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
-                    {
-                        m_localRTPPort = P;
-                        m_localRTCPPort = P + 1;
-                        break;
-                    }
-                    else
-                    {
-                        closesocket(m_RtpSocket);
-                        closesocket(m_RtcpSocket);
-                    };
+            m_RtpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+            Server.sin_port = htons(P);
+            if (bind(m_RtpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
+            {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
+                m_RtcpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+                Server.sin_port = htons(P + 1);
+                if (bind(m_RtcpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
+                {
+                    m_localRTPPort = P;
+                    m_localRTCPPort = P + 1;
+                    break;
                 }
-                else closesocket(m_RtpSocket);
+                else
+                {
+                    closesocket(m_RtpSocket);
+                    m_RtpSocket = INVALID_SOCKET;
+                    closesocket(m_RtcpSocket);
+                    m_RtcpSocket = INVALID_SOCKET;
+                }
+            }
+            else
+            {
+                closesocket(m_RtpSocket);
+                m_RtpSocket = INVALID_SOCKET;
             }
         }
+
         inet_pton(AF_INET, destination.c_str(), &(m_remoteAddr.sin_addr));
         m_remoteAddr.sin_port = htons(m_remotePort);
         m_remoteAddr.sin_family = AF_INET;
+    }
+}
+
+TxContext::~TxContext()
+{
+    if (m_RtpSocket != INVALID_SOCKET)
+    {
+        closesocket(m_RtpSocket);
+    }
+    if (m_RtcpSocket != INVALID_SOCKET)
+    {
+        closesocket(m_RtcpSocket);
     }
 }
 
@@ -109,10 +126,7 @@ RTPVideoStreamSink::RTPVideoStreamSink(IMFMediaType* pMediaType, IMFMediaSink* p
     m_pTxBuf = winrt::Windows::Storage::Streams::Buffer((uint32_t)m_MTUSize);
 
 }
-RTPVideoStreamSink ::~RTPVideoStreamSink()
-{
-    //delete[] m_pTxBuf;
-}
+
 BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 {
     auto it = bufStart;
@@ -132,7 +146,6 @@ BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 void RTPVideoStreamSink::PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime)
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
-    //BYTE* pOut = m_pTxBuf;
     size_t szOut = m_MTUSize;
     while (sc < (bufIn + szIn))
     {
@@ -162,7 +175,7 @@ void RTPVideoStreamSink::SendPacket(winrt::Windows::Storage::Streams::IBuffer bu
 
     if (bLastNalOfFrame)
     {
-        pOut[1] = (byte)(h264payloadType | 1 << 7);  //last packet of frame marker bit
+        pOut[1] = (byte)(h264payloadType | 1 << 7);  // last packet of frame marker bit
     }
     else
     {
@@ -173,19 +186,19 @@ void RTPVideoStreamSink::SendPacket(winrt::Windows::Storage::Streams::IBuffer bu
     m_SequenceNumber++;
     for (auto& ct : m_RtpStreamers)
     {
-        auto ssrc = ct.second.m_ssrc;
+        auto ssrc = ct.second->m_ssrc;
         auto ts1 = ts;
         pOut[4] = (BYTE)((ts1 & 0xFF000000) >> 24);   // each image gets a timestamp
         pOut[5] = (BYTE)((ts1 & 0x00FF0000) >> 16);
         pOut[6] = (BYTE)((ts1 & 0x0000FF00) >> 8);
         pOut[7] = (BYTE)((ts1 & 0x000000FF));
 
-        pOut[8] = (BYTE)((ssrc & 0xFF000000) >> 24);// 4 BYTE SSRC (sychronization source identifier)
+        pOut[8] = (BYTE)((ssrc & 0xFF000000) >> 24); // 4 BYTE SSRC (synchronization source identifier)
         pOut[9] = (BYTE)((ssrc & 0x00FF0000) >> 16);
         pOut[10] = (BYTE)((ssrc & 0x0000FF00) >> 8);
         pOut[11] = (BYTE)((ssrc & 0x000000FF));
 
-        ct.second.SendPacket(buf);
+        ct.second->SendPacket(buf);
     }
 }
 
@@ -284,7 +297,7 @@ STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(ABI::PacketHandler* packeth
     std::string destination = std::to_string((intptr_t)packethandler);
     winrt::PacketHandler t;
     winrt::copy_from_abi(t, packethandler);
-    m_RtpStreamers.insert({ destination, TxContext((destination + "?" + winrt::to_string(params)),t) });
+    m_RtpStreamers.insert({ destination, std::make_unique<TxContext>((destination + "?" + winrt::to_string(params)),t) });
     HRESULT_EXCEPTION_BOUNDARY_END;
 }
 
@@ -297,7 +310,7 @@ STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(LPCWSTR destination, LPCWSTR p
     winrt::check_pointer(params);
     auto dest = winrt::to_string(destination);
 
-    m_RtpStreamers.insert({ dest, TxContext(dest + "?" + winrt::to_string(params)) });
+    m_RtpStreamers.insert({ dest, std::make_unique<TxContext>(dest + "?" + winrt::to_string(params)) });
 
     HRESULT_EXCEPTION_BOUNDARY_END;
 }
@@ -401,7 +414,7 @@ STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample)
         winrt::check_hresult(pSample->GetSampleTime(&llSampleTime));
         winrt::check_hresult(pSample->GetSampleDuration(&llSampleDur));
         MFTIME latency = MFGetSystemTime() - llSampleTime;
-        //std::cout << "\nlatency = " << latency / 10000;
+        // convert timestamp from 100ns units to 90Khz clock as per RTP standard 
         auto ts = ((llSampleTime) * 90) / 10000;
         if (m_packetizationMode == 1)
         {
