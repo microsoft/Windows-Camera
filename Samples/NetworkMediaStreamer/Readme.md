@@ -68,11 +68,11 @@ An instance of RTSP Server can be created by using the factory method-
 ### Arguments  
 |  |  |
 | ----------- | ----------- |
-| pStreamers | Input map of MediaSink objects as IMediaExtention interface and the corrosponsing url suffix. |
+| pStreamers | Input map of MediaSink objects as IMediaExtension interface and the corresponding url suffix. |
 | socketPort | Input socket port on which the Server wil listen for RTSP requests. |
 | bSecure | Input bool flag indicating if the server uses secure tcp connection |  
 | pAuthProvider | Input pointer to the IRTSPAuthProvider interface to the authentication provider to be used by the server |
-| aServerCerts | Input array of server certificate contexts to use for sercure tcp tls. |
+| aServerCerts | Input array of server certificate contexts to use for secure tcp tls. |
 | uCertCount | Input number of certificate contexts in the array |
 | ppRTSPServerControl | Output pointer to the [IRTSPServerControl](###IRTSPServerControl) interface to the RTSP server instance |
 ---
@@ -97,7 +97,7 @@ A base/sample implementation of AuthProvider is included in the source. An insta
 ### Arguments  
 |  |  |
 | ----------- | ----------- |
-|AuthType | Input array of MFMediaType objects which describe each stream of the sink |
+| authType | Input array of MFMediaType objects which describe each stream of the sink |
 | pResourceName | Input resource name to which the credentials are bound |
 | ppRTSPAuthProvider | Output pointer to the IRTSPAuthProvider interface to the auth provider instance |
 ---
@@ -126,14 +126,14 @@ Generates nonce and Gets new authentication request message from Auth provider
 | 
 
 `IRTSPAuthProvider::Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod)`  
-Verifies authorization responce received from the client  
+Verifies authorization response received from the client  
 ||||
 | ----------- | ----------- | -------- |
-| pAuthResp | Input pointer to Authorization responce received from client| e.g. `Authorization: Digest username="user", realm="BeyondTheWall", nonce="8e03237a99bc26d6914a562fc98b08593fec11a055040000", uri="rtsp://127.0.0.1:8554", response="742dd5a18cddb799a861461ae72570b2"`|
+| pAuthResp | Input pointer to Authorization response received from client| e.g. `Authorization: Digest username="user", realm="BeyondTheWall", nonce="8e03237a99bc26d6914a562fc98b08593fec11a055040000", uri="rtsp://127.0.0.1:8554", response="742dd5a18cddb799a861461ae72570b2"`|
 | pAuthSesMsg | Input pointer to the authentication request that was sent to client | e.g. `WWW-Authenticate: Digest realm="BeyondTheWall", nonce="6fc93a0604338c68070b75e49745baeab46c507155040000", algorithm=MD5, charset="UTF-8", stale=FALSE` |
 | pMethod | Input pointer to the name of the request method to be authenticated | e.g. `PLAY`| 
 | return value | S_OK if succeeded. HRESULT error if failed. | `HRESULT_FROM_WIN32(ERROR_INVALID_PASSWORD)  if authentication fails.`
-|
+
 
 ### IRTSPAuthProviderCredStore
 ```
@@ -149,7 +149,7 @@ Adds a new user to the credential store.
 | ----------- | ----------- | ----------- |
 | pUserName | Input pointer to the Username to be added to the cred store
 | pPassword | Input pointer to the password for the corresponding username
-|
+
 `IRTSPAuthProviderCredStore::RemoveUser(LPCWSTR pUserName)`  
 Removes a user from credential store
 ||||
@@ -180,7 +180,7 @@ public:
 };
 ```
 `IRTSPServerControl::StartServer()`  
-Starts the server by listening for incomming connections
+Starts the server by listening for incoming connections
 
 `IRTSPServerControl::StopServer()`  
  Stops listening to incoming connections and terminates existing connections/sessions
@@ -192,7 +192,7 @@ Adds a handler delegate to capture logs from the server
 | type | Enum LoggerType specifying which category of logs to be handled by the delegate | `LoggerType::ERRORS , LoggerType::WARNINGS,   LoggerType::RTSPMSGS, LoggerType::OTHER`|
 | pHandler | TypedEventHandler delegate taking HRESULT and HSTRING arguments | `auto handler = winrt::LogHandler([](HRESULT hr, HSTRING msg){ /* handle the logging*/});` `pHandler = handler.as<ABI::LogHandler>().get()` |
 | pToken | token representing the delegate registration| See `RemoveLogHandler` |
-|
+
 
 `IRTSPServerControl::RemoveLogHandler(LoggerType type, EventRegistrationToken token)`  
 Removes the handler delegate that was added to capture logs from the server
@@ -262,7 +262,7 @@ Adds a custom packet transport handler delegate and starts calling the delegate 
 
 `INetworkMediaStreamSink::RemoveTransportHandler(
         ABI::PacketHandler* pPacketHandler)`
-Removed the specified custom transport handler delegate and stops calling the specified delegate for future packets.
+Remove the specified custom transport handler delegate and stops calling the specified delegate for future packets.
 | | | |
 | ----------- | ----------- | -------- |
 | pPackethandler | Input pointer to ABI interface of EventHandler delegate to be removed.| see: `INetworkMediaStreamSink::AddTransportHandler`|
@@ -293,6 +293,6 @@ This is used by the Sink to manage streaming clock states. Refer to [IMFClockSta
 This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockPause](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockpause)
 
 `INetworkMediaStreamSink::Shutdown()`  
-This is used by the Sink to manage streaming clock states. Refer to [IMFMediaSink::Shutdown](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfmediasink-shutdown)
+This is used by the Sink to convey media sink state to the stream sink. Refer to [IMFMediaSink::Shutdown](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfmediasink-shutdown)
 
 ---
