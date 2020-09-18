@@ -98,8 +98,6 @@ cleanup:
 std::map<winrt::hstring, std::vector<GUID>> streamMap =
 {
     {L"/h264", {MFVideoFormat_H264}},
-    //{"/hevc",MFVideoFormat_HEVC},
-    //{"/mpeg2",MFVideoFormat_MPEG2}
 };
 
 #ifdef USE_FR
@@ -161,7 +159,7 @@ PROCESS_INFORMATION StartLoggerConsole(std::wstring filename)
         si.dwXCountChars = 40;
         si.dwYCountChars = 10;
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USEPOSITION | STARTF_PREVENTPINNING | STARTF_USECOUNTCHARS;
-        si.wShowWindow = SW_SHOWNOACTIVATE;// | SW_HIDE;
+        si.wShowWindow = SW_SHOWNOACTIVATE;
         // Start the child process. 
         if (!CreateProcess(NULL,   // No module name (use command line)
             (LPWSTR)cmdline.c_str(),        // Command line
@@ -172,7 +170,7 @@ PROCESS_INFORMATION StartLoggerConsole(std::wstring filename)
             NULL,           // Use parent's environment block
             NULL,           // Use parent's starting directory 
             &si,            // Pointer to STARTUPINFO structure
-            &pi)           // Pointer to PROCESS_INFORMATION structure
+            &pi)            // Pointer to PROCESS_INFORMATION structure
             )
         {
             check_win32(GetLastError());
@@ -188,34 +186,57 @@ void StopLoggerConsole(PROCESS_INFORMATION pi)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 }
+
+winrt::hstring GetDeviceSelectionFromUser()
+{
+    auto filteredDevices = DeviceInformation::FindAllAsync(DeviceClass::VideoCapture).get();
+    if (!filteredDevices.Size())
+    {
+        throw_hresult(MF_E_NO_CAPTURE_DEVICES_AVAILABLE);
+    }
+    int selection = 1;
+    auto deviceIter = filteredDevices.First();
+    while (deviceIter.HasCurrent())
+    {
+        auto device = deviceIter.Current();
+        std::wcout << std::endl << selection++ << L". " << device.Name().c_str() << L":" << device.Id().c_str();
+        deviceIter.MoveNext();
+    }
+    std::cout << "\nEnter Selection:";
+    std::cin >> selection; selection--;
+    return filteredDevices.GetAt(selection).Id();
+}
+void GetUserSelectionAndSetMediaFormat(MediaCapture &mc)
+{
+    auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
+    IMediaEncodingProperties selectedProp(nullptr);
+    uint32_t idx = 1;
+    for (auto f : formats)
+    {
+        auto format = f.try_as<VideoEncodingProperties>();
+        float fr = (float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator();
+        std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << /*std::setprecision(2) <<*/ fr << L":" << format.Subtype().c_str();
+    }
+    std::cout << "Enter format choice: ";
+    std::cin >> idx; idx--;
+    selectedProp = formats.GetAt(idx);
+    mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
+}
+
 int main()
 {
     std::cout << "VideoSteamer App \n";
     PROCESS_INFORMATION loggerConsole;
     try
     {
-        auto filteredDevices = DeviceInformation::FindAllAsync(DeviceClass::VideoCapture).get();
+       
         std::wofstream fileLogger("RTSPServer.log");
         fileLogger << L"StartLogging..\n";
         loggerConsole = StartLoggerConsole(L"RTSPServer.log");
-
-        if (!filteredDevices.Size())
-        {
-            throw_hresult(MF_E_NO_CAPTURE_DEVICES_AVAILABLE);
-        }
-        int selection = 1;
-        auto deviceIter = filteredDevices.First();
-        while (deviceIter.HasCurrent())
-        {
-            auto device = deviceIter.Current();
-            std::wcout << std::endl << selection++ << L". " << device.Name().c_str() << L":" << device.Id().c_str();
-            deviceIter.MoveNext();
-        }
-        std::cout << "\nEnter Selection:";
-        std::cin >> selection; selection--;
+       
         auto mc = MediaCapture();
         auto s = MediaCaptureInitializationSettings();
-        s.VideoDeviceId(filteredDevices.GetAt(selection).Id());
+        s.VideoDeviceId(GetDeviceSelectionFromUser());
 #ifdef USE_FR
         s.MemoryPreference(MediaCaptureMemoryPreference::Cpu);
 #else
@@ -224,26 +245,15 @@ int main()
 
         s.StreamingCaptureMode(StreamingCaptureMode::Video);
         mc.InitializeAsync(s).get();
+        GetUserSelectionAndSetMediaFormat(mc);
+
         auto streamers = winrt::RTSPSuffixSinkMap();
-        auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
-        IMediaEncodingProperties selectedProp(nullptr);
-        uint32_t idx = 1;
-        for (auto f : formats)
-        {
-            auto format = f.try_as<VideoEncodingProperties>();
-            float fr = (float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator();
-            std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << /*std::setprecision(2) <<*/ fr << L":" << format.Subtype().c_str();
-        }
-        std::cout << "Enter format choice: ";
-        std::cin >> idx; idx--;
-        selectedProp = formats.GetAt(idx);
-        mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
         BitmapSize sz;
         auto selectedFormat = mc.VideoDeviceController().GetMediaStreamProperties(MediaStreamType::VideoRecord).as<VideoEncodingProperties>(); //selectedProp.as<VideoEncodingProperties>();
         sz.Height = selectedFormat.Height();
         sz.Width = selectedFormat.Width();
         MediaRatio frameRate = selectedFormat.FrameRate();
-        for (auto strm : streamMap)
+        for (auto&& strm : streamMap)
         {
             std::vector<IMFMediaType*> mediaTypes;
             winrt::com_ptr<IMFMediaType> spOutType;
@@ -257,7 +267,7 @@ int main()
             winrt::check_hresult(MFSetAttributeRatio(spOutType.get(), MF_MT_FRAME_RATE, frameRate.Numerator() * 100, frameRate.Denominator() * 100));
             mediaTypes.push_back(spOutType.get());
             IMediaExtension mediaExtSink;
-            winrt::check_hresult(CreateRTPMediaSink(mediaTypes.data(), mediaTypes.size(), (IMFMediaSink**)put_abi(mediaExtSink)));
+            winrt::check_hresult(CreateRTPMediaSink(mediaTypes.data(), (DWORD)mediaTypes.size(), (IMFMediaSink**)put_abi(mediaExtSink)));
             streamers.Insert(winrt::hstring(strm.first), mediaExtSink);
             mediaTypes.clear();
             spOutType = nullptr;
@@ -308,7 +318,7 @@ int main()
         auto fsources = mc.FrameSources();
         MediaFrameSource selectedFs(nullptr);
         std::vector<hstring> preferredsubTypes = { L"NV12", L"YUY2", L"IYUV", L"ARGB32" };
-        for (auto fs : fsources)
+        for (auto&& fs : fsources)
         {
             if (fs.Value().Controller().VideoDeviceController().Id() == s.VideoDeviceId())
             {
@@ -338,9 +348,9 @@ int main()
                 if (!vf) return;
                 winrt::com_ptr<IMFSample> spSample;
                 vf.as<IVideoFrameNative>()->GetData(__uuidof(IMFSample), spSample.put_void());
-                for (uint32_t i = 0; i < spSinkWriters.size(); i++)
+                for(auto&& sinkWriter : spSinkWriters)
                 {
-                    spSinkWriters[i]->WriteSample(0, spSample.get());
+                    sinkWriter->WriteSample(0, spSample.get());
                 }
             });
         fr.StartAsync();
@@ -354,9 +364,9 @@ int main()
         std::cout << "\nStarted Capture and RTSP Server.\n";
         auto hostnames = winrt::Windows::Networking::Connectivity::NetworkInformation::GetHostNames();
         std::cout << "\nAvailable links:\n";
-        for (auto hname : hostnames)
+        for (auto&& hname : hostnames)
         {
-            for (auto s : streamers)
+            for (auto&& s : streamers)
             {
                 std::wcout << L"rtsp://" << hname.DisplayName().c_str() << L":" << ServerPort << s.Key().c_str() << std::endl;
                 if (serverHandleSecure)
@@ -369,7 +379,7 @@ int main()
         char c = 1;
         while (c != 0)
         {
-            std::cout << "\n 1. Add User\n 2. Remove User \n 0. Quit\n You choice:" ;
+            std::cout << "\n 1. Add User\n 2. Remove User \n 0. Quit\n Your choice:" ;
 
             std::cin >> c;
             switch (c)
