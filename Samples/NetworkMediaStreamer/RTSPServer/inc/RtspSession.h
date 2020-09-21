@@ -26,7 +26,7 @@ public:
         winrt::event<winrt::LogHandler>* m_pLoggers);
     virtual ~RTSPSession();
 
-    RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
+    virtual RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
     int GetStreamID();
     SOCKET GetSocket() 
     { 

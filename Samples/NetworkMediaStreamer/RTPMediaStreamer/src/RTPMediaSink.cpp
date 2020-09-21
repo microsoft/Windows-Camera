@@ -212,6 +212,7 @@ RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(IMFMediaType** apMediaTypes
     std::vector<winrt::com_ptr<IMFMediaType>> mediaTypes(dwMediaTypeCount);
     for (DWORD i = 0; i < dwMediaTypeCount; i++)
     {
+        winrt::check_pointer(apMediaTypes[i]);
         mediaTypes[i].copy_from(apMediaTypes[i]);
     }
     *ppMediaSink = RTPMediaSink::CreateInstance(mediaTypes);
