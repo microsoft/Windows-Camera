@@ -28,7 +28,10 @@ public:
 
     RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
     int GetStreamID();
-
+    SOCKET GetSocket() 
+    { 
+        return m_pRtspClient->GetSocket(); 
+    }
     void BeginSession(winrt::delegate<RTSPSession*> completed);
 private:
     void Init();

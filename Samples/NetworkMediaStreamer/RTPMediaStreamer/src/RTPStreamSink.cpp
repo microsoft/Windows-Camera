@@ -15,16 +15,16 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
     , m_SequenceNumber(0)
 {
     memset(&m_remoteAddr, 0, sizeof(m_remoteAddr));
+    m_ssrc = 0;
     std::string param = "ssrc=";
     auto sep2 = destination.find(param);
     if (sep2 != std::string::npos)
     {
         auto sep3 = destination.find("&", sep2);
-        m_ssrc = std::stoi(destination.substr(sep2 + param.size(), sep3 - sep2));
-    }
-    else
-    {
-        m_ssrc = 0;
+        if (sep3 != std::string::npos)
+        {
+            m_ssrc = std::stoi(destination.substr(sep2 + param.size(), sep3 - sep2));
+        }
     }
 
     if (!packetHandler)

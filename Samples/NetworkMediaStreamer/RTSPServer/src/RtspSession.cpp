@@ -308,6 +308,7 @@ void RTSPSession::HandleCmdDESCRIBE()
     char   SDPBuf[1024];
     if (m_pRtspClient.get()->IsClientCertAuthenticated() || m_bAuthorizationReceived)
     {
+        InitUDPTransport();
         std::string dest = m_RtspClientAddr + std::string(":") + std::to_string(m_LocalRTPPort);
         m_spCurrentStreamer.as<INetworkMediaStreamSink>()->GenerateSDP((uint8_t*)SDPBuf, 1024, winrt::to_hstring(dest).c_str());
 

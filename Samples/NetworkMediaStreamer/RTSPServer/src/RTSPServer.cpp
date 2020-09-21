@@ -14,10 +14,6 @@ STDMETHODIMP RTSPServer::StopServer()
     }
     WSACloseEvent(m_acceptEvent.detach());
 
-    for (auto& session : m_Sessions)
-    {
-        delete session.first;
-    }
     m_Sessions.clear();
 
     closesocket(m_masterSocket);
@@ -122,20 +118,20 @@ STDMETHODIMP RTSPServer::StartServer()
                     pServer->m_LoggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
                     return;
                 }
-                RTSPSession* pRtspSession = new RTSPSession(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents);
-                pServer->m_Sessions.insert({ pRtspSession, clientSocket });
-                pServer->m_SessionStatusEvents((uintptr_t)pRtspSession, SessionStatus::SessionStarted);
+                
+                pServer->m_Sessions.insert(
+                    { 
+                    clientSocket,
+                    std::make_unique<RTSPSession>(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents) 
+                    });
+                pServer->m_SessionStatusEvents(pServer->m_Sessions[clientSocket]->GetStreamID(), SessionStatus::SessionStarted);
+                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring(pServer->m_Sessions[clientSocket]->GetStreamID()));
 
-                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring((uintptr_t)pRtspSession));
-
-                pRtspSession->BeginSession([pServer](RTSPSession* pSession)
+                pServer->m_Sessions[clientSocket]->BeginSession([pServer](RTSPSession* pSession)
                     {
-                        pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring((uintptr_t)pSession));
-
-                        pServer->m_Sessions.erase(pSession);
-                        pServer->m_SessionStatusEvents((uintptr_t)pSession, SessionStatus::SessionEnded);
-                        delete pSession;
-
+                        pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring(pSession->GetStreamID()));
+                        pServer->m_SessionStatusEvents(pSession->GetStreamID(), SessionStatus::SessionEnded);
+                        pServer->m_Sessions.erase(pSession->GetSocket());
                     });
             }
             catch (...)
