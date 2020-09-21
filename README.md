@@ -77,6 +77,8 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
  <tr>
   <td><a href="Samples/MediaCaptureSampleExtendedControl">WinRT application demonstrating use of custom KS Camera Extended Properties</a></td>
  </tr>
+</table>
+<table>
  <tr>
   <td><a href="Samples/NetworkMediaStreamer"> Win32 Desktop application and libraries demonstrating use of Windows APIs and Windows Media Foundation APIs for RTP/RTSP streaming from camera</a></td>
  </tr>
