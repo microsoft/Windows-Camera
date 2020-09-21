@@ -37,7 +37,7 @@ public:
 
     //IMFMediaSink
     STDMETHODIMP GetCharacteristics(
-        /* [out] */ __RPC__out DWORD* pdwCharacteristics) noexcept
+        /* [out] */ __RPC__out DWORD* pdwCharacteristics) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (!pdwCharacteristics)
@@ -51,21 +51,21 @@ public:
     STDMETHODIMP AddStreamSink(
         /* [in] */ DWORD dwStreamSinkIdentifier,
         /* [in] */ __RPC__in_opt IMFMediaType* pMediaType,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
         RETURNIFSHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP RemoveStreamSink(
-        /* [in] */ DWORD dwStreamSinkIdentifier) noexcept
+        /* [in] */ DWORD dwStreamSinkIdentifier) noexcept override
     {
         RETURNIFSHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP GetStreamSinkCount(
-        /* [out] */ __RPC__out DWORD* pcStreamSinkCount) noexcept
+        /* [out] */ __RPC__out DWORD* pcStreamSinkCount) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (!pcStreamSinkCount)
@@ -81,7 +81,7 @@ public:
 
     STDMETHODIMP GetStreamSinkByIndex(
         /* [in] */ DWORD dwIndex,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (!ppStreamSink)
@@ -98,7 +98,7 @@ public:
 
     STDMETHODIMP GetStreamSinkById(
         /* [in] */ DWORD dwStreamSinkIdentifier,
-        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
+        /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (dwStreamSinkIdentifier > m_spStreamSinks.size())
@@ -113,7 +113,7 @@ public:
     }
 
     STDMETHODIMP SetPresentationClock(
-        /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock) noexcept
+        /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (m_spClock)
@@ -127,7 +127,7 @@ public:
     }
 
     STDMETHODIMP GetPresentationClock(
-        /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock) noexcept
+        /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock) noexcept override
     {
         RETURNIFSHUTDOWN;
         if (!ppPresentationClock)
@@ -159,7 +159,7 @@ public:
     }
 
     // IMFClockStateSink methods
-    STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset) noexcept
+    STDMETHODIMP OnClockStart(MFTIME hnsSystemTime, LONGLONG llClockStartOffset) noexcept override
     {
         HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
@@ -169,7 +169,7 @@ public:
         }
         return hr;
     }
-    STDMETHODIMP OnClockStop(MFTIME hnsSystemTime) noexcept
+    STDMETHODIMP OnClockStop(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
@@ -179,7 +179,7 @@ public:
         }
         return hr;
     }
-    STDMETHODIMP OnClockPause(MFTIME hnsSystemTime) noexcept
+    STDMETHODIMP OnClockPause(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
@@ -189,7 +189,7 @@ public:
         }
         return hr;
     }
-    STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime) noexcept
+    STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
         for (auto strm : m_spStreamSinks)
@@ -199,7 +199,7 @@ public:
         }
         return hr;
     }
-    STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate) noexcept
+    STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate) noexcept override
     {
         return S_OK;
     }

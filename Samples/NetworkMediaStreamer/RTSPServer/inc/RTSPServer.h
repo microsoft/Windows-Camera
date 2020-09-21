@@ -30,7 +30,7 @@ public:
     }
 
     // IRTSPServerControl
-    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler * handler, EventRegistrationToken * pToken)
+    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler * handler, EventRegistrationToken * pToken) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(pToken);
@@ -41,7 +41,7 @@ public:
         winrt::copy_to_abi(token, *pToken);
         HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token)
+    STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::event_token tk;
@@ -50,7 +50,7 @@ public:
         HRESULT_EXCEPTION_BOUNDARY_END;
     }
 
-    STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler * handler, EventRegistrationToken* pToken)
+    STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler * handler, EventRegistrationToken* pToken) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::SessionStatusHandler h;
@@ -67,8 +67,8 @@ public:
         m_SessionStatusEvents.remove(tk);
         HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    STDMETHODIMP StartServer();
-    STDMETHODIMP StopServer();
+    STDMETHODIMP StartServer() override;
+    STDMETHODIMP StopServer() override;
 
 private:
 

@@ -26,7 +26,7 @@ class CAuthProvider : public winrt::implements<CAuthProvider, IRTSPAuthProvider,
     }
 public:
 
-    STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage)
+    STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(pAuthSessionMessage);
@@ -49,7 +49,7 @@ public:
     }
 
 
-    STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd)
+    STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(authResp);
@@ -171,7 +171,7 @@ public:
         HRESULT_EXCEPTION_BOUNDARY_END;
     }
 
-    STDMETHODIMP AddUser(LPCWSTR userName, LPCWSTR password)
+    STDMETHODIMP AddUser(LPCWSTR userName, LPCWSTR password) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(userName);
@@ -181,7 +181,7 @@ public:
         vault.Add(cr);
         HRESULT_EXCEPTION_BOUNDARY_END;
     }
-    STDMETHODIMP RemoveUser(LPCWSTR userName)
+    STDMETHODIMP RemoveUser(LPCWSTR userName) override
     {
         HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(userName);
