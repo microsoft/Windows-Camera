@@ -64,6 +64,7 @@ RTSPSession::~RTSPSession()
         WSACloseEvent(m_RtspReadEvent.detach());
     }
 }
+
 void RTSPSession::InitTCPTransport()
 {
 
@@ -83,6 +84,7 @@ void RTSPSession::InitTCPTransport()
     });
 
 }
+
 void RTSPSession::InitUDPTransport()
 {
     sockaddr_in Server;
@@ -115,6 +117,7 @@ void RTSPSession::InitUDPTransport()
     };
 
 }
+
 void RTSPSession::Init()
 {
     m_CSeq.clear();
@@ -406,6 +409,7 @@ void RTSPSession::StopIfStreaming()
     }
     m_bStreamingStarted = false;
 }
+
 void RTSPSession::HandleCmdPLAY()
 {
     std::string   Response;
@@ -468,6 +472,7 @@ void RTSPSession::HandleCmdTEARDOWN()
 {
     StopIfStreaming();
 }
+
 void RTSPSession::Handle_RtspPAUSE()
 {
     std::string   Response;// [1024] ;

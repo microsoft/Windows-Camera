@@ -74,7 +74,7 @@ private:
 
     winrt::RTSPSuffixSinkMap m_streamers;
 
-    std::map<RTSPSession*, SOCKET> m_Sessions;
+    std::map<SOCKET,std::unique_ptr<RTSPSession>> m_Sessions;
     SOCKET      m_masterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
     winrt::handle m_acceptEvent;
     winrt::handle m_callbackHandle;
