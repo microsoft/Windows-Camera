@@ -364,7 +364,7 @@ STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWS
                 p.Length(3);
                 profileIdc = winrt::to_string(winrt::Windows::Security::Cryptography::CryptographicBuffer::EncodeToHexString(p));
             }
-            memcpy_s(p.data(), p.Capacity(), sc, nalsz);
+            winrt::check_win32(memcpy_s(p.data(), p.Capacity(), sc, nalsz));
             p.Length((uint32_t)nalsz);
             auto paramSet = winrt::Windows::Security::Cryptography::CryptographicBuffer::EncodeToBase64String(p);
             paramSets += winrt::to_string(paramSet) + ",";
@@ -395,7 +395,7 @@ STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWS
             + "; sprop-parameter-sets="
             + paramSets + "; profile-level-id=" + profileIdc + "\n";
     }
-    memcpy_s(buf, maxSize, sdp.c_str(), sdp.size());
+    winrt::check_win32(memcpy_s(buf, maxSize, sdp.c_str(), sdp.size()));
     buf[sdp.size()] = 0;
     HRESULT_EXCEPTION_BOUNDARY_END;
 }
