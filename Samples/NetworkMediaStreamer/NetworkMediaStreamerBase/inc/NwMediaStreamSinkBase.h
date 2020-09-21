@@ -5,8 +5,7 @@
 
 #define RETURNIFSHUTDOWN if(m_bIsShutdown) return MF_E_SHUTDOWN;
 
-#define HRESULT_EXCEPTION_BOUNDARY_START HRESULT hr = S_OK; try {
-#define HRESULT_EXCEPTION_BOUNDARY_END }catch(...) { hr = winrt::to_hresult();} return hr;
+#define HRESULT_EXCEPTION_BOUNDARY_FUNC catch(...) { auto hr = winrt::to_hresult(); return hr;}
 
 class NwMediaStreamSinkBase  : public winrt::implements<NwMediaStreamSinkBase, INetworkMediaStreamSink, IMFStreamSink, IMFMediaEventGenerator>
 {

@@ -13,7 +13,7 @@ enum class RTSP_CMD
     PLAY,
     TEARDOWN
 };
-#define RTP_DEFAULT_PORT 54554
+#define RTP_DEFAULT_PORT       54554
 #define RTSP_BUFFER_SIZE       10000    // for incoming requests, and outgoing responses
 #define RTSP_PARAM_STRING_MAX  200
 class RTSPSession

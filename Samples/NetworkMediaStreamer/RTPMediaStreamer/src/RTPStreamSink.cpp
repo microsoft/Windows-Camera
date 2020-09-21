@@ -284,9 +284,8 @@ void RTPVideoStreamSink::PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSam
 
 }
 
-STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(ABI::PacketHandler* packethandler, LPCWSTR protocol /*= L"rtp"*/, LPCWSTR params /*=L""*/)
+STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(ABI::PacketHandler* packethandler, LPCWSTR protocol /*= L"rtp"*/, LPCWSTR params /*=L""*/) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(packethandler);
     winrt::check_pointer(protocol);
@@ -300,12 +299,11 @@ STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(ABI::PacketHandler* packeth
     winrt::PacketHandler t;
     winrt::copy_from_abi(t, packethandler);
     m_RtpStreamers.insert({ destination, std::make_unique<TxContext>((destination + "?" + winrt::to_string(params)),t) });
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(LPCWSTR destination, LPCWSTR protocol /*=L"rtp"*/, LPCWSTR params /*= L""*/)
+STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(LPCWSTR destination, LPCWSTR protocol /*=L"rtp"*/, LPCWSTR params /*= L""*/) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(destination);
     winrt::check_pointer(protocol);
@@ -314,32 +312,29 @@ STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(LPCWSTR destination, LPCWSTR p
 
     m_RtpStreamers.insert({ dest, std::make_unique<TxContext>(dest + "?" + winrt::to_string(params)) });
 
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-STDMETHODIMP RTPVideoStreamSink::RemoveNetworkClient(LPCWSTR destination)
+STDMETHODIMP RTPVideoStreamSink::RemoveNetworkClient(LPCWSTR destination) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(destination);
     auto dest = winrt::to_string(destination);
     m_RtpStreamers.erase(dest);
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-STDMETHODIMP RTPVideoStreamSink::RemoveTransportHandler(ABI::PacketHandler* packetHandler)
+STDMETHODIMP RTPVideoStreamSink::RemoveTransportHandler(ABI::PacketHandler* packetHandler) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(packetHandler);
     std::string destination = std::to_string((intptr_t)packetHandler);
     m_RtpStreamers.erase(destination);
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWSTR dest)
+STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWSTR dest) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     std::string paramSets;
     std::string profileIdc;
     auto destination = winrt::to_string(dest);
@@ -397,11 +392,11 @@ STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWS
     }
     winrt::check_win32(memcpy_s(buf, maxSize, sdp.c_str(), sdp.size()));
     buf[sdp.size()] = 0;
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
 //IMFSampleGrabberCallback
-STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample)
+STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample) noexcept
 {
     auto lock = std::lock_guard(m_guardlock);
     winrt::com_ptr<IMFMediaBuffer> spMediaBuf;

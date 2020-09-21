@@ -35,7 +35,7 @@ class RTPVideoStreamSink  final : public NwMediaStreamSinkBase
     RTPVideoStreamSink(IMFMediaType *pMT, IMFMediaSink* pParent, DWORD dwStreamID);
     virtual ~RTPVideoStreamSink () = default;
     BYTE* FindSC(BYTE* bufStart, BYTE* bufEnd);
-    STDMETHODIMP PacketizeAndSend(IMFSample *pSample);
+    STDMETHODIMP PacketizeAndSend(IMFSample *pSample) noexcept;
     void PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime);
 
     void SendPacket(winrt::Windows::Storage::Streams::IBuffer buf, LONGLONG ts, bool bLastNalOfFrame);

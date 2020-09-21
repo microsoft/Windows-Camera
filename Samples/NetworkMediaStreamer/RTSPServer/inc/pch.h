@@ -30,8 +30,7 @@
 #include <winrt\Windows.Security.Cryptography.Core.h>
 #include <winrt\Windows.Security.Credentials.h>
 #include <winrt\Windows.Storage.Streams.h>
-#define HRESULT_EXCEPTION_BOUNDARY_START HRESULT hr = S_OK; try {
-#define HRESULT_EXCEPTION_BOUNDARY_END }catch(...) { hr = winrt::to_hresult();} return hr;
+#define HRESULT_EXCEPTION_BOUNDARY_FUNC catch(...) { auto hr = winrt::to_hresult(); return hr;}
 #include "NetworkMediaStreamer.h"
 #include "RTSPServerControl.h"
 #include "SocketWrapper.h"

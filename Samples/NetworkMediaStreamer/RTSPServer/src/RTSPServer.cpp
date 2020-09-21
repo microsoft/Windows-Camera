@@ -4,9 +4,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 #include <pch.h>
 
-STDMETHODIMP RTSPServer::StopServer()
+STDMETHODIMP RTSPServer::StopServer() try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
@@ -19,12 +18,11 @@ STDMETHODIMP RTSPServer::StopServer()
     closesocket(m_masterSocket);
     WSACleanup();
 
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-STDMETHODIMP RTSPServer::StartServer()
+STDMETHODIMP RTSPServer::StartServer() try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     auto apiLock = std::lock_guard(m_apiGuard);
     if (m_callbackHandle)
     {
@@ -145,13 +143,11 @@ STDMETHODIMP RTSPServer::StartServer()
             }
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD));
 
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl /*=empty*/)
+RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl /*=empty*/) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
-
     winrt::check_pointer(ppRTSPServerControl);
     if (bSecure && !uCertCount)
     {
@@ -161,6 +157,6 @@ RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, 
     spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts,uCertCount));
     *ppRTSPServerControl = spRTSPServer.as<IRTSPServerControl>().detach();
 
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
 

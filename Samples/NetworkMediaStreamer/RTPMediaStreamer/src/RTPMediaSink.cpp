@@ -205,9 +205,8 @@ public:
     }
 };
 
-RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(IMFMediaType** apMediaTypes, DWORD dwMediaTypeCount, IMFMediaSink** ppMediaSink)
+RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(IMFMediaType** apMediaTypes, DWORD dwMediaTypeCount, IMFMediaSink** ppMediaSink) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     winrt::check_pointer(ppMediaSink);
     std::vector<winrt::com_ptr<IMFMediaType>> mediaTypes(dwMediaTypeCount);
     for (DWORD i = 0; i < dwMediaTypeCount; i++)
@@ -216,5 +215,5 @@ RTPMEDIASTREAMER_API STDMETHODIMP CreateRTPMediaSink(IMFMediaType** apMediaTypes
         mediaTypes[i].copy_from(apMediaTypes[i]);
     }
     *ppMediaSink = RTPMediaSink::CreateInstance(mediaTypes);
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC

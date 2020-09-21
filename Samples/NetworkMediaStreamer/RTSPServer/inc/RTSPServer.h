@@ -30,43 +30,42 @@ public:
     }
 
     // IRTSPServerControl
-    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler * handler, EventRegistrationToken * pToken) override
+    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler * handler, EventRegistrationToken * pToken) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(pToken);
         winrt::check_pointer(handler);
         winrt::LogHandler h;
         winrt::copy_from_abi(h, handler);
         auto token = m_LoggerEvents[(int)type].add(h);
         winrt::copy_to_abi(token, *pToken);
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
-    STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token) override
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
+
+    STDMETHODIMP RemoveLogHandler(LoggerType type, EventRegistrationToken token) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::event_token tk;
         winrt::copy_from_abi(tk, token);
         m_LoggerEvents[(int)type].remove(tk);
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-    STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler * handler, EventRegistrationToken* pToken) override
+    STDMETHODIMP AddSessionStatusHandler(LoggerType type, ABI::SessionStatusHandler* handler, EventRegistrationToken* pToken) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::SessionStatusHandler h;
         winrt::copy_from_abi(h, handler);
         auto token = m_SessionStatusEvents.add(h);
         winrt::copy_to_abi(token, *pToken);
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
-    STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, EventRegistrationToken token)
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
+
+    STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, EventRegistrationToken token) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::event_token tk;
         winrt::copy_from_abi(tk, token);
         m_SessionStatusEvents.remove(tk);
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
+
     STDMETHODIMP StartServer() override;
     STDMETHODIMP StopServer() override;
 

@@ -10,25 +10,10 @@ using namespace Cryptography;
 
 class CAuthProvider : public winrt::implements<CAuthProvider, IRTSPAuthProvider, IRTSPAuthProviderCredStore>
 {
-    std::string GetValueForParam(std::string message, std::string param)
-    {
-        auto idx = message.find(param);
-        std::string val;
-        if (idx != std::string::npos)
-        {
-            idx += param.size();
-            if (message[idx] == '\"') idx++;
-            auto endIdx = message.find_first_of("\" \r\n,", idx);
-            val = message.substr(idx, endIdx - idx);
-        }
-        return val;
-
-    }
 public:
 
-    STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) override
+    STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(pAuthSessionMessage);
         std::string authString;
         if ((m_authType == AuthType::Both) || (m_authType == AuthType::Basic))
@@ -45,13 +30,12 @@ public:
         }
 
         *pAuthSessionMessage = reinterpret_cast<HSTRING> (winrt::detach_abi(winrt::to_hstring(authString)));
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
 
-    STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd) override
+    STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(authResp);
         winrt::check_pointer(authSesMsg);
         winrt::check_pointer(mthd);
@@ -168,22 +152,21 @@ public:
         {
             winrt::check_win32(ERROR_INVALID_PASSWORD);
         }
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-    STDMETHODIMP AddUser(LPCWSTR userName, LPCWSTR password) override
+    STDMETHODIMP AddUser(LPCWSTR userName, LPCWSTR password) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(userName);
         winrt::check_pointer(password);
         auto vault = PasswordVault();
         auto cr = PasswordCredential(m_resourceName, userName, winrt::hstring(password));
         vault.Add(cr);
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
-    STDMETHODIMP RemoveUser(LPCWSTR userName) override
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
+
+    STDMETHODIMP RemoveUser(LPCWSTR userName) override try
     {
-        HRESULT_EXCEPTION_BOUNDARY_START;
         winrt::check_pointer(userName);
         auto vault = PasswordVault();
         auto creds = vault.FindAllByUserName(userName);
@@ -195,8 +178,8 @@ public:
                 break;
             }
         }
-        HRESULT_EXCEPTION_BOUNDARY_END;
-    }
+        return S_OK;
+    }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
     static IRTSPAuthProvider* CreateInstance(AuthType authtype, winrt::hstring resourceName)
     {
@@ -217,15 +200,29 @@ private:
     }
     virtual  ~CAuthProvider() = default;
 
+    std::string GetValueForParam(std::string message, std::string param)
+    {
+        auto idx = message.find(param);
+        std::string val;
+        if (idx != std::string::npos)
+        {
+            idx += param.size();
+            if (message[idx] == '\"') idx++;
+            auto endIdx = message.find_first_of("\" \r\n,", idx);
+            val = message.substr(idx, endIdx - idx);
+        }
+        return val;
+
+    }
+
     winrt::hstring m_resourceName;
     AuthType m_authType;
     CryptographicHash m_hashMD5, m_hashSHA256;
 };
 
-RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, LPCWSTR resourceName, IRTSPAuthProvider** ppRTSPAuthProvider)
+RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, LPCWSTR resourceName, IRTSPAuthProvider** ppRTSPAuthProvider) try
 {
-    HRESULT_EXCEPTION_BOUNDARY_START;
     winrt::check_pointer(ppRTSPAuthProvider);
     *ppRTSPAuthProvider = CAuthProvider::CreateInstance(authType, resourceName);
-    HRESULT_EXCEPTION_BOUNDARY_END;
-}
+    return S_OK;
+}HRESULT_EXCEPTION_BOUNDARY_FUNC
