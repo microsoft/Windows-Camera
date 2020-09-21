@@ -37,7 +37,7 @@
     <ProjectGuid>{763269FF-37EB-4A0A-B152-0924CFA81FFF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VideoStreamer</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectName>RTPMediaStreamer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
