@@ -1,4 +1,6 @@
-// Copyright (C) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for more information
+
 #include <pch.h>
 
 class RTPMediaSink
@@ -82,7 +84,10 @@ public:
         /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept
     {
         RETURNIFSHUTDOWN;
-        if (!ppStreamSink) return E_POINTER;
+        if (!ppStreamSink)
+        {
+            return E_POINTER;
+        }
         if (dwIndex > 0)
         {
             return MF_E_INVALIDINDEX;
@@ -125,7 +130,10 @@ public:
         /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock) noexcept
     {
         RETURNIFSHUTDOWN;
-        if (!ppPresentationClock) return E_POINTER;
+        if (!ppPresentationClock)
+        {
+            return E_POINTER;
+        }
         m_spClock.copy_to(ppPresentationClock);
         return S_OK;
     }
