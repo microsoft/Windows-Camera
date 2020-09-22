@@ -50,28 +50,28 @@ private:
     void StopIfStreaming();
     void SendToClient(std::string Response);
 
-    int            m_RtspSessionID;
-    winrt::delegate<RTSPSession*> m_Completed;
+    int            m_rtspSessionID;
+    winrt::delegate<RTSPSession*> m_sessionCompleted;
     std::unique_ptr<CSocketWrapper> m_pRtspClient;
-    std::string    m_RtspClientAddr;
-    u_short  m_RtspPort;
-    u_short  m_LocalRTPPort;                           // client port for UDP based RTP transport
-    u_short  m_LocalRTCPPort;                          // client port for UDP based RTCP transport  
+    std::string    m_rtspClientAddr;
+    u_short  m_rtspPort;
+    u_short  m_localRTPPort;                           // client port for UDP based RTP transport
+    u_short  m_localRTCPPort;                          // client port for UDP based RTCP transport  
 
-    u_short  m_ClientRTPPort;                           // client port for UDP based RTP transport
-    u_short  m_ClientRTCPPort;                          // client port for UDP based RTCP transport  
-    bool     m_TcpTransport;                            // if Tcp based streaming was activated
+    u_short  m_clientRTPPort;                           // client port for UDP based RTP transport
+    u_short  m_clientRTCPPort;                          // client port for UDP based RTCP transport  
+    bool     m_bTcpTransport;                            // if Tcp based streaming was activated
     uint32_t m_ssrc;
     winrt::Windows::Foundation::Collections::PropertySet m_streamers;
     winrt::com_ptr<IMFStreamSink> m_spCurrentStreamer;
 
     // parameters of the last received RTSP request
-    std::string           m_CSeq;             // RTSP command sequence number
-    std::string           m_URLHostPort;      // host:port part of the URL
-    std::string           m_URLProto;
+    std::string           m_strCSeq;             // RTSP command sequence number
+    std::string           m_urlHostPort;      // host:port part of the URL
+    std::string           m_urlProto;
     std::string           m_curAuthSessionMsg;
     winrt::com_ptr<IRTSPAuthProvider> m_spAuthProvider;
-    winrt::handle m_RtspReadEvent;
+    winrt::handle m_rtspReadEvent;
     winrt::handle m_callBackHandle;
     winrt::PacketHandler m_packetHandler;
     bool m_bStreamingStarted,m_bTerminate, m_bAuthorizationReceived;

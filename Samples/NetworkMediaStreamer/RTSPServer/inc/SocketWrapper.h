@@ -30,7 +30,7 @@ private:
 
     CredHandle m_hCred;
     struct _SecHandle  m_hCtxt;
-    SECURITY_STATUS m_SecurityStatus;
+    SECURITY_STATUS m_securityStatus;
     std::unique_ptr<BYTE[]> m_pInBuf;
     std::unique_ptr<BYTE[]> m_pOutBuf;
     DWORD m_bufSz;
@@ -39,7 +39,5 @@ private:
     winrt::handle m_readEvent;
     std::condition_variable m_handshakeDone;
     winrt::handle m_callBackHandle;
-
-    std::mutex m;
     std::wstring m_clientUserName;
 };

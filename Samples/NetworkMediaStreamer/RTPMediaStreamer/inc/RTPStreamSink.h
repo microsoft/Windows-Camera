@@ -11,7 +11,7 @@ class TxContext final
 {
     uint16_t m_localRTPPort, m_localRTCPPort, m_remotePort;
     sockaddr_in m_remoteAddr;
-    SOCKET m_RtpSocket, m_RtcpSocket;
+    SOCKET m_rtpSocket, m_rtcpSocket;
     winrt::PacketHandler m_packetHandler;
 
 public:
@@ -21,17 +21,17 @@ public:
 
     uint32_t m_ssrc;
     uint64_t m_u64StartTime;
-    uint32_t m_SequenceNumber;
+    uint32_t m_uSequenceNumber;
 };
 
 class RTPVideoStreamSink  final : public NwMediaStreamSinkBase
 {
     std::mutex m_guardlock;
-    std::map<std::string, std::unique_ptr<TxContext>> m_RtpStreamers;
+    std::map<std::string, std::unique_ptr<TxContext>> m_rtpStreamers;
     winrt::Windows::Storage::Streams::Buffer m_pTxBuf;
-    size_t m_MTUSize;
+    size_t m_mtuSize;
     uint32_t m_packetizationMode;
-    uint32_t m_SequenceNumber;
+    uint32_t m_uSequenceNumber;
     RTPVideoStreamSink(IMFMediaType *pMT, IMFMediaSink* pParent, DWORD dwStreamID);
     virtual ~RTPVideoStreamSink () = default;
     BYTE* FindSC(BYTE* bufStart, BYTE* bufEnd);

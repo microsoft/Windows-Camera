@@ -45,7 +45,7 @@ CSocketWrapper::~CSocketWrapper()
 void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
 {
     auto pSock = (CSocketWrapper*)arg;
-    pSock->m_SecurityStatus  = SEC_E_INVALID_HANDLE;
+    pSock->m_securityStatus  = SEC_E_INVALID_HANDLE;
     try 
     {
         WSAResetEvent(pSock->m_readEvent.get());
@@ -80,7 +80,7 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
             InSecBuff[1].BufferType = SECBUFFER_EMPTY;
             InSecBuff[1].pvBuffer = nullptr;
             bool bFirstHandshake = !(pSock->m_hCtxt.dwLower || pSock->m_hCtxt.dwUpper);
-            pSock->m_SecurityStatus = AcceptSecurityContext(
+            pSock->m_securityStatus = AcceptSecurityContext(
                 &pSock->m_hCred,
                 bFirstHandshake ? NULL : &pSock->m_hCtxt,
                 &InBuffDesc,
@@ -96,19 +96,19 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
                 //TODO: handle this case
             }
 
-            winrt::check_hresult(pSock->m_SecurityStatus);
+            winrt::check_hresult(pSock->m_securityStatus);
             send(pSock->m_socket, (char*)OutSecBuff.pvBuffer, OutSecBuff.cbBuffer, 0);
         }
 
     }
     catch(...)
     {
-        pSock->m_SecurityStatus = winrt::to_hresult();
+        pSock->m_securityStatus = winrt::to_hresult();
         pSock->m_hCtxt.dwUpper = pSock->m_hCtxt.dwLower = 0;
     }
 
-    if (((SEC_I_CONTINUE_NEEDED == pSock->m_SecurityStatus)
-        || (SEC_I_COMPLETE_AND_CONTINUE == pSock->m_SecurityStatus)))
+    if (((SEC_I_CONTINUE_NEEDED == pSock->m_securityStatus)
+        || (SEC_I_COMPLETE_AND_CONTINUE == pSock->m_securityStatus)))
     {
         UnregisterWait(pSock->m_callBackHandle.detach());
         RegisterWaitForSingleObject(pSock->m_callBackHandle.put(), pSock->m_readEvent.get(), (WAITORTIMERCALLBACK)ReadDelegate, pSock, INFINITE, WT_EXECUTEONLYONCE);
@@ -167,7 +167,7 @@ void CSocketWrapper::InitilizeSecurity()
     UnregisterWait(m_callBackHandle.detach());
     WSACloseEvent(m_readEvent.detach());
 
-    winrt::check_hresult(m_SecurityStatus);
+    winrt::check_hresult(m_securityStatus);
 }
 
 int  CSocketWrapper::Recv(BYTE* buf, int sz)

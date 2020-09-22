@@ -13,7 +13,7 @@ STDMETHODIMP RTSPServer::StopServer() try
     }
     WSACloseEvent(m_acceptEvent.detach());
 
-    m_Sessions.clear();
+    m_rtspSessions.clear();
 
     closesocket(m_masterSocket);
     WSACleanup();
@@ -89,12 +89,12 @@ STDMETHODIMP RTSPServer::StartServer() try
                 clientSocket = WSAAccept(pServer->m_masterSocket, (struct sockaddr*)&ClientAddr, &ClientAddrLen, nullptr, NULL);
                 if (clientSocket == INVALID_SOCKET)
                 {
-                    pServer->m_LoggerEvents[(int)LoggerType::ERRORS](E_HANDLE, L"\nInvalid client socket returned by WSAAccept");
+                    pServer->m_loggerEvents[(int)LoggerType::ERRORS](E_HANDLE, L"\nInvalid client socket returned by WSAAccept");
                     return;
                 }
                 inet_ntop(AF_INET, &(ClientAddr.sin_addr), addr, INET_ADDRSTRLEN);
 
-                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, winrt::hstring(L"\nConnected to client with address: ") + winrt::to_hstring(addr));
+                pServer->m_loggerEvents[(int)LoggerType::OTHER](S_OK, winrt::hstring(L"\nConnected to client with address: ") + winrt::to_hstring(addr));
                 std::unique_ptr<CSocketWrapper> pClientSocketWrapper;
                 try
                 { // TODO: use a factory to return errors instead of try-throw-catch here
@@ -113,23 +113,23 @@ STDMETHODIMP RTSPServer::StartServer() try
                     {
                         closesocket(clientSocket);
                     }
-                    pServer->m_LoggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
+                    pServer->m_loggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
                     return;
                 }
                 
-                pServer->m_Sessions.insert(
+                pServer->m_rtspSessions.insert(
                     { 
                     clientSocket,
-                    std::make_unique<RTSPSession>(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_LoggerEvents) 
+                    std::make_unique<RTSPSession>(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_loggerEvents) 
                     });
-                pServer->m_SessionStatusEvents(pServer->m_Sessions[clientSocket]->GetStreamID(), SessionStatus::SessionStarted);
-                pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring(pServer->m_Sessions[clientSocket]->GetStreamID()));
+                pServer->m_sessionStatusEvents(pServer->m_rtspSessions[clientSocket]->GetStreamID(), SessionStatus::SessionStarted);
+                pServer->m_loggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring(pServer->m_rtspSessions[clientSocket]->GetStreamID()));
 
-                pServer->m_Sessions[clientSocket]->BeginSession([pServer](RTSPSession* pSession)
+                pServer->m_rtspSessions[clientSocket]->BeginSession([pServer](RTSPSession* pSession)
                     {
-                        pServer->m_LoggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring(pSession->GetStreamID()));
-                        pServer->m_SessionStatusEvents(pSession->GetStreamID(), SessionStatus::SessionEnded);
-                        pServer->m_Sessions.erase(pSession->GetSocket());
+                        pServer->m_loggerEvents[(int)LoggerType::OTHER](S_OK, L"\nSession completed:" + winrt::to_hstring(pSession->GetStreamID()));
+                        pServer->m_sessionStatusEvents(pSession->GetStreamID(), SessionStatus::SessionEnded);
+                        pServer->m_rtspSessions.erase(pSession->GetSocket());
                     });
             }
             catch (...)
@@ -139,7 +139,7 @@ STDMETHODIMP RTSPServer::StartServer() try
                 {
                     closesocket(clientSocket);
                 }
-                pServer->m_LoggerEvents[(int)LoggerType::ERRORS](hr, L"\nFailed to Create Session");
+                pServer->m_loggerEvents[(int)LoggerType::ERRORS](hr, L"\nFailed to Create Session");
             }
         }, this, INFINITE, WT_EXECUTEINWAITTHREAD));
 

@@ -7,12 +7,12 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
     : m_u64StartTime(0)
     , m_packetHandler(packetHandler)
     , m_ssrc(0)
-    , m_RtpSocket(INVALID_SOCKET)
-    , m_RtcpSocket(INVALID_SOCKET)
+    , m_rtpSocket(INVALID_SOCKET)
+    , m_rtcpSocket(INVALID_SOCKET)
     , m_localRTPPort(0)
     , m_localRTCPPort(0)
     , m_remotePort(0)
-    , m_SequenceNumber(0)
+    , m_uSequenceNumber(0)
 {
     memset(&m_remoteAddr, 0, sizeof(m_remoteAddr));
     m_ssrc = 0;
@@ -49,13 +49,13 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
         Server.sin_addr.s_addr = INADDR_ANY;
         for (u_short P = m_localRTPPort; P < 0xFFFE; P += 2)
         {
-            m_RtpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+            m_rtpSocket = socket(AF_INET, SOCK_DGRAM, 0);
             Server.sin_port = htons(P);
-            if (bind(m_RtpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
+            if (bind(m_rtpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
             {   // Rtp socket was bound successfully. Lets try to bind the consecutive Rtsp socket
-                m_RtcpSocket = socket(AF_INET, SOCK_DGRAM, 0);
+                m_rtcpSocket = socket(AF_INET, SOCK_DGRAM, 0);
                 Server.sin_port = htons(P + 1);
-                if (bind(m_RtcpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
+                if (bind(m_rtcpSocket, (sockaddr*)&Server, sizeof(Server)) == 0)
                 {
                     m_localRTPPort = P;
                     m_localRTCPPort = P + 1;
@@ -63,16 +63,16 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
                 }
                 else
                 {
-                    closesocket(m_RtpSocket);
-                    m_RtpSocket = INVALID_SOCKET;
-                    closesocket(m_RtcpSocket);
-                    m_RtcpSocket = INVALID_SOCKET;
+                    closesocket(m_rtpSocket);
+                    m_rtpSocket = INVALID_SOCKET;
+                    closesocket(m_rtcpSocket);
+                    m_rtcpSocket = INVALID_SOCKET;
                 }
             }
             else
             {
-                closesocket(m_RtpSocket);
-                m_RtpSocket = INVALID_SOCKET;
+                closesocket(m_rtpSocket);
+                m_rtpSocket = INVALID_SOCKET;
             }
         }
 
@@ -84,13 +84,13 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
 
 TxContext::~TxContext()
 {
-    if (m_RtpSocket != INVALID_SOCKET)
+    if (m_rtpSocket != INVALID_SOCKET)
     {
-        closesocket(m_RtpSocket);
+        closesocket(m_rtpSocket);
     }
-    if (m_RtcpSocket != INVALID_SOCKET)
+    if (m_rtcpSocket != INVALID_SOCKET)
     {
-        closesocket(m_RtcpSocket);
+        closesocket(m_rtcpSocket);
     }
 }
 
@@ -104,28 +104,28 @@ void TxContext::SendPacket(winrt::Windows::Storage::Streams::IBuffer buf)
     {
         auto pBuf = buf.data();
         auto sz = buf.Length();
-        sendto(m_RtpSocket, (char*)pBuf, (int)sz, 0, (SOCKADDR*)&m_remoteAddr, sizeof(m_remoteAddr));
+        sendto(m_rtpSocket, (char*)pBuf, (int)sz, 0, (SOCKADDR*)&m_remoteAddr, sizeof(m_remoteAddr));
     }
-    m_SequenceNumber++;
+    m_uSequenceNumber++;
 }
 
 
 RTPVideoStreamSink::RTPVideoStreamSink(IMFMediaType* pMediaType, IMFMediaSink* pParent, DWORD dwStreamID)
     : NwMediaStreamSinkBase(pMediaType, pParent, dwStreamID)
     , m_packetizationMode(1)
-    , m_SequenceNumber(0)
+    , m_uSequenceNumber(0)
     , m_pTxBuf(nullptr)
 {
     if (m_packetizationMode == 1)
     {
-        m_MTUSize = 1500;
+        m_mtuSize = 1500;
     }
     else
     {
         //TODO: find a way to control encoder's max NAL size and edit this param to a better value
-        m_MTUSize = 65535; // max size to allow any size NAL into one packet
+        m_mtuSize = 65535; // max size to allow any size NAL into one packet
     }
-    m_pTxBuf = winrt::Windows::Storage::Streams::Buffer((uint32_t)m_MTUSize);
+    m_pTxBuf = winrt::Windows::Storage::Streams::Buffer((uint32_t)m_mtuSize);
 
 }
 
@@ -148,7 +148,7 @@ BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 void RTPVideoStreamSink::PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime)
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
-    size_t szOut = m_MTUSize;
+    size_t szOut = m_mtuSize;
     while (sc < (bufIn + szIn))
     {
         while ((sc < bufIn + szIn) && !(*sc++));
@@ -183,10 +183,10 @@ void RTPVideoStreamSink::SendPacket(winrt::Windows::Storage::Streams::IBuffer bu
     {
         pOut[1] = (byte)(h264payloadType);
     }
-    pOut[2] = m_SequenceNumber >> 8;
-    pOut[3] = m_SequenceNumber & 0x0FF;           // each packet is counted with a sequence counter
-    m_SequenceNumber++;
-    for (auto& ct : m_RtpStreamers)
+    pOut[2] = m_uSequenceNumber >> 8;
+    pOut[3] = m_uSequenceNumber & 0x0FF;           // each packet is counted with a sequence counter
+    m_uSequenceNumber++;
+    for (auto& ct : m_rtpStreamers)
     {
         auto ssrc = ct.second->m_ssrc;
         auto ts1 = ts;
@@ -208,7 +208,7 @@ void RTPVideoStreamSink::PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSam
 {
     BYTE* sc = FindSC(bufIn, bufIn + szIn);
     BYTE* pOut = m_pTxBuf.data();
-    size_t szOut = m_MTUSize;
+    size_t szOut = m_mtuSize;
     BYTE* pOutEnd = pOut + szOut;
     BYTE* sc1 = sc;
     auto pOutCurr = pOut + rtpHeaderSize + stapAtypeHeaderSize;
@@ -298,7 +298,7 @@ STDMETHODIMP RTPVideoStreamSink::AddTransportHandler(ABI::PacketHandler* packeth
     std::string destination = std::to_string((intptr_t)packethandler);
     winrt::PacketHandler t;
     winrt::copy_from_abi(t, packethandler);
-    m_RtpStreamers.insert({ destination, std::make_unique<TxContext>((destination + "?" + winrt::to_string(params)),t) });
+    m_rtpStreamers.insert({ destination, std::make_unique<TxContext>((destination + "?" + winrt::to_string(params)),t) });
     return S_OK;
 }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
@@ -310,7 +310,7 @@ STDMETHODIMP RTPVideoStreamSink::AddNetworkClient(LPCWSTR destination, LPCWSTR p
     winrt::check_pointer(params);
     auto dest = winrt::to_string(destination);
 
-    m_RtpStreamers.insert({ dest, std::make_unique<TxContext>(dest + "?" + winrt::to_string(params)) });
+    m_rtpStreamers.insert({ dest, std::make_unique<TxContext>(dest + "?" + winrt::to_string(params)) });
 
     return S_OK;
 }HRESULT_EXCEPTION_BOUNDARY_FUNC
@@ -320,7 +320,7 @@ STDMETHODIMP RTPVideoStreamSink::RemoveNetworkClient(LPCWSTR destination) try
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(destination);
     auto dest = winrt::to_string(destination);
-    m_RtpStreamers.erase(dest);
+    m_rtpStreamers.erase(dest);
     return S_OK;
 }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
@@ -329,7 +329,7 @@ STDMETHODIMP RTPVideoStreamSink::RemoveTransportHandler(ABI::PacketHandler* pack
     auto lock = std::lock_guard(m_guardlock);
     winrt::check_pointer(packetHandler);
     std::string destination = std::to_string((intptr_t)packetHandler);
-    m_RtpStreamers.erase(destination);
+    m_rtpStreamers.erase(destination);
     return S_OK;
 }HRESULT_EXCEPTION_BOUNDARY_FUNC
 

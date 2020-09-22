@@ -36,7 +36,7 @@ public:
         winrt::check_pointer(handler);
         winrt::LogHandler h;
         winrt::copy_from_abi(h, handler);
-        auto token = m_LoggerEvents[(int)type].add(h);
+        auto token = m_loggerEvents[(int)type].add(h);
         winrt::copy_to_abi(token, *pToken);
         return S_OK;
     }HRESULT_EXCEPTION_BOUNDARY_FUNC
@@ -45,7 +45,7 @@ public:
     {
         winrt::event_token tk;
         winrt::copy_from_abi(tk, token);
-        m_LoggerEvents[(int)type].remove(tk);
+        m_loggerEvents[(int)type].remove(tk);
         return S_OK;
     }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
@@ -53,7 +53,7 @@ public:
     {
         winrt::SessionStatusHandler h;
         winrt::copy_from_abi(h, handler);
-        auto token = m_SessionStatusEvents.add(h);
+        auto token = m_sessionStatusEvents.add(h);
         winrt::copy_to_abi(token, *pToken);
         return S_OK;
     }HRESULT_EXCEPTION_BOUNDARY_FUNC
@@ -62,7 +62,7 @@ public:
     {
         winrt::event_token tk;
         winrt::copy_from_abi(tk, token);
-        m_SessionStatusEvents.remove(tk);
+        m_sessionStatusEvents.remove(tk);
         return S_OK;
     }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
@@ -73,15 +73,15 @@ private:
 
     winrt::RTSPSuffixSinkMap m_streamers;
 
-    std::map<SOCKET,std::unique_ptr<RTSPSession>> m_Sessions;
+    std::map<SOCKET,std::unique_ptr<RTSPSession>> m_rtspSessions;
     SOCKET      m_masterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
     winrt::handle m_acceptEvent;
     winrt::handle m_callbackHandle;
     uint16_t m_socketPort;
     bool m_bSecure;
     winrt::com_array<PCCERT_CONTEXT> m_serverCerts;
-    winrt::event<winrt::LogHandler> m_LoggerEvents[(size_t)LoggerType::LOGGER_MAX];
-    winrt::event<winrt::SessionStatusHandler> m_SessionStatusEvents;
+    winrt::event<winrt::LogHandler> m_loggerEvents[(size_t)LoggerType::LOGGER_MAX];
+    winrt::event<winrt::SessionStatusHandler> m_sessionStatusEvents;
     winrt::com_ptr<IMFPresentationClock> m_spClock;
     bool m_bIsShutdown;
     std::mutex m_apiGuard;
