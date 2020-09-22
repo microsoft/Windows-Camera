@@ -1,11 +1,11 @@
 
 # NetworkMediaStreamer
 ## Introduction
-The NetworkMediaStreamer is a set of basic implementations of RTP streaming and RTSP server to demonstrate usage of [Windows Media Foundation APIs](https://docs.microsoft.com/en-us/windows/win32/medfound/media-foundation-programming-guide) related to-
+The NetworkMediaStreamer is a set of basic implementations of RTP streaming and RTSP server to demonstrate usage of [Windows Media Foundation APIs](https://docs.microsoft.com/en-us/windows/win32/medfound/media-foundation-programming-guide) related to:
  1. Using and configuring OS built-in codecs
  2. Consuming samples/frames from the MediaFoundation stack of APIs
  
- The implementation also demonstrates -
+ The implementation also demonstrates:
  1. Using Windows APIs for network to implement RTP video streaming and RTSP server , and using [Schannel APIs](https://docs.microsoft.com/en-us/windows/win32/com/schannel) for secure RTSP.
  2. Using credential store using [PasswordVault APIs](https://docs.microsoft.com/en-us/uwp/api/windows.security.credentials.passwordvault?view=winrt-19041) 
 
@@ -13,7 +13,7 @@ The NetworkMediaStreamer is a set of basic implementations of RTP streaming and 
 
 ![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)
  ## RTPSink
- The RTP streaming is implemented as a COM class which implements [IMFMediaSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfmediasink). This class encapsulates the Network media stream sink which does the actual packetization work and UDP streaming. The NetworkMediaStream sink can be controlled via two interfaces -
+ The RTP streaming is implemented as a COM class which implements [IMFMediaSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfmediasink). This class encapsulates the Network media stream sink which does the actual packetization work and UDP streaming. The NetworkMediaStream sink can be controlled via two interfaces:
  1. [IMFStreamSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfstreamsink)
     - negotiating/setting media types and streaming states
     - supplying encoded samples to the sink.
@@ -51,7 +51,7 @@ This can be acheived using one of the following (but not limited to) options
 ## RTSP Server
 The RTSP server control implements RTSP protocol to negotiate and setup RTP streaming to the clients from the RTPSink instances it holds. 
 The RTSP Server controls the network side interface (INetworkMediaStreamSink) for all the sinks that it controls.
-An instance of RTSP Server can be created by using the factory method-  
+An instance of RTSP Server can be created by using the factory method: 
 
 ---
 ```
@@ -84,8 +84,8 @@ An instance of RTSP Server can be created by using the factory method-
 ## Authentication provider
 
 The authentication provider implements the following interfaces 
-1. IRTSPAuthProvider - This interface is used by the RTSP server to authenticate incoming client connections
-2. IRTSPAuthProviderCredStore - This interface is used by the administrative module of the app to add and remove credentials etc.  
+1. IRTSPAuthProvider: This interface is used by the RTSP server to authenticate incoming client connections
+2. IRTSPAuthProviderCredStore: This interface is used by the administrative module of the app to add and remove credentials etc.  
 A base/sample implementation of AuthProvider is included in the source. An instance to the authentication provider can be created using -
 ---
 ```
@@ -238,7 +238,7 @@ Adds a UDP client destination to stream RTP packets and starts streaming to the 
 | ----------- | ----------- | -------- |
 | pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
 | pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
-| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format:  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty; an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
 
 
 `INetworkMediaStreamSink::RemoveNetworkClient(LPCWSTR pDestination)`  
@@ -257,7 +257,7 @@ Adds a custom packet transport handler delegate and starts calling the delegate 
 | ----------- | ----------- | -------- |
 | pPackethandler | Input pointer to ABI interface of EventHandler delegate that takes IBuffer pointer as an argument.| e.g. `auto handler = winrt::PacketHandler([](IInspectable sender, IBuffer args){ /*handle the rtp packet- send it over tcp etc.*/});` `pPacketHandler = handler.as<ABI::PacketHandler>().get()`|
 | pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
-| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format -  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty- an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format:  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty; an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
 
 
 `INetworkMediaStreamSink::RemoveTransportHandler(
