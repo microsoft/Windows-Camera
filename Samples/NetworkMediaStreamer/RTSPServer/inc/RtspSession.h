@@ -28,9 +28,9 @@ public:
 
     virtual RTSP_CMD HandleRequest(char const* aRequest, unsigned aRequestSize);
     int GetStreamID();
-    SOCKET GetSocket() 
-    { 
-        return m_pRtspClient->GetSocket(); 
+    SOCKET GetSocket()
+    {
+        return m_pRtspClient->GetSocket();
     }
     void BeginSession(winrt::delegate<RTSPSession*> completed);
 private:
@@ -74,7 +74,7 @@ private:
     winrt::handle m_rtspReadEvent;
     winrt::handle m_callBackHandle;
     winrt::PacketHandler m_packetHandler;
-    bool m_bStreamingStarted,m_bTerminate, m_bAuthorizationReceived;
+    bool m_bStreamingStarted, m_bTerminate, m_bAuthorizationReceived;
     std::unique_ptr<BYTE[]> m_pTcpTxBuff;
     std::unique_ptr<BYTE[]> m_pTcpRxBuff;
     std::string m_urlSuffix;

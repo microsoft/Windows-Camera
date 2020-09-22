@@ -18,7 +18,7 @@
 #define VIDEOSTREAMER_API __declspec(dllimport)
 #endif
 
-namespace ABI 
+namespace ABI
 {
     using namespace ABI::Windows::Foundation;
     using namespace ABI::Windows::Storage::Streams;
@@ -39,7 +39,7 @@ MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DA")
 INetworkMediaStreamSink : public IMFStreamSink
 {
 public:
-    virtual STDMETHODIMP AddTransportHandler (ABI::PacketHandler* pPackethandler, LPCWSTR pProtocol = L"rtp", LPCWSTR pParam = L"") = 0;
+    virtual STDMETHODIMP AddTransportHandler(ABI::PacketHandler * pPackethandler, LPCWSTR pProtocol = L"rtp", LPCWSTR pParam = L"") = 0;
     virtual STDMETHODIMP RemoveTransportHandler(ABI::PacketHandler* pPacketHandler) = 0;
     virtual STDMETHODIMP AddNetworkClient(LPCWSTR pDestination, LPCWSTR pProtocol = L"rtp", LPCWSTR pParams = L"") = 0;
     virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR pDestination) = 0;

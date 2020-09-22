@@ -18,7 +18,7 @@ CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_
     if (m_bIsSecure)
     {
 
-        InitilizeSecurity();
+        InitializeSecurity();
 
         winrt::check_hresult(QueryContextAttributes(
             &m_hCtxt,
@@ -45,20 +45,20 @@ CSocketWrapper::~CSocketWrapper()
 void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
 {
     auto pSock = (CSocketWrapper*)arg;
-    pSock->m_securityStatus  = SEC_E_INVALID_HANDLE;
-    try 
+    pSock->m_securityStatus = SEC_E_INVALID_HANDLE;
+    try
     {
         WSAResetEvent(pSock->m_readEvent.get());
 
         auto numRead = recv(pSock->m_socket, (char*)pSock->m_pInBuf.get(), pSock->m_bufSz, 0);
         if (numRead > 0)
         {
-            TimeStamp         tokenLifetime;
-            SecBufferDesc     OutBuffDesc;
-            SecBuffer         OutSecBuff;
-            SecBufferDesc     InBuffDesc;
-            SecBuffer         InSecBuff[2];
-            ULONG             Attribs = ASC_REQ_MUTUAL_AUTH;
+            TimeStamp tokenLifetime;
+            SecBufferDesc OutBuffDesc;
+            SecBuffer OutSecBuff;
+            SecBufferDesc InBuffDesc;
+            SecBuffer InSecBuff[2];
+            ULONG Attribs = ASC_REQ_MUTUAL_AUTH;
 
             OutBuffDesc.ulVersion = 0;
             OutBuffDesc.cBuffers = 1;
@@ -101,7 +101,7 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
         }
 
     }
-    catch(...)
+    catch (...)
     {
         pSock->m_securityStatus = winrt::to_hresult();
         pSock->m_hCtxt.dwUpper = pSock->m_hCtxt.dwLower = 0;
@@ -120,9 +120,9 @@ void CSocketWrapper::ReadDelegate(PVOID arg, BOOLEAN flag)
 
 }
 
-void CSocketWrapper::InitilizeSecurity()
+void CSocketWrapper::InitializeSecurity()
 {
-    TimeStamp         Lifetime;
+    TimeStamp Lifetime;
     PSecPkgInfo pPkgInfo = nullptr;
     winrt::check_hresult(QuerySecurityPackageInfo((LPWSTR)g_lpPackageName, &pPkgInfo));
 
@@ -152,7 +152,7 @@ void CSocketWrapper::InitilizeSecurity()
         &Lifetime));
 
     m_readEvent.attach(WSACreateEvent());      // create READ wait event for our RTSP client socket
-    if (!m_readEvent) // == WSA_INVALID_EVENT)
+    if (!m_readEvent) // == WSA_INVALID_EVENT
     {
         winrt::check_win32(WSAGetLastError());
     }
@@ -170,7 +170,7 @@ void CSocketWrapper::InitilizeSecurity()
     winrt::check_hresult(m_securityStatus);
 }
 
-int  CSocketWrapper::Recv(BYTE* buf, int sz)
+int CSocketWrapper::Recv(BYTE* buf, int sz)
 {
     int ret = 0;
 
@@ -181,8 +181,8 @@ int  CSocketWrapper::Recv(BYTE* buf, int sz)
 
         if (cbRead <= 0) return cbRead;
 
-        SecBufferDesc     BuffDesc;
-        SecBuffer         SecBuff[4];
+        SecBufferDesc BuffDesc;
+        SecBuffer SecBuff[4];
         BuffDesc.ulVersion = SECBUFFER_VERSION;
         BuffDesc.cBuffers = 4;
         BuffDesc.pBuffers = SecBuff;
@@ -229,9 +229,9 @@ int CSocketWrapper::Send(BYTE* buf, int sz)
 {
     if (m_bIsSecure)
     {
-        SecBufferDesc     BuffDesc;
-        SecBuffer         SecBuff[4];
-        ULONG             ulQop = 0;
+        SecBufferDesc BuffDesc;
+        SecBuffer SecBuff[4];
+        ULONG ulQop = 0;
 
         BuffDesc.ulVersion = SECBUFFER_VERSION;
         BuffDesc.cBuffers = 4;
@@ -299,6 +299,6 @@ bool CSocketWrapper::AuthenticateClient()
     //-----------------------------------------------------------------   
     //  Revert to self.
     winrt::check_win32(RevertSecurityContext(&m_hCtxt));
-    
+
     return true;
 }

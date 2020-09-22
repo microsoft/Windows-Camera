@@ -32,16 +32,16 @@ class RTPVideoStreamSink  final : public NwMediaStreamSinkBase
     size_t m_mtuSize;
     uint32_t m_packetizationMode;
     uint32_t m_uSequenceNumber;
-    RTPVideoStreamSink(IMFMediaType *pMT, IMFMediaSink* pParent, DWORD dwStreamID);
-    virtual ~RTPVideoStreamSink () = default;
+    RTPVideoStreamSink(IMFMediaType* pMT, IMFMediaSink* pParent, DWORD dwStreamID);
+    virtual ~RTPVideoStreamSink() = default;
     BYTE* FindSC(BYTE* bufStart, BYTE* bufEnd);
-    STDMETHODIMP PacketizeAndSend(IMFSample *pSample) noexcept;
+    STDMETHODIMP PacketizeAndSend(IMFSample* pSample) noexcept;
     void PacketizeMode0(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime);
 
     void SendPacket(winrt::Windows::Storage::Streams::IBuffer buf, LONGLONG ts, bool bLastNalOfFrame);
     void PacketizeMode1(BYTE* bufIn, size_t szIn, LONGLONG llSampleTime);
 public:
-    static INetworkMediaStreamSink* CreateInstance(IMFMediaType *pMediaType, IMFMediaSink* pParent, DWORD dwStreamID);
+    static INetworkMediaStreamSink* CreateInstance(IMFMediaType* pMediaType, IMFMediaSink* pParent, DWORD dwStreamID);
 
     STDMETHODIMP AddTransportHandler(ABI::PacketHandler* packetHandler, LPCWSTR protocol = L"rtp", LPCWSTR params = L"") override;
     STDMETHODIMP AddNetworkClient(LPCWSTR destination, LPCWSTR protocol = L"rtp", LPCWSTR param = L"") override;

@@ -22,7 +22,7 @@ public:
 private:
 
     static void ReadDelegate(PVOID arg, BOOLEAN flag);
-    void InitilizeSecurity();
+    void InitializeSecurity();
     bool AuthenticateClient();
     bool m_bIsSecure;
     SOCKET m_socket;

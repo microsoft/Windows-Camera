@@ -33,7 +33,6 @@ public:
         return S_OK;
     }HRESULT_EXCEPTION_BOUNDARY_FUNC
 
-
     STDMETHODIMP Authorize(LPCWSTR authResp, LPCWSTR authSesMsg, LPCWSTR mthd) override try
     {
         winrt::check_pointer(authResp);
@@ -73,11 +72,19 @@ public:
             auto username = paramMapResponse["username="];
             std::string password;
             auto vault = PasswordVault();
-            
-            PasswordCredential cred;
+
+            PasswordCredential cred = nullptr;
             if (!username.empty())
             {
-                cred = vault.Retrieve(m_resourceName, winrt::to_hstring(username));
+                try
+                {
+                    cred = vault.Retrieve(m_resourceName, winrt::to_hstring(username));
+                }
+                catch (winrt::hresult_error const& ex) // not-so-elegant hack- vault.Retrieve throws if user is not found.
+                {
+                    (ex);
+                    cred = nullptr;
+                }
             }
             if (cred)
             {
@@ -129,15 +136,18 @@ public:
                 username = strR.substr(0, idx);
             }
             auto vault = PasswordVault();
-            PasswordCredential cred;
-            try
+            PasswordCredential cred = nullptr;
+            if (!username.empty())
             {
-                cred = vault.Retrieve(m_resourceName, winrt::to_hstring(username));
-            }
-            catch (winrt::hresult_error const& ex) // ugly hack- vault.Retreive throws if user is not found.
-            {
-                (ex);
-                cred = nullptr;
+                try
+                {
+                    cred = vault.Retrieve(m_resourceName, winrt::to_hstring(username));
+                }
+                catch (winrt::hresult_error const& ex) // not-so-elegant hack- vault.Retrieve throws if user is not found.
+                {
+                    (ex);
+                    cred = nullptr;
+                }
             }
             bool match = false;
             if (cred)

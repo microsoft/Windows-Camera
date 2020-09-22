@@ -101,7 +101,7 @@ std::map<winrt::hstring, std::vector<GUID>> streamMap =
 };
 
 #ifdef USE_FR
-IMFSinkWriter* InitSinkWriter(IMFMediaSink *pMediaSink, MediaFrameFormat format)
+IMFSinkWriter* InitSinkWriter(IMFMediaSink* pMediaSink, MediaFrameFormat format)
 {
     com_ptr<IMFSinkWriter> spSinkWriter;
     com_ptr<IMFAttributes> spSWAttributes;
@@ -121,7 +121,7 @@ IMFSinkWriter* InitSinkWriter(IMFMediaSink *pMediaSink, MediaFrameFormat format)
     check_hresult(MFSetAttributeRatio(spInType.get(), MF_MT_FRAME_RATE, format.FrameRate().Numerator(), format.FrameRate().Denominator()));
 
     check_hresult(spInType->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video));
-    check_hresult(spInType->SetGUID(MF_MT_SUBTYPE, subType ));
+    check_hresult(spInType->SetGUID(MF_MT_SUBTYPE, subType));
 
     check_hresult(MFCreateAttributes(spSWAttributes.put(), 2));
     check_hresult(spSWAttributes->SetUINT32(MF_LOW_LATENCY, TRUE));
@@ -144,39 +144,39 @@ IMFSinkWriter* InitSinkWriter(IMFMediaSink *pMediaSink, MediaFrameFormat format)
 
 PROCESS_INFORMATION StartLoggerConsole(std::wstring filename)
 {
-        STARTUPINFO si,si1;
-        PROCESS_INFORMATION pi;
-        GetStartupInfo(&si1);
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        ZeroMemory(&pi, sizeof(pi));
-        std::wstring cmdline = L"powershell Get-Content " + filename + L" -Wait ";
-        std::wstring title = L"RTSPServer Log Console";
-        si.lpTitle = (LPWSTR)title.c_str();
-        
-        si.dwX = si1.dwX + 500;
-        si.dwY = si1.dwY;
-        si.dwXCountChars = 40;
-        si.dwYCountChars = 10;
-        si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USEPOSITION | STARTF_PREVENTPINNING | STARTF_USECOUNTCHARS;
-        si.wShowWindow = SW_SHOWNOACTIVATE;
-        // Start the child process. 
-        if (!CreateProcess(NULL,   // No module name (use command line)
-            (LPWSTR)cmdline.c_str(),        // Command line
-            NULL,           // Process handle not inheritable
-            NULL,           // Thread handle not inheritable
-            FALSE,          // Set handle inheritance to FALSE
-            CREATE_NEW_CONSOLE,              // No creation flags
-            NULL,           // Use parent's environment block
-            NULL,           // Use parent's starting directory 
-            &si,            // Pointer to STARTUPINFO structure
-            &pi)            // Pointer to PROCESS_INFORMATION structure
-            )
-        {
-            check_win32(GetLastError());
-        }
-        return pi;
-    
+    STARTUPINFO si, si1;
+    PROCESS_INFORMATION pi;
+    GetStartupInfo(&si1);
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+    std::wstring cmdline = L"powershell Get-Content " + filename + L" -Wait ";
+    std::wstring title = L"RTSPServer Log Console";
+    si.lpTitle = (LPWSTR)title.c_str();
+
+    si.dwX = si1.dwX + 500;
+    si.dwY = si1.dwY;
+    si.dwXCountChars = 40;
+    si.dwYCountChars = 10;
+    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USEPOSITION | STARTF_PREVENTPINNING | STARTF_USECOUNTCHARS;
+    si.wShowWindow = SW_SHOWNOACTIVATE;
+    // Start the child process. 
+    if (!CreateProcess(NULL,   // No module name (use command line)
+        (LPWSTR)cmdline.c_str(),        // Command line
+        NULL,           // Process handle not inheritable
+        NULL,           // Thread handle not inheritable
+        FALSE,          // Set handle inheritance to FALSE
+        CREATE_NEW_CONSOLE,              // No creation flags
+        NULL,           // Use parent's environment block
+        NULL,           // Use parent's starting directory 
+        &si,            // Pointer to STARTUPINFO structure
+        &pi)            // Pointer to PROCESS_INFORMATION structure
+        )
+    {
+        check_win32(GetLastError());
+    }
+    return pi;
+
 }
 
 void StopLoggerConsole(PROCESS_INFORMATION pi)
@@ -206,7 +206,7 @@ winrt::hstring GetDeviceSelectionFromUser()
     std::cin >> selection; selection--;
     return filteredDevices.GetAt(selection).Id();
 }
-void GetUserSelectionAndSetMediaFormat(MediaCapture &mc)
+void GetUserSelectionAndSetMediaFormat(MediaCapture& mc)
 {
     auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);
     IMediaEncodingProperties selectedProp(nullptr);
@@ -229,11 +229,11 @@ int main()
     PROCESS_INFORMATION loggerConsole;
     try
     {
-       
+
         std::wofstream fileLogger("RTSPServer.log");
         fileLogger << L"StartLogging..\n";
         loggerConsole = StartLoggerConsole(L"RTSPServer.log");
-       
+
         auto mc = MediaCapture();
         auto s = MediaCaptureInitializationSettings();
         s.VideoDeviceId(GetDeviceSelectionFromUser());
@@ -278,7 +278,7 @@ int main()
         check_hresult(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer", m_spAuthProvider.put()));
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
-        check_hresult(CreateRTSPServer(streamers.as<ABI::RTSPSuffixSinkMap>().get(), ServerPort, false, m_spAuthProvider.get(),{},0, serverHandle.put() ));
+        check_hresult(CreateRTSPServer(streamers.as<ABI::RTSPSuffixSinkMap>().get(), ServerPort, false, m_spAuthProvider.get(), {}, 0, serverHandle.put()));
 #ifndef  DISABLE_SECURE_RTSP
         try
         {
@@ -295,17 +295,17 @@ int main()
         }
 #endif
         auto loggerdelegate = winrt::LogHandler([&fileLogger](auto er, auto msg)
-        {
-            fileLogger << msg.c_str() << "\n";
-            if (er)
             {
-                fileLogger << L" ErrCode:" << std::hex << er <<"\n" << std::dec;
-                std::wcout << msg.c_str();
-                std::wcout << L" ErrCode:" << std::hex << er << "\n" << std::dec;
-            }
-            fileLogger.flush();
+                fileLogger << msg.c_str() << "\n";
+                if (er)
+                {
+                    fileLogger << L" ErrCode:" << std::hex << er << "\n" << std::dec;
+                    std::wcout << msg.c_str();
+                    std::wcout << L" ErrCode:" << std::hex << er << "\n" << std::dec;
+                }
+                fileLogger.flush();
 
-        });
+            });
         for (int i = 0; i < (int)LoggerType::LOGGER_MAX; i++)
         {
             EventRegistrationToken t1, t2;
@@ -348,7 +348,7 @@ int main()
                 if (!vf) return;
                 winrt::com_ptr<IMFSample> spSample;
                 vf.as<IVideoFrameNative>()->GetData(__uuidof(IMFSample), spSample.put_void());
-                for(auto&& sinkWriter : spSinkWriters)
+                for (auto&& sinkWriter : spSinkWriters)
                 {
                     sinkWriter->WriteSample(0, spSample.get());
                 }
@@ -379,7 +379,7 @@ int main()
         char c = 1;
         while (c != 0)
         {
-            std::cout << "\n 1. Add User\n 2. Remove User \n 0. Quit\n Your choice:" ;
+            std::cout << "\n 1. Add User\n 2. Remove User \n 0. Quit\n Your choice:";
 
             std::cin >> c;
             switch (c)
@@ -391,9 +391,9 @@ int main()
                 std::cin >> username;
                 std::cout << "\nEnter new password :- ";
                 std::cin >> password;
-                check_hresult( m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username).c_str(), winrt::to_hstring(password).c_str()));
+                check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(winrt::to_hstring(username).c_str(), winrt::to_hstring(password).c_str()));
             }
-                break;
+            break;
             case '2':
             {
                 std::string username;
@@ -401,7 +401,7 @@ int main()
                 std::cin >> username;
                 check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(winrt::to_hstring(username).c_str()));
             }
-                break;
+            break;
             case '0':
                 c = 0;
                 break;
@@ -409,7 +409,7 @@ int main()
                 break;
             }
 
-        } 
+        }
 #ifdef USE_FR
         fr.StopAsync();
 #else
@@ -417,7 +417,7 @@ int main()
         lowLagRec.FinishAsync().get();
 #endif
         check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(L"user"));
-        
+
     }
     catch (hresult_error const& ex)
     {

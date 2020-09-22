@@ -51,7 +51,7 @@ enum class AuthType
 MIDL_INTERFACE("BC710897-4727-4154-B085-52C5F5A4047C")
 IRTSPAuthProvider : public ::IUnknown
 {
-    virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) = 0;
+    virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING * pAuthSessionMessage) = 0;
     virtual STDMETHODIMP Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod) = 0;
 };
 
@@ -69,7 +69,7 @@ namespace ABI
     template<> MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DE") ITypedEventHandler< uintptr_t, SessionStatus> : ITypedEventHandler_impl<uintptr_t, SessionStatus>{};
     typedef ITypedEventHandler<uintptr_t, SessionStatus> SessionStatusHandler;
 
-    template<> MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DF") ITypedEventHandler<HRESULT, HSTRING> : ITypedEventHandler_impl<HRESULT, HSTRING>  { };
+    template<> MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DF") ITypedEventHandler<HRESULT, HSTRING> : ITypedEventHandler_impl<HRESULT, HSTRING>{ };
     typedef ITypedEventHandler<HRESULT, HSTRING> LogHandler;
 
     typedef Collections::IPropertySet RTSPSuffixSinkMap;
@@ -103,5 +103,5 @@ public:
     virtual STDMETHODIMP RemoveSessionStatusHandler(LoggerType type, EventRegistrationToken token) = 0;
 };
 
-RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap *pStreamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* aServerCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl);
+RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* pStreamers, uint16_t socketPort, bool bSecure, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* aServerCerts, size_t uCertCount, IRTSPServerControl** ppRTSPServerControl);
 RTSPSERVER_API STDMETHODIMP GetAuthProviderInstance(AuthType authType, LPCWSTR pResourceName, IRTSPAuthProvider** ppRTSPAuthProvider);

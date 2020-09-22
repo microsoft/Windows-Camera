@@ -4,7 +4,7 @@
 #include <pch.h>
 
 RTSPSession::RTSPSession(
-      CSocketWrapper* rtspClientSocket
+    CSocketWrapper* rtspClientSocket
     , winrt::Windows::Foundation::Collections::PropertySet streamers
     , IRTSPAuthProvider* pAuthProvider
     , winrt::event<winrt::LogHandler>* m_pLoggers)
@@ -21,7 +21,7 @@ RTSPSession::RTSPSession(
     , m_bAuthorizationReceived(!pAuthProvider)
 {
     auto time = MFGetSystemTime();
-    m_rtspSessionID = (time>>32)^((uint32_t)time);         // create a session ID
+    m_rtspSessionID = (time >> 32) ^ ((uint32_t)time);         // create a session ID
     m_rtspSessionID |= 0x80000000;
     m_ssrc = 0;
     m_clientRTPPort = RTP_DEFAULT_PORT;
@@ -32,7 +32,7 @@ RTSPSession::RTSPSession(
 
     sockaddr_in recvAddr;
     int         recvLen = sizeof(recvAddr);
-    getpeername(m_pRtspClient->GetSocket(), (struct sockaddr*) & recvAddr, &recvLen);
+    getpeername(m_pRtspClient->GetSocket(), (struct sockaddr*)&recvAddr, &recvLen);
     char addr[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(recvAddr.sin_addr), addr, INET_ADDRSTRLEN);
     m_rtspClientAddr = addr;
@@ -69,19 +69,19 @@ void RTSPSession::InitTCPTransport()
 {
 
     m_pTcpTxBuff = std::make_unique<BYTE[]>(USHRT_MAX);
-    m_packetHandler = winrt::PacketHandler([this] (winrt::Windows::Foundation::IInspectable, winrt::Windows::Storage::Streams::IBuffer buf)
-    {
-        BYTE* pBuf = buf.data();
-        auto size = buf.Length();
-        BYTE strmIdx = ((pBuf[1] >= 192 && pBuf[1] <= 195) || pBuf[1] >= 200 && pBuf[1] <= 210);
-        m_pTcpTxBuff[0] = '$';
-        m_pTcpTxBuff[1] = strmIdx;
-        m_pTcpTxBuff[2] = (size & 0x0000FF00) >> 8;
-        m_pTcpTxBuff[3] = (size & 0x000000FF);
-        memcpy_s(&m_pTcpTxBuff[4], USHRT_MAX - 4, pBuf, size);
+    m_packetHandler = winrt::PacketHandler([this](winrt::Windows::Foundation::IInspectable, winrt::Windows::Storage::Streams::IBuffer buf)
+        {
+            BYTE* pBuf = buf.data();
+            auto size = buf.Length();
+            BYTE strmIdx = ((pBuf[1] >= 192 && pBuf[1] <= 195) || pBuf[1] >= 200 && pBuf[1] <= 210);
+            m_pTcpTxBuff[0] = '$';
+            m_pTcpTxBuff[1] = strmIdx;
+            m_pTcpTxBuff[2] = (size & 0x0000FF00) >> 8;
+            m_pTcpTxBuff[3] = (size & 0x000000FF);
+            memcpy_s(&m_pTcpTxBuff[4], USHRT_MAX - 4, pBuf, size);
 
-        m_pRtspClient->Send(m_pTcpTxBuff.get(), (int)size + 4);
-    });
+            m_pRtspClient->Send(m_pTcpTxBuff.get(), (int)size + 4);
+        });
 
 }
 
@@ -123,7 +123,6 @@ void RTSPSession::Init()
     m_strCSeq.clear();
     m_urlHostPort.clear();
     m_urlProto.clear();
-    //m_ContentLength = 0;
 
 }
 
@@ -281,7 +280,12 @@ RTSP_CMD RTSPSession::ParseRequest(char const* aRequest, unsigned aRequestSize)
 
 RTSP_CMD RTSPSession::HandleRequest(char const* aRequest, unsigned aRequestSize)
 {
-    auto rtspCmdType = ParseRequest(aRequest, aRequestSize);
+    RTSP_CMD rtspCmdType = RTSP_CMD::UNKNOWN;
+    // we filter away everything which seems not to be an known RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
+    if ((aRequest[0] == 'O') || (aRequest[0] == 'D') || (aRequest[0] == 'S') || (aRequest[0] == 'P') || (aRequest[0] == 'T'))
+    {
+        rtspCmdType = ParseRequest(aRequest, aRequestSize);
+    }
 
     switch (rtspCmdType)
     {
@@ -331,11 +335,11 @@ void RTSPSession::HandleCmdDESCRIBE()
             HSTRING msg;
             winrt::check_hresult(m_spAuthProvider->GetNewAuthSessionMessage(&msg));
             winrt::attach_abi(curAuthSessionMsg, msg);
-            m_curAuthSessionMsg =  winrt::to_string(curAuthSessionMsg);
+            m_curAuthSessionMsg = winrt::to_string(curAuthSessionMsg);
             Response += m_curAuthSessionMsg;
         }
-         Response += std::string("Server: NightKing\r\n")
-        + DateHeader() + "\r\n\r\n";
+        Response += std::string("Server: NightKing\r\n")
+            + DateHeader() + "\r\n\r\n";
 
     }
     SendToClient(Response);
@@ -448,7 +452,7 @@ void RTSPSession::HandleCmdPLAY()
     else
     {
         Response = "RTSP/1.0 401 Unauthorized\r\n"
-        + std::string("CSeq: ") + m_strCSeq + "\r\n";
+            + std::string("CSeq: ") + m_strCSeq + "\r\n";
 
         if (m_spAuthProvider)
         {
@@ -529,16 +533,12 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
 
                 char* pRecvBuf = (char*)pSession->m_pTcpRxBuff.get();
 
-                RTSP_CMD C = RTSP_CMD::UNKNOWN;
+                RTSP_CMD rtspCmd = RTSP_CMD::UNKNOWN;
                 int res = pSession->m_pRtspClient->Recv((BYTE*)pRecvBuf, RTSP_BUFFER_SIZE);
                 if (res > 0)
                 {
-                    // we filter away everything which seems not to be an RTSP command: O-ption, D-escribe, S-etup, P-lay, T-eardown
-                    if ((pRecvBuf[0] == 'O') || (pRecvBuf[0] == 'D') || (pRecvBuf[0] == 'S') || (pRecvBuf[0] == 'P') || (pRecvBuf[0] == 'T'))
-                    {
-                        C = pSession->HandleRequest(pRecvBuf, res);
-                    }
-                    else
+                    rtspCmd = pSession->HandleRequest(pRecvBuf, res);
+                    if (rtspCmd == RTSP_CMD::UNKNOWN)
                     {
                         std::ostringstream logstring;
                         logstring << "\nUnhandled Request ignored : size =" << res << "\nDump:";
@@ -550,7 +550,7 @@ void RTSPSession::BeginSession(winrt::delegate<RTSPSession*> completed)
                     }
                 }
 
-                pSession->m_bTerminate = (C == RTSP_CMD::TEARDOWN) || (res <= 0);
+                pSession->m_bTerminate = (rtspCmd == RTSP_CMD::TEARDOWN) || (res <= 0);
 
             }
             catch (...)

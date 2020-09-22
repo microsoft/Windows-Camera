@@ -146,7 +146,7 @@ public:
         for (auto strm : m_spStreamSinks)
         {
             auto hr1 = strm->Shutdown();
-            hr = FAILED(hr1)? hr1: hr;
+            hr = FAILED(hr1) ? hr1 : hr;
         }
         return hr;
     }

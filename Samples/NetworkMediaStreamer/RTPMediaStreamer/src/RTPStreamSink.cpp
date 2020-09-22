@@ -29,7 +29,7 @@ TxContext::TxContext(std::string destination, winrt::PacketHandler packetHandler
 
     if (!packetHandler)
     {
-       param = "localrtpport=";
+        param = "localrtpport=";
         auto sep1 = destination.find(":");
         auto ipaddr = destination.substr(0, sep1);
         sep2 = destination.find(param);
@@ -116,6 +116,7 @@ RTPVideoStreamSink::RTPVideoStreamSink(IMFMediaType* pMediaType, IMFMediaSink* p
     , m_uSequenceNumber(0)
     , m_pTxBuf(nullptr)
 {
+    // TODO: Add arguments to contructor to enable m_packetizationMode = 0;
     if (m_packetizationMode == 1)
     {
         m_mtuSize = 1500;
@@ -131,16 +132,16 @@ RTPVideoStreamSink::RTPVideoStreamSink(IMFMediaType* pMediaType, IMFMediaSink* p
 
 BYTE* RTPVideoStreamSink::FindSC(BYTE* bufStart, BYTE* bufEnd)
 {
-    auto it = bufStart;
-    while (it < bufEnd - 3)
+    for (auto it = bufStart; it < bufEnd - 3; it++)
     {
-        if ((it[0] == 0) && (it[1] == 0) && (it[2] == 1)
-            || (*((uint32_t*)it) == 0x01000000)
-            )
+        if (it[0] == 0)
         {
-            return it;
+            if ((it[1] == 0) && (it[2] == 1)
+                || (*((uint32_t*)it) == 0x01000000))
+            {
+                return it;
+            }
         }
-        while (*(++it) != 0);
     }
     return bufEnd;
 }
@@ -365,12 +366,13 @@ STDMETHODIMP RTPVideoStreamSink::GenerateSDP(uint8_t* buf, size_t maxSize, LPCWS
             paramSets += winrt::to_string(paramSet) + ",";
             sc = sc1;
         }
+        if (!paramSets.empty())
+        {
+            //remove last comma
+            paramSets.pop_back();
+        }
     }
-    if (!paramSets.empty())
-    {
-        //remove last comma
-        paramSets.pop_back();
-    }
+
     auto sep = destination.find(":");
     auto destIP = destination.substr(0, sep);
     auto destPort = destination.substr(sep + 1, destination.find("?") - sep);

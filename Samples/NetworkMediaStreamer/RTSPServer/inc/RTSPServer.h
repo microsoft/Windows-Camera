@@ -4,10 +4,10 @@
 #pragma once
 #define DBGLEVEL 1
 
-class RTSPServer  : public winrt::implements<RTSPServer, IRTSPServerControl>
+class RTSPServer : public winrt::implements<RTSPServer, IRTSPServerControl>
 {
 public:
-    RTSPServer(ABI::RTSPSuffixSinkMap *streamers, uint16_t socketPort, IRTSPAuthProvider *pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount)
+    RTSPServer(ABI::RTSPSuffixSinkMap* streamers, uint16_t socketPort, IRTSPAuthProvider* pAuthProvider, PCCERT_CONTEXT* serverCerts, size_t uCertCount)
         : m_acceptEvent(nullptr)
         , m_callbackHandle(nullptr)
         , m_socketPort(socketPort)
@@ -16,9 +16,9 @@ public:
         , m_bIsShutdown(false)
     {
         winrt::copy_from_abi(m_streamers, streamers);
-        uCertCount && winrt::check_pointer(serverCerts);
+        uCertCount&& winrt::check_pointer(serverCerts);
         m_serverCerts = winrt::com_array<PCCERT_CONTEXT>((uint32_t)uCertCount);
-        for (uint32_t i=0; i < uCertCount; i++)
+        for (uint32_t i = 0; i < uCertCount; i++)
         {
             m_serverCerts[i] = CertDuplicateCertificateContext(serverCerts[i]);
         }
@@ -30,7 +30,7 @@ public:
     }
 
     // IRTSPServerControl
-    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler * handler, EventRegistrationToken * pToken) override try
+    STDMETHODIMP AddLogHandler(LoggerType type, ABI::LogHandler* handler, EventRegistrationToken* pToken) override try
     {
         winrt::check_pointer(pToken);
         winrt::check_pointer(handler);
@@ -73,7 +73,7 @@ private:
 
     winrt::RTSPSuffixSinkMap m_streamers;
 
-    std::map<SOCKET,std::unique_ptr<RTSPSession>> m_rtspSessions;
+    std::map<SOCKET, std::unique_ptr<RTSPSession>> m_rtspSessions;
     SOCKET      m_masterSocket;                                 // our masterSocket(socket that listens for RTSP client connections)  
     winrt::handle m_acceptEvent;
     winrt::handle m_callbackHandle;

@@ -30,8 +30,8 @@ STDMETHODIMP RTSPServer::StartServer() try
         return S_OK;
     }
 
-    sockaddr_in ServerAddr;                                   // server address parameters
-    WSADATA     WsaData;
+    sockaddr_in ServerAddr; // server address parameters
+    WSADATA WsaData;
 
     int ret = WSAStartup(0x101, &WsaData);
     if (ret != 0)
@@ -70,7 +70,7 @@ STDMETHODIMP RTSPServer::StartServer() try
     winrt::check_bool(RegisterWaitForSingleObject(m_callbackHandle.put(), m_acceptEvent.get(), [](PVOID arg, BOOLEAN flag)
         {
             auto pServer = (RTSPServer*)arg;
-            SOCKET      clientSocket;                                 // RTSP socket to handle an client
+            SOCKET clientSocket; // RTSP socket to handle an client
             try
             {
                 auto apiLock = std::lock_guard(pServer->m_apiGuard);
@@ -81,8 +81,8 @@ STDMETHODIMP RTSPServer::StartServer() try
                 }
                 WSAResetEvent(pServer->m_acceptEvent.get());
 
-                sockaddr_in ClientAddr;                                   // address parameters of a new RTSP client
-                int         ClientAddrLen = sizeof(ClientAddr);
+                sockaddr_in ClientAddr; // address parameters of a new RTSP client
+                int ClientAddrLen = sizeof(ClientAddr);
                 char addr[INET_ADDRSTRLEN];
 
                 // loop forever to accept client connections
@@ -116,11 +116,11 @@ STDMETHODIMP RTSPServer::StartServer() try
                     pServer->m_loggerEvents[(int)LoggerType::ERRORS](ex.code(), L"\nFailed to Create Socket wrapper:" + ex.message());
                     return;
                 }
-                
+
                 pServer->m_rtspSessions.insert(
-                    { 
+                    {
                     clientSocket,
-                    std::make_unique<RTSPSession>(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_loggerEvents) 
+                    std::make_unique<RTSPSession>(pClientSocketWrapper.release(), pServer->m_streamers, pServer->m_spAuthProvider.get(), pServer->m_loggerEvents)
                     });
                 pServer->m_sessionStatusEvents(pServer->m_rtspSessions[clientSocket]->GetStreamID(), SessionStatus::SessionStarted);
                 pServer->m_loggerEvents[(int)LoggerType::OTHER](S_OK, L"\nStarting session:" + winrt::to_hstring(pServer->m_rtspSessions[clientSocket]->GetStreamID()));
@@ -154,7 +154,7 @@ RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, 
         winrt::check_hresult(SEC_E_NO_CREDENTIALS);
     }
     winrt::com_ptr<RTSPServer> spRTSPServer;
-    spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts,uCertCount));
+    spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts, uCertCount));
     *ppRTSPServerControl = spRTSPServer.as<IRTSPServerControl>().detach();
 
     return S_OK;
