@@ -22,11 +22,12 @@ namespace ABI
 {
     using namespace ABI::Windows::Foundation;
     using namespace ABI::Windows::Storage::Streams;
-    template<> MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DB") IEventHandler<IBuffer*> : IEventHandler_impl<IBuffer*>{};
+    template<> MIDL_INTERFACE("7E37DD5F-7749-46E4-856A-FE098BAA142D") IEventHandler<IBuffer*> : IEventHandler_impl<IBuffer*>{};
     typedef IEventHandler<IBuffer*> PacketHandler;
 }
-namespace winrt {
 
+namespace winrt 
+{
     typedef winrt::Windows::Foundation::EventHandler<winrt::Windows::Storage::Streams::IBuffer> PacketHandler;
     template <> struct winrt::impl::guid_storage<PacketHandler>
     {

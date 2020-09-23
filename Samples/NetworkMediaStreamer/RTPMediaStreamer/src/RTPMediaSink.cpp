@@ -21,6 +21,7 @@ protected:
             m_spStreamSinks[i].attach(RTPVideoStreamSink::CreateInstance(streamMediaTypes[i].get(), this, i));
         }
     }
+
     virtual ~RTPMediaSink() = default;
 public:
     static IMFMediaSink* CreateInstance(std::vector<winrt::com_ptr<IMFMediaType>> streamMediaTypes)

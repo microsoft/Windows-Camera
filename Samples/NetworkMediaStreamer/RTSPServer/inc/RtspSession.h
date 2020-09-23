@@ -32,6 +32,7 @@ public:
     {
         return m_pRtspClient->GetSocket();
     }
+
     void BeginSession(winrt::delegate<RTSPSession*> completed);
 private:
     void Init();
