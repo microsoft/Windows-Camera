@@ -37,6 +37,7 @@ CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_
 
     }
 }
+
 CSocketWrapper::~CSocketWrapper()
 {
     //TODO: need to handle secure socket shutdown message to client

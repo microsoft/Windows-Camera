@@ -169,6 +169,7 @@ public:
         }
         return hr;
     }
+
     STDMETHODIMP OnClockStop(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
@@ -179,6 +180,7 @@ public:
         }
         return hr;
     }
+
     STDMETHODIMP OnClockPause(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
@@ -189,6 +191,7 @@ public:
         }
         return hr;
     }
+
     STDMETHODIMP OnClockRestart(MFTIME hnsSystemTime) noexcept override
     {
         HRESULT hr = S_OK;
@@ -199,6 +202,7 @@ public:
         }
         return hr;
     }
+
     STDMETHODIMP OnClockSetRate(MFTIME hnsSystemTime, float flRate) noexcept override
     {
         return S_OK;

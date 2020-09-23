@@ -195,6 +195,7 @@ public:
     {
         return new CAuthProvider(authtype, resourceName);
     }
+
 private:
 
     CAuthProvider(AuthType authType, winrt::hstring resourceName)
@@ -208,6 +209,7 @@ private:
         hashProvider = HashAlgorithmProvider::OpenAlgorithm(HashAlgorithmNames::Sha256());
         m_hashSHA256 = hashProvider.CreateHash();
     }
+
     virtual  ~CAuthProvider() = default;
 
     std::string GetValueForParam(std::string message, std::string param)

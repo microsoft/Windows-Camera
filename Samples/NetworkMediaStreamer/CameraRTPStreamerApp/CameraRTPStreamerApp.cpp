@@ -206,6 +206,7 @@ winrt::hstring GetDeviceSelectionFromUser()
     std::cin >> selection; selection--;
     return filteredDevices.GetAt(selection).Id();
 }
+
 void GetUserSelectionAndSetMediaFormat(MediaCapture& mc)
 {
     auto formats = mc.VideoDeviceController().GetAvailableMediaStreamProperties(MediaStreamType::VideoRecord);

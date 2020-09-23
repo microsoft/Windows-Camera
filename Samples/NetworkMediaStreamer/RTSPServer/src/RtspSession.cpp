@@ -396,6 +396,7 @@ void RTSPSession::HandleCmdSETUP()
     m_pLoggerEvents[(int)LoggerType::RTSPMSGS](S_OK, winrt::to_hstring(__FUNCTION__) + L":Response:" + winrt::to_hstring(Response));
 #endif
 }
+
 void RTSPSession::StopIfStreaming()
 {
     if (m_bStreamingStarted)
