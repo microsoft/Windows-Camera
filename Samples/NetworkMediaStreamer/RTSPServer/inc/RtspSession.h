@@ -51,7 +51,7 @@ private:
     void StopIfStreaming();
     void SendToClient(std::string Response);
 
-    int            m_rtspSessionID;
+    uint32_t m_rtspSessionID;
     winrt::delegate<RTSPSession*> m_sessionCompleted;
     std::unique_ptr<CSocketWrapper> m_pRtspClient;
     std::string    m_rtspClientAddr;
