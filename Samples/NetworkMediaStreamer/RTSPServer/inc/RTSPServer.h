@@ -24,6 +24,7 @@ public:
         }
         m_spAuthProvider.copy_from(pAuthProvider);
     }
+
     virtual  ~RTSPServer()
     {
         StopServer();

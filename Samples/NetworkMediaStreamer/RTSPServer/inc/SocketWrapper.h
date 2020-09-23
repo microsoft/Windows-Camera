@@ -15,10 +15,27 @@ public:
     virtual ~CSocketWrapper();
     int Recv(BYTE* buf, int sz);
     int Send(BYTE* buf, int sz);
-    SOCKET GetSocket() { return m_socket; }
-    bool IsClientCertAuthenticated() { return m_bIsAuthenticated; }
-    bool IsSecure() { return m_bIsSecure; }
-    std::wstring GetClientCertUserName() { return m_clientUserName; }
+
+    SOCKET GetSocket()
+    {
+        return m_socket;
+    }
+
+    bool IsClientCertAuthenticated()
+    {
+        return m_bIsAuthenticated;
+    }
+
+    bool IsSecure()
+    {
+        return m_bIsSecure;
+    }
+
+    std::wstring GetClientCertUserName()
+    {
+        return m_clientUserName;
+    }
+
 private:
 
     static void ReadDelegate(PVOID arg, BOOLEAN flag);
