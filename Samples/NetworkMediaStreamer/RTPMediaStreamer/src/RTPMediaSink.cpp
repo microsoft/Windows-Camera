@@ -40,7 +40,7 @@ public:
     STDMETHODIMP GetCharacteristics(
         /* [out] */ __RPC__out DWORD* pdwCharacteristics) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (!pdwCharacteristics)
         {
             return E_POINTER;
@@ -54,21 +54,21 @@ public:
         /* [in] */ __RPC__in_opt IMFMediaType* pMediaType,
         /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP RemoveStreamSink(
         /* [in] */ DWORD dwStreamSinkIdentifier) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         return MF_E_STREAMSINKS_FIXED;
     }
 
     STDMETHODIMP GetStreamSinkCount(
         /* [out] */ __RPC__out DWORD* pcStreamSinkCount) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (!pcStreamSinkCount)
         {
             return E_POINTER;
@@ -84,7 +84,7 @@ public:
         /* [in] */ DWORD dwIndex,
         /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (!ppStreamSink)
         {
             return E_POINTER;
@@ -101,7 +101,7 @@ public:
         /* [in] */ DWORD dwStreamSinkIdentifier,
         /* [out] */ __RPC__deref_out_opt IMFStreamSink** ppStreamSink) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (dwStreamSinkIdentifier > m_spStreamSinks.size())
         {
             return MF_E_INVALIDSTREAMNUMBER;
@@ -116,7 +116,7 @@ public:
     STDMETHODIMP SetPresentationClock(
         /* [in] */ __RPC__in_opt IMFPresentationClock* pPresentationClock) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (m_spClock)
         {
             m_spClock->RemoveClockStateSink(this);
@@ -130,7 +130,7 @@ public:
     STDMETHODIMP GetPresentationClock(
         /* [out] */ __RPC__deref_out_opt IMFPresentationClock** ppPresentationClock) noexcept override
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         if (!ppPresentationClock)
         {
             return E_POINTER;
@@ -141,7 +141,7 @@ public:
 
     STDMETHODIMP Shutdown(void) noexcept
     {
-        RETURNIFSHUTDOWN;
+        RETURN_IF_SHUTDOWN;
         HRESULT hr = S_OK;
         m_bIsShutdown = true;
         for (auto strm : m_spStreamSinks)

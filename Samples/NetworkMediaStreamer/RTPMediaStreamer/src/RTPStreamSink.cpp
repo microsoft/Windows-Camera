@@ -406,8 +406,9 @@ STDMETHODIMP RTPVideoStreamSink::PacketizeAndSend(IMFSample* pSample) noexcept
     DWORD dwSampleSize, maxLen;
     BYTE* pSampleBuffer = nullptr;
     HRESULT hr = S_OK;
-    try {
-
+    try
+    {
+        winrt::check_pointer(pSample);
         winrt::check_hresult(pSample->GetBufferByIndex(0, spMediaBuf.put()));
         winrt::check_hresult(spMediaBuf->Lock(&pSampleBuffer, &maxLen, &dwSampleSize));
         winrt::check_hresult(pSample->GetSampleTime(&llSampleTime));

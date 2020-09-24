@@ -3,8 +3,8 @@
 
 #pragma once
 
-#define RETURNIFSHUTDOWN if(m_bIsShutdown) return MF_E_SHUTDOWN;
-
+#define RETURN_IF_SHUTDOWN if(m_bIsShutdown) return MF_E_SHUTDOWN;
+#define RETURN_IF_NULL(p) if(!p) return E_POINTER;
 #define HRESULT_EXCEPTION_BOUNDARY_FUNC catch(...) { auto hr = winrt::to_hresult(); return hr;}
 
 class NwMediaStreamSinkBase : public winrt::implements<NwMediaStreamSinkBase, INetworkMediaStreamSink, IMFStreamSink, IMFMediaEventGenerator>

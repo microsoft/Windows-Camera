@@ -153,6 +153,7 @@ RTSPSERVER_API STDMETHODIMP CreateRTSPServer(ABI::RTSPSuffixSinkMap* streamers, 
     {
         winrt::check_hresult(SEC_E_NO_CREDENTIALS);
     }
+
     winrt::com_ptr<RTSPServer> spRTSPServer;
     spRTSPServer.attach(new RTSPServer(streamers, socketPort, pAuthProvider, serverCerts, uCertCount));
     *ppRTSPServerControl = spRTSPServer.as<IRTSPServerControl>().detach();

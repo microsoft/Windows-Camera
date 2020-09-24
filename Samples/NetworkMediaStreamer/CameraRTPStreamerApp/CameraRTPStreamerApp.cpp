@@ -40,7 +40,7 @@ constexpr uint16_t ServerPort = 8554;
 constexpr uint16_t SecureServerPort = 6554;
 
 // Uncomment the following if you want to use FrameReader API instead of the Record-to-sink APIs
-//#define USE_FR 
+#define USE_FR 
 
 // sample test code to get localhost test certificate
 std::vector<PCCERT_CONTEXT> getServerCertificate()
@@ -61,7 +61,7 @@ std::vector<PCCERT_CONTEXT> getServerCertificate()
     if (hMyCertStore == NULL)
     {
         printf("Error opening MY store for server.\n");
-        goto cleanup;
+        return aCertContext;
     }
     //-------------------------------------------------------
     // Search for a certificate with some specified
@@ -83,11 +83,12 @@ std::vector<PCCERT_CONTEXT> getServerCertificate()
             aCertContext.push_back(CertDuplicateCertificateContext(pCertContext));
         }
     } while (pCertContext);
+
     if (aCertContext.empty())
     {
         printf("Error retrieving server certificate.");
     }
-cleanup:
+
     if (hMyCertStore)
     {
         CertCloseStore(hMyCertStore, 0);
@@ -202,8 +203,13 @@ winrt::hstring GetDeviceSelectionFromUser()
         std::wcout << std::endl << selection++ << L". " << device.Name().c_str() << L":" << device.Id().c_str();
         deviceIter.MoveNext();
     }
-    std::cout << "\nEnter Selection:";
-    std::cin >> selection; selection--;
+
+    do
+    {
+        std::cout << "\nEnter Selection:";
+        std::cin >> selection; selection--;
+    } while ((selection < 0) || (selection > filteredDevices.Size()));
+
     return filteredDevices.GetAt(selection).Id();
 }
 
@@ -218,8 +224,13 @@ void GetUserSelectionAndSetMediaFormat(MediaCapture& mc)
         float fr = (float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator();
         std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << /*std::setprecision(2) <<*/ fr << L":" << format.Subtype().c_str();
     }
-    std::cout << "Enter format choice: ";
-    std::cin >> idx; idx--;
+
+    do
+    {
+        std::cout << "Enter format choice: ";
+        std::cin >> idx; idx--;
+    } while ((idx < 0) || (idx >= formats.Size()));
+
     selectedProp = formats.GetAt(idx);
     mc.VideoDeviceController().SetMediaStreamPropertiesAsync(MediaStreamType::VideoRecord, selectedProp).get();
 }
@@ -236,6 +247,13 @@ int main()
         loggerConsole = StartLoggerConsole(L"RTSPServer.log");
 
         auto mc = MediaCapture();
+
+        mc.Failed([](MediaCapture sender, MediaCaptureFailedEventArgs args)
+            {
+                std::wcout << L"MediaCapture pipeline error: " << args.Code() << L":" << args.Message().c_str();
+                std::wcout << L"\nPress 0 to exit program.";
+            });
+
         auto s = MediaCaptureInitializationSettings();
         s.VideoDeviceId(GetDeviceSelectionFromUser());
 #ifdef USE_FR
@@ -277,6 +295,7 @@ int main()
         com_ptr<IRTSPServerControl> serverHandle, serverHandleSecure;
         com_ptr<IRTSPAuthProvider> m_spAuthProvider;
         check_hresult(GetAuthProviderInstance(AuthType::Digest, L"RTSPServer", m_spAuthProvider.put()));
+
         // add a default user for testing
         m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->AddUser(L"user", L"pass");
         check_hresult(CreateRTSPServer(streamers.as<ABI::RTSPSuffixSinkMap>().get(), ServerPort, false, m_spAuthProvider.get(), {}, 0, serverHandle.put()));
@@ -343,18 +362,26 @@ int main()
                 slim_lock_guard g(m);
                 auto mf = mfr.TryAcquireLatestFrame();
                 if (!mf) return;
-                auto vmf = mf.VideoMediaFrame();
-                if (!vmf) return;
-                auto vf = vmf.GetVideoFrame();
-                if (!vf) return;
-                winrt::com_ptr<IMFSample> spSample;
-                vf.as<IVideoFrameNative>()->GetData(__uuidof(IMFSample), spSample.put_void());
+                auto spGetService = mf.as<IMFGetService>();
+                com_ptr<IMFSample> spSample;
+                check_hresult(spGetService->GetService(MF_WRAPPED_SAMPLE_SERVICE, IID_PPV_ARGS(spSample.put())));
                 for (auto&& sinkWriter : spSinkWriters)
                 {
-                    sinkWriter->WriteSample(0, spSample.get());
+                    check_hresult(sinkWriter->WriteSample(0, spSample.get()));
                 }
             });
-        fr.StartAsync();
+
+        auto frStatus = fr.StartAsync().get();
+        std::map<MediaFrameReaderStartStatus, HRESULT> frErrorMap =
+        {
+            {MediaFrameReaderStartStatus::DeviceNotAvailable, MF_E_VIDEO_RECORDING_DEVICE_INVALIDATED},
+            {MediaFrameReaderStartStatus::ExclusiveControlNotAvailable, ERROR_SHARING_VIOLATION},
+            {MediaFrameReaderStartStatus::OutputFormatNotSupported, MF_E_INVALIDMEDIATYPE},
+            {MediaFrameReaderStartStatus::UnknownFailure, E_FAIL},
+            {MediaFrameReaderStartStatus::Success, S_OK}
+        };
+
+        winrt::check_hresult(frErrorMap[frStatus]);
 #else
 
         auto me = MediaEncodingProfile::CreateMp4(VideoEncodingQuality::Auto);
@@ -411,11 +438,18 @@ int main()
             }
 
         }
+
 #ifdef USE_FR
-        fr.StopAsync();
+        if (fr)
+        {
+            fr.StopAsync().get();
+        }
 #else
-        lowLagRec.StopAsync().get();
-        lowLagRec.FinishAsync().get();
+        if (lowLagRec)
+        {
+            lowLagRec.StopAsync().get();
+            lowLagRec.FinishAsync().get();
+        }
 #endif
         check_hresult(m_spAuthProvider.as<IRTSPAuthProviderCredStore>()->RemoveUser(L"user"));
 

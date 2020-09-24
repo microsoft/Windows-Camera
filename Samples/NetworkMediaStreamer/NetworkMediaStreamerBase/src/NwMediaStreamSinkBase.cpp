@@ -31,7 +31,7 @@ NwMediaStreamSinkBase ::~NwMediaStreamSinkBase()
 
 STDMETHODIMP NwMediaStreamSinkBase::Start(MFTIME hnsSystemTime, LONGLONG llClockStartOffset)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     auto hr = QueueEvent(MEStreamSinkStarted, GUID_NULL, S_OK, nullptr);
     if (m_spMTHandler)
     {
@@ -48,55 +48,52 @@ STDMETHODIMP NwMediaStreamSinkBase::Start(MFTIME hnsSystemTime, LONGLONG llClock
 
 STDMETHODIMP NwMediaStreamSinkBase::Stop(MFTIME hnsSystemTime)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return QueueEvent(MEStreamSinkStopped, GUID_NULL, S_OK, nullptr);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::Pause(MFTIME hnsSystemTime)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return QueueEvent(MEStreamSinkPaused, GUID_NULL, S_OK, nullptr);;
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::Shutdown()
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     m_bIsShutdown = true;
     return S_OK;
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::BeginGetEvent(IMFAsyncCallback* pCallback, IUnknown* pState)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return m_spEventQueue->BeginGetEvent(pCallback, pState);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::EndGetEvent(IMFAsyncResult* pResult, IMFMediaEvent** ppEvent)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return m_spEventQueue->EndGetEvent(pResult, ppEvent);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::GetEvent(DWORD dwFlags, IMFMediaEvent** ppEvent)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return m_spEventQueue->GetEvent(dwFlags, ppEvent);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::QueueEvent(MediaEventType met, REFGUID extendedType, HRESULT hrStatus, const PROPVARIANT* pvValue)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return m_spEventQueue->QueueEventParamVar(met, extendedType, hrStatus, pvValue);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::GetMediaSink(IMFMediaSink** ppMediaSink)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
+    RETURN_IF_NULL(ppMediaSink);
 
-    if (!ppMediaSink)
-    {
-        return E_POINTER;
-    }
     if (m_pParentSink)
     {
         m_pParentSink->AddRef();
@@ -111,11 +108,8 @@ STDMETHODIMP NwMediaStreamSinkBase::GetMediaSink(IMFMediaSink** ppMediaSink)
 
 STDMETHODIMP NwMediaStreamSinkBase::GetIdentifier(DWORD* pdwIdentifier)
 {
-    RETURNIFSHUTDOWN;
-    if (!pdwIdentifier)
-    {
-        return E_POINTER;
-    }
+    RETURN_IF_SHUTDOWN;
+    RETURN_IF_NULL(pdwIdentifier);
 
     *pdwIdentifier = m_dwStreamID;
     return S_OK;
@@ -123,15 +117,16 @@ STDMETHODIMP NwMediaStreamSinkBase::GetIdentifier(DWORD* pdwIdentifier)
 
 STDMETHODIMP NwMediaStreamSinkBase::GetMediaTypeHandler(IMFMediaTypeHandler** ppHandler)
 {
-    RETURNIFSHUTDOWN;
-    if (!ppHandler) return E_POINTER;
+    RETURN_IF_SHUTDOWN;
+    RETURN_IF_NULL(ppHandler);
+
     m_spMTHandler.copy_to(ppHandler);
     return S_OK;
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::ProcessSample(IMFSample* pSample)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     auto hr = PacketizeAndSend(pSample);
     if (SUCCEEDED(hr))
     {
@@ -143,12 +138,12 @@ STDMETHODIMP NwMediaStreamSinkBase::ProcessSample(IMFSample* pSample)
 
 STDMETHODIMP NwMediaStreamSinkBase::PlaceMarker(MFSTREAMSINK_MARKER_TYPE eMarkerType, const PROPVARIANT* pvarMarkerValue, const PROPVARIANT* pvarContextValue)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return QueueEvent(MEStreamSinkMarker, GUID_NULL, S_OK, pvarContextValue);
 }
 
 STDMETHODIMP NwMediaStreamSinkBase::Flush(void)
 {
-    RETURNIFSHUTDOWN;
+    RETURN_IF_SHUTDOWN;
     return S_OK;
 }

@@ -17,7 +17,6 @@ CSocketWrapper::CSocketWrapper(SOCKET connectedSocket, winrt::array_view<PCCERT_
 {
     if (m_bIsSecure)
     {
-
         InitializeSecurity();
 
         winrt::check_hresult(QueryContextAttributes(

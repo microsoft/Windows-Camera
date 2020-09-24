@@ -20,6 +20,7 @@ public:
         m_serverCerts = winrt::com_array<PCCERT_CONTEXT>((uint32_t)uCertCount);
         for (uint32_t i = 0; i < uCertCount; i++)
         {
+            winrt::check_pointer(serverCerts[i]);
             m_serverCerts[i] = CertDuplicateCertificateContext(serverCerts[i]);
         }
         m_spAuthProvider.copy_from(pAuthProvider);
