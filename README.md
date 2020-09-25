@@ -1,86 +1,300 @@
 
-<!---
-  samplefwlink: TBD
---->
+# NetworkMediaStreamer
+## Introduction
+The NetworkMediaStreamer is a set of basic implementations of RTP streaming and RTSP server to demonstrate usage of [Windows Media Foundation APIs](https://docs.microsoft.com/en-us/windows/win32/medfound/media-foundation-programming-guide) related to:
+ 1. Using and configuring OS built-in codecs
+ 2. Consuming samples/frames from the MediaFoundation stack of APIs
+ 
+ The implementation also demonstrates:
+ 1. Using Windows APIs for network to implement RTP video streaming and RTSP server , and using [Schannel APIs](https://docs.microsoft.com/en-us/windows/win32/com/schannel) for secure RTSP.
+ 2. Using credential store using [PasswordVault APIs](https://docs.microsoft.com/en-us/uwp/api/windows.security.credentials.passwordvault?view=winrt-19041) 
 
-# Windows Platform sample applications and tools for using and developing the Camera features
+ This base implementation supports H264 RTP via RTSP . The code can be extended very easily to support more RTP payloads and other protocols as well. Refer to this figure to understand the interaction between various components.
 
-This repo contains sample applications that demonstrate the API usage patterns for using the camera related features on Universal Windows Platform (UWP), Win32 Desktop platform and .NetCore 3.0 for Windows 10. 
-These code samples were created with the project templates available in Visual Studio, and are designed to run on desktop, mobile, and future devices.
+![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)  
+ In the above figure, the red arrows denote Media data flow and the black arrows denote command and control flow.
+ 
+ ## RTPSink
+ The RTP streaming is implemented as a COM class which implements [IMFMediaSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfmediasink). This class encapsulates the Network media stream sink which does the actual packetization work and UDP streaming. The NetworkMediaStream sink can be controlled via two interfaces:
+ 1. [IMFStreamSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfstreamsink)
+    - negotiating/setting media types and streaming states
+    - supplying encoded samples to the sink.
+ 2. [INetworkMediaStreamSink](###INetworkMediaStreamSink)
+    - adding network destination end points for streaming
+    - adding custom packet transport handlers
 
-> **Note:** If you are unfamiliar with Git and GitHub, you can download the entire collection as a 
-> [ZIP file](https://github.com/microsoft/Windows-Camera/archive/master.zip), but be 
-> sure to unzip everything to access shared dependencies. 
+The RTPSink instance can be created using the factory method
 
-## Universal Windows Platform (UWP) samples/tools
+---
+```
+ HRESULT CreateRTPMediaSink( 
+    IMFMediaType** apMediaTypes,
+    DWORD          dwMediaTypeCount, 
+    IMFMediaSink** ppMediaSink)
+``` 
+### Arguments  
+|  |  |
+| ----------- | ----------- |
+| apMediaTypes | Input array of MFMediaType objects which describe each stream of the sink |
+| dwMediaTypeCount | Input number of Media types in the array (number of streams to be created) |
+| ppMediaSink | Output pointer to the instance of the RTP MediaSink |
+---
+### Return
+>HRESULT 
+: S_OK if succeeded. HRESULT error if failed. 
+---
 
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 16299 for Windows 10.
+### Feeding samples/video to the RTPSink
+This can be acheived using one of the following (but not limited to) options
+1. Use [MFCreateSinkWriterFromMediaSink](https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nf-mfreadwrite-mfcreatesinkwriterfrommediasink) and write samples using the obtained [IMFSinkWriter](https://docs.microsoft.com/en-us/windows/win32/api/mfreadwrite/nn-mfreadwrite-imfsinkwriter) interface
+2. Using a [Media Session](https://docs.microsoft.com/en-us/windows/win32/medfound/media-session)
+3. Streaming Video from Camera using [Mediacapture](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture?view=winrt-19041) and [Record to custom Sink](https://docs.microsoft.com/en-us/uwp/api/windows.media.capture.mediacapture.preparelowlagrecordtocustomsinkasync?view=winrt-19041)
 
-   [Get a free copy of Visual Studio 2017 Community Edition with support for building Universal Windows Platform apps](http://go.microsoft.com/fwlink/p/?LinkID=280676)
+## RTSP Server
+The RTSP server control implements RTSP protocol to negotiate and setup RTP streaming to the clients from the RTPSink instances it holds. 
+The RTSP Server controls the network side interface (INetworkMediaStreamSink) for all the sinks that it controls.
+An instance of RTSP Server can be created by using the factory method: 
 
-Additionally, to stay on top of the latest updates to Windows and the development tools, become a Windows Insider by joining the Windows Insider Program.
+---
+```
+ HRESULT CreateRTSPServer(
+    ABI::RTSPSuffixSinkMap *pStreamers,
+    uint16_t socketPort,
+    bool bSecure,
+    IRTSPAuthProvider* pAuthProvider,
+    PCCERT_CONTEXT* aServerCerts,
+    size_t uCertCount,
+    IRTSPServerControl** ppRTSPServerControl);
 
-   [Become a Windows Insider](https://insider.windows.com/)
+``` 
+### Arguments  
+|  |  |
+| ----------- | ----------- |
+| pStreamers | Input map of MediaSink objects as IMediaExtension interface and the corresponding url suffix. |
+| socketPort | Input socket port on which the Server wil listen for RTSP requests. |
+| bSecure | Input bool flag indicating if the server uses secure tcp connection |  
+| pAuthProvider | Input pointer to the IRTSPAuthProvider interface to the authentication provider to be used by the server |
+| aServerCerts | Input array of server certificate contexts to use for secure tcp tls. |
+| uCertCount | Input number of certificate contexts in the array |
+| ppRTSPServerControl | Output pointer to the [IRTSPServerControl](###IRTSPServerControl) interface to the RTSP server instance |
+---
+### Return  
+>HRESULT 
+: S_OK if succeeded. HRESULT error if failed. 
+---
 
-## Win32 Desktop applications/tools
+## Authentication provider
 
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 17763 for Windows 10.
+The authentication provider implements the following interfaces 
+1. IRTSPAuthProvider: This interface is used by the RTSP server to authenticate incoming client connections
+2. IRTSPAuthProviderCredStore: This interface is used by the administrative module of the app to add and remove credentials etc.  
+A base/sample implementation of AuthProvider is included in the source. An instance to the authentication provider can be created using -
+---
+```
+ HRESULT GetAuthProviderInstance(
+    AuthType authType,
+    LPCWSTR pResourceName,
+    IRTSPAuthProvider** ppRTSPAuthProvider);
+``` 
+### Arguments  
+|  |  |
+| ----------- | ----------- |
+| authType | Input array of MFMediaType objects which describe each stream of the sink |
+| pResourceName | Input resource name to which the credentials are bound |
+| ppRTSPAuthProvider | Output pointer to the IRTSPAuthProvider interface to the auth provider instance |
+---
+### Return  
+>HRESULT 
+: S_OK if succeeded. HRESULT error if failed. 
+---
 
-## .NetCore 3.0 Desktop applications/tools
+## Interface definitions
+---
+### IRTSPAuthProvider
+```
+IRTSPAuthProvider : public ::IUnknown
+{
+    virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) = 0;
+    virtual STDMETHODIMP Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod) = 0;
+};
+```
+`IRTSPAuthProvider::GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage)`  
+Generates nonce and Gets new authentication request message from Auth provider
 
-These samples require .NetCore 3.0 SDK and Visual Studio 2019 preview. (https://visualstudio.microsoft.com/vs/preview/)
+| |  |  |
+| ----------- | ----------- | --------- |
+| pAuthSessionMessage | Output pointer to the Authentication request/description message to be sent to client as per [RFC7616](https://tools.ietf.org/html/rfc7616#section-3.7). | e.g. `WWW-Authenticate: Digest realm="BeyondTheWall", nonce="6fc93a0604338c68070b75e49745baeab46c507155040000", algorithm=MD5, charset="UTF-8", stale=FALSE` |
+| return value | S_OK if succeeded. HRESULT error if failed. | 
+| 
 
-## Using the samples
-
-The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio.
-
-   [Download the samples ZIP](../../archive/master.zip)
-
-   **Notes:** 
-   * Before you unzip the archive, right-click it, select **Properties**, and then select **Unblock**.
-   * Be sure to unzip the entire archive, and not just individual samples. The samples all depend on the SharedContent folder in the archive.   
-   * In Visual Studio 2017, the platform target defaults to ARM, so be sure to change that to x64 or x86 if you want to test on a non-ARM device. 
-   
-The samples use Linked files in Visual Studio to reduce duplication of common files, including sample template files and image assets. These common files are stored in the SharedContent folder at the root of the repository, and are referred to in the project files using links.
-
-**Reminder:** If you unzip individual samples, they will not build due to references to other portions of the ZIP file that were not unzipped. You must unzip the entire archive if you intend to build the samples.
-
-For more info about the programming models, platforms, languages, and APIs demonstrated in these samples, please refer to the guidance, tutorials, and reference topics provided in the Windows 10 documentation available in the [Windows Developer Center](http://go.microsoft.com/fwlink/p/?LinkID=532421). These samples are provided as-is in order to indicate or demonstrate the functionality of the programming models and feature APIs for Windows.
-
-## Contributing
-
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.microsoft.com.
-
-When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+`IRTSPAuthProvider::Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod)`  
+Verifies authorization response received from the client  
+||||
+| ----------- | ----------- | -------- |
+| pAuthResp | Input pointer to Authorization response received from client| e.g. `Authorization: Digest username="user", realm="BeyondTheWall", nonce="8e03237a99bc26d6914a562fc98b08593fec11a055040000", uri="rtsp://127.0.0.1:8554", response="742dd5a18cddb799a861461ae72570b2"`|
+| pAuthSesMsg | Input pointer to the authentication request that was sent to client | e.g. `WWW-Authenticate: Digest realm="BeyondTheWall", nonce="6fc93a0604338c68070b75e49745baeab46c507155040000", algorithm=MD5, charset="UTF-8", stale=FALSE` |
+| pMethod | Input pointer to the name of the request method to be authenticated | e.g. `PLAY`| 
+| return value | S_OK if succeeded. HRESULT error if failed. | `HRESULT_FROM_WIN32(ERROR_INVALID_PASSWORD)  if authentication fails.`
 
 
-## Samples
-<table>
- <tr>
-  <td><a href="Tools/Cam360">360-degree camera capture/record/preview</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/WMCConsole_winrtcpp">Win32 Desktop console application demonstrating use of Windows Media Capture APIs</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/MediaCaptureSampleExtendedControl">WinRT application demonstrating use of custom KS Camera Extended Properties</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/NetworkMediaStreamer"> Win32 Desktop application and libraries demonstrating use of Windows APIs and Windows Media Foundation APIs for RTP/RTSP streaming from camera</a></td>
- </tr>
-</table>
+### IRTSPAuthProviderCredStore
+```
+IRTSPAuthProviderCredStore : public ::IUnknown
+{
+    virtual STDMETHODIMP AddUser(LPCWSTR pUserName, LPCWSTR pPassword) = 0;
+    virtual STDMETHODIMP RemoveUser(LPCWSTR pUserName) = 0;
+};
+```
+`IRTSPAuthProviderCredStore::AddUser(LPCWSTR pUserName, LPCWSTR pPassword)`  
+Adds a new user to the credential store.
+||||
+| ----------- | ----------- | ----------- |
+| pUserName | Input pointer to the Username to be added to the cred store
+| pPassword | Input pointer to the password for the corresponding username
 
+`IRTSPAuthProviderCredStore::RemoveUser(LPCWSTR pUserName)`  
+Removes a user from credential store
+||||
+| ----------- | ----------- | ----------- |
+| pUserName | Input pointer to the Username to be removed from the cred store
+---
+### IRTSPServerControl 
+```
+IRTSPServerControl : public ::IUnknown
+{
+public:
+    virtual STDMETHODIMP StartServer() = 0;
+    virtual STDMETHODIMP StopServer() = 0;
+    virtual STDMETHODIMP AddLogHandler(
+        LoggerType type,
+        ABI::LogHandler* pHandler,
+        EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP RemoveLogHandler(
+        LoggerType type,
+        EventRegistrationToken token) = 0;
+    virtual STDMETHODIMP AddSessionStatusHandler(
+        LoggerType type, 
+        ABI::SessionStatusHandler* handler,
+        EventRegistrationToken* pToken) = 0;
+    virtual STDMETHODIMP RemoveSessionStatusHandler(
+        LoggerType type,
+        EventRegistrationToken token) = 0;
+};
+```
+`IRTSPServerControl::StartServer()`  
+Starts the server by listening for incoming connections
+
+`IRTSPServerControl::StopServer()`  
+ Stops listening to incoming connections and terminates existing connections/sessions
+
+`IRTSPServerControl::AddLogHandler(LoggerType type, ABI::LogHandler* pHandler, EventRegistrationToken* pToken)`  
+Adds a handler delegate to capture logs from the server
+| | | |
+| ----------- | ----------- | -------- |
+| type | Enum LoggerType specifying which category of logs to be handled by the delegate | `LoggerType::ERRORS , LoggerType::WARNINGS,   LoggerType::RTSPMSGS, LoggerType::OTHER`|
+| pHandler | TypedEventHandler delegate taking HRESULT and HSTRING arguments | `auto handler = winrt::LogHandler([](HRESULT hr, HSTRING msg){ /* handle the logging*/});` `pHandler = handler.as<ABI::LogHandler>().get()` |
+| pToken | token representing the delegate registration| See `RemoveLogHandler` |
+
+
+`IRTSPServerControl::RemoveLogHandler(LoggerType type, EventRegistrationToken token)`  
+Removes the handler delegate that was added to capture logs from the server
+| | | |
+| ----------- | ----------- | -------- |
+| type | Enum LoggerType specifying which category of logs to be handled by the delegate | `LoggerType::ERRORS, LoggerType::WARNINGS, LoggerType::RTSPMSGS, LoggerType::OTHER` |
+| pToken | token representing the delegate registration| Obtained by calling  `AddLogHandler` |
+---
+### INetworkMediaStreamSink
+```
+INetworkMediaStreamSink : public IMFStreamSink
+{
+public:
+    virtual STDMETHODIMP AddTransportHandler (
+        ABI::PacketHandler* packethandler,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR param = L"") = 0;
+    virtual STDMETHODIMP RemoveTransportHandler(
+        ABI::PacketHandler* packetHandler) = 0;
+    virtual STDMETHODIMP AddNetworkClient(
+        LPCWSTR destination,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR params = L"") = 0;
+    virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR destination) = 0;
+    virtual STDMETHODIMP GenerateSDP(
+        uint8_t* buf,
+        size_t maxSize,
+        LPCWSTR destination) = 0;
+    virtual STDMETHODIMP Start(
+        MFTIME hnsSystemTime,
+        LONGLONG llClockStartOffset) = 0;
+    virtual STDMETHODIMP Stop(MFTIME hnsSystemTime) = 0;
+    virtual STDMETHODIMP Pause(MFTIME hnsSystemTime) = 0;
+    virtual STDMETHODIMP Shutdown() = 0;
+};
+```  
+`INetworkMediaStreamSink::AddNetworkClient(
+        LPCWSTR pDestination,
+        LPCWSTR pProtocol = L"rtp",
+        LPCWSTR pParams = L"")`  
+Adds a UDP client destination to stream RTP packets and starts streaming to the specified destination
+| | | |
+| ----------- | ----------- | -------- |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+| pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format:  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty; an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+
+
+`INetworkMediaStreamSink::RemoveNetworkClient(LPCWSTR pDestination)`  
+Stops streaming to the specified destination and removes the client destination.
+| | | |
+| ----------- | ----------- | -------- |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+
+
+`INetworkMediaStreamSink::AddTransportHandler (
+        ABI::PacketHandler* pPackethandler,
+        LPCWSTR protocol = L"rtp",
+        LPCWSTR param = L"")`  
+Adds a custom packet transport handler delegate and starts calling the delegate everytime a packet is ready to be sent. This is used by RTSP server to handle RTP media packet delivery over TCP connections.
+| | | |
+| ----------- | ----------- | -------- |
+| pPackethandler | Input pointer to ABI interface of EventHandler delegate that takes IBuffer pointer as an argument.| e.g. `auto handler = winrt::PacketHandler([](IInspectable sender, IBuffer args){ /*handle the rtp packet- send it over tcp etc.*/});` `pPacketHandler = handler.as<ABI::PacketHandler>().get()`|
+| pProtocol | Input pointer to string specifying the packetization format/protocol prefix | at present the default and only supported format is `L"rtp"`|
+| pParams | Input pointer to string containing extra parameters required to configure the client specific parameters in the format:  *param_name1=param_value1&param_name2=param_value2* | At present the only supported parameters are `ssrc` and `localrtpport`. e.g.-`L"ssrc=323454&localrtpport=5445"`. The default value for pParams is empty; an empty string  sets ssrc=0 and localrtpport is auto selected to an unused port.|
+
+
+`INetworkMediaStreamSink::RemoveTransportHandler(
+        ABI::PacketHandler* pPacketHandler)`
+Remove the specified custom transport handler delegate and stops calling the specified delegate for future packets.
+| | | |
+| ----------- | ----------- | -------- |
+| pPackethandler | Input pointer to ABI interface of EventHandler delegate to be removed.| see: `INetworkMediaStreamSink::AddTransportHandler`|
+
+
+
+`INetworkMediaStreamSink::GenerateSDP(
+        uint8_t* pBuf,
+        size_t maxSize,
+        LPCWSTR pDestination)`  
+Generated a Session Description Protocol buffer as per [RFC4566](https://tools.ietf.org/html/rfc4566)
+| | | |
+| ----------- | ----------- | -------- |
+| pBuf | Input pointer to the start of an allocated buffer to receive the SDP payload ||
+| maxSize | Input allocated size of the buffer pointed by pBuf| |
+| pDestination | Input pointer to a string containing destination ip address and port with a ':' separator. | e.g. `L"192.168.10.22:6554"` |
+
+
+`INetworkMediaStreamSink::Start(
+        MFTIME hnsSystemTime,
+        LONGLONG llClockStartOffset)`    
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockStart](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockstart)
+
+`INetworkMediaStreamSink::Stop(MFTIME hnsSystemTime)`  
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockStop](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockstop)
+
+`INetworkMediaStreamSink::Pause(MFTIME hnsSystemTime)`  
+This is used by the Sink to manage streaming clock states. Refer to [IMFClockStateSink::OnClockPause](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfclockstatesink-onclockpause)
+
+`INetworkMediaStreamSink::Shutdown()`  
+This is used by the Sink to convey media sink state to the stream sink. Refer to [IMFMediaSink::Shutdown](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nf-mfidl-imfmediasink-shutdown)
+
+---
