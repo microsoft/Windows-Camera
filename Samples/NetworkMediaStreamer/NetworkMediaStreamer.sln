@@ -1,0 +1,71 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkMediaStreamer", "NetworkMediaStreamerBase\build\NetworkMediaStreamer.vcxproj", "{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTPMediaStreamer", "RTPMediaStreamer\build\RTPMediaStreamer.vcxproj", "{763269FF-37EB-4A0A-B152-0924CFA81FFF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RTSPServer", "RTSPServer\build\RTSPServer.vcxproj", "{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Library", "Library", "{CB1B2075-B9DD-4077-9265-981429224ED0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Application", "Application", "{16A0580F-7B57-4DE0-B856-EE6B62E890E8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CameraRTPStreamerApp", "CameraRTPStreamerApp\build\CameraRTPStreamerApp.vcxproj", "{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Debug|x64.ActiveCfg = Debug|x64
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Debug|x64.Build.0 = Debug|x64
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Debug|x86.ActiveCfg = Debug|Win32
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Debug|x86.Build.0 = Debug|Win32
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Release|x64.ActiveCfg = Release|x64
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Release|x64.Build.0 = Release|x64
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Release|x86.ActiveCfg = Release|Win32
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0}.Release|x86.Build.0 = Release|Win32
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Debug|x64.ActiveCfg = Debug|x64
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Debug|x64.Build.0 = Debug|x64
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Debug|x86.ActiveCfg = Debug|Win32
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Debug|x86.Build.0 = Debug|Win32
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Release|x64.ActiveCfg = Release|x64
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Release|x64.Build.0 = Release|x64
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Release|x86.ActiveCfg = Release|Win32
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF}.Release|x86.Build.0 = Release|Win32
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Debug|x64.ActiveCfg = Debug|x64
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Debug|x64.Build.0 = Debug|x64
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Debug|x86.ActiveCfg = Debug|Win32
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Debug|x86.Build.0 = Debug|Win32
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Release|x64.ActiveCfg = Release|x64
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Release|x64.Build.0 = Release|x64
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Release|x86.ActiveCfg = Release|Win32
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC}.Release|x86.Build.0 = Release|Win32
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Debug|x64.ActiveCfg = Debug|x64
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Debug|x64.Build.0 = Debug|x64
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Debug|x86.ActiveCfg = Debug|Win32
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Debug|x86.Build.0 = Debug|Win32
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Release|x64.ActiveCfg = Release|x64
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Release|x64.Build.0 = Release|x64
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Release|x86.ActiveCfg = Release|Win32
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{58E4848E-B347-43FB-94C1-C5C85ABFD6B0} = {CB1B2075-B9DD-4077-9265-981429224ED0}
+		{763269FF-37EB-4A0A-B152-0924CFA81FFF} = {CB1B2075-B9DD-4077-9265-981429224ED0}
+		{1F92CAD2-33C6-42ED-AF2E-FDD0D8CE07BC} = {CB1B2075-B9DD-4077-9265-981429224ED0}
+		{61D9C2A4-F52D-44DF-A262-7C5C8E7BB850} = {16A0580F-7B57-4DE0-B856-EE6B62E890E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {061B9878-8BEA-494D-B797-C61AA09888B5}
+	EndGlobalSection
+EndGlobal
