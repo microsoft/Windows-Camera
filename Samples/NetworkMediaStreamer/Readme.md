@@ -11,7 +11,7 @@ The NetworkMediaStreamer is a set of basic implementations of RTP streaming and 
 
  This base implementation supports H264 RTP via RTSP . The code can be extended very easily to support more RTP payloads and other protocols as well. Refer to this figure to understand the interaction between various components.
 
-![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)
+![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)  
  In the above figure, the red arrows denote Media data flow and the black arrows denote command and control flow.
  
  ## RTPSink
