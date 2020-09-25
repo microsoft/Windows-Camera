@@ -1,17 +1,17 @@
 
-# NetworkMediaStreamer
+# NetworkMediaStreamer v1.0
 ## Introduction
 The NetworkMediaStreamer is a set of basic implementations of RTP streaming and RTSP server to demonstrate usage of [Windows Media Foundation APIs](https://docs.microsoft.com/en-us/windows/win32/medfound/media-foundation-programming-guide) related to:
  1. Using and configuring OS built-in codecs
  2. Consuming samples/frames from the MediaFoundation stack of APIs
  
  The implementation also demonstrates:
- 1. Using Windows APIs for network to implement RTP video streaming and RTSP server , and using [Schannel APIs](https://docs.microsoft.com/en-us/windows/win32/com/schannel) for secure RTSP.
+ 1. Using Windows APIs for network to implement RTP video (H.264/AVC) streaming and RTSP server , and using [Schannel APIs](https://docs.microsoft.com/en-us/windows/win32/com/schannel) for secure RTSP.
  2. Using credential store using [PasswordVault APIs](https://docs.microsoft.com/en-us/uwp/api/windows.security.credentials.passwordvault?view=winrt-19041) 
 
  This base implementation supports H264 RTP via RTSP . The code can be extended very easily to support more RTP payloads and other protocols as well. Refer to this figure to understand the interaction between various components.
 
-![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)  
+![NetworkStreamer Block Diagram](NetworkMediaStreamer/docs/RTSPVideoStreamer.jpg)  
  In the above figure, the red arrows denote Media data flow and the black arrows denote command and control flow.
  
  ## RTPSink
