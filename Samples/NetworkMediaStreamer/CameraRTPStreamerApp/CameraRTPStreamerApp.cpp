@@ -222,7 +222,7 @@ void GetUserSelectionAndSetMediaFormat(MediaCapture& mc)
     {
         auto format = f.try_as<VideoEncodingProperties>();
         float fr = (float)format.FrameRate().Numerator() / (float)format.FrameRate().Denominator();
-        std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << /*std::setprecision(2) <<*/ fr << L":" << format.Subtype().c_str();
+        std::wcout << L"\n" << idx++ << L". " << format.Width() << L"x" << format.Height() << L"@" << fr << L":" << format.Subtype().c_str();
     }
 
     do
@@ -268,7 +268,7 @@ int main()
 
         auto streamers = winrt::RTSPSuffixSinkMap();
         BitmapSize sz;
-        auto selectedFormat = mc.VideoDeviceController().GetMediaStreamProperties(MediaStreamType::VideoRecord).as<VideoEncodingProperties>(); //selectedProp.as<VideoEncodingProperties>();
+        auto selectedFormat = mc.VideoDeviceController().GetMediaStreamProperties(MediaStreamType::VideoRecord).as<VideoEncodingProperties>();
         sz.Height = selectedFormat.Height();
         sz.Width = selectedFormat.Width();
         MediaRatio frameRate = selectedFormat.FrameRate();

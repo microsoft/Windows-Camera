@@ -9,9 +9,13 @@ NwMediaStreamSinkBase::NwMediaStreamSinkBase(IMFMediaType* pMediaType, IMFMediaS
     : m_pVideoHeader(nullptr)
     , m_VideoHeaderSize(0)
     , m_bIsShutdown(false)
-    , m_pParentSink(pParent) // to avoid circular reference never Add-Ref to pParent unless giving ownership to another class
     , m_dwStreamID(dwStreamID)
 {
+    winrt::com_ptr<IMFMediaSink> spParent;
+    spParent.copy_from(pParent);
+    // We release the reference to pParent as soon as spParent goes out of scope.
+    // We safe a weak_ref in m_spParentSink to avoid circular dependency
+    m_spParentSink = spParent;
     winrt::check_hresult(MFCreateEventQueue(m_spEventQueue.put()));
     winrt::check_hresult(MFCreateSimpleTypeHandler(m_spMTHandler.put()));
     winrt::check_hresult(m_spMTHandler->SetCurrentMediaType(pMediaType));
@@ -25,7 +29,6 @@ NwMediaStreamSinkBase ::~NwMediaStreamSinkBase()
         CoTaskMemFree(m_pVideoHeader);
     }
 }
-
 
 // IMFClockStateSink methods.
 
@@ -94,10 +97,10 @@ STDMETHODIMP NwMediaStreamSinkBase::GetMediaSink(IMFMediaSink** ppMediaSink)
     RETURN_IF_SHUTDOWN;
     RETURN_IF_NULL(ppMediaSink);
 
-    if (m_pParentSink)
+    auto sink = m_spParentSink ? m_spParentSink.get() : nullptr;
+    if (sink)
     {
-        m_pParentSink->AddRef();
-        *ppMediaSink = m_pParentSink;
+        *ppMediaSink = sink.detach();
         return S_OK;
     }
     else

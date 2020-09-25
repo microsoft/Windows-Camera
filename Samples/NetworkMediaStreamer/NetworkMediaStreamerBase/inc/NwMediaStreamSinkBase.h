@@ -13,7 +13,7 @@ protected:
     uint8_t* m_pVideoHeader;
     uint32_t m_VideoHeaderSize;
     bool m_bIsShutdown;
-    IMFMediaSink* m_pParentSink;
+    winrt::weak_ref<IMFMediaSink> m_spParentSink;
     winrt::com_ptr<IMFMediaEventQueue> m_spEventQueue;
     winrt::com_ptr<IMFMediaTypeHandler> m_spMTHandler;
     DWORD m_dwStreamID;
