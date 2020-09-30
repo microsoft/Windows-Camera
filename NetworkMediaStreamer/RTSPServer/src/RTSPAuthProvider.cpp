@@ -5,6 +5,7 @@
 
 using namespace winrt::Windows::Security;
 using namespace winrt::Windows::Security::Credentials;
+using namespace winrt::Windows::Foundation::Collections;
 using namespace Cryptography::Core;
 using namespace Cryptography;
 

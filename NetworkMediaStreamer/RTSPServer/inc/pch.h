@@ -25,6 +25,7 @@
 #include <sstream>
 #include <winrt\base.h>
 #include <winrt\Windows.Foundation.h>
+#include <winrt\Windows.Foundation.Collections.h>
 #include <winrt\windows.system.threading.h>
 #include <winrt\Windows.Security.Cryptography.h>
 #include <winrt\Windows.Security.Cryptography.Core.h>
