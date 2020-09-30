@@ -2,9 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for more information
 
 #pragma once
-#ifndef UNICODE
-#define UNICODE
-#endif
+
 #define SECURITY_WIN32
 #include <WinSock2.h>
 #include <windows.h>
@@ -12,8 +10,6 @@
 #include <mutex>
 
 #include <Security.h>
-#include <winternl.h>
-#define SCHANNEL_USE_BLACKLISTS
 #include <schnlsp.h>
 
 #include <ws2def.h>

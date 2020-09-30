@@ -133,12 +133,12 @@ void CSocketWrapper::InitializeSecurity()
     FreeContextBuffer(pPkgInfo);
 
     // Perform Handshake
-    SCH_CREDENTIALS credData;
+    SCHANNEL_CRED credData;
     ZeroMemory(&credData, sizeof(credData));
-    credData.dwVersion = SCH_CREDENTIALS_VERSION;
-    credData.dwCredFormat = SCH_CRED_FORMAT_CERT_HASH;
+    credData.dwVersion = SCHANNEL_CRED_VERSION;
     credData.cCreds = (DWORD)m_aCertContext.size();
-    credData.paCred = m_aCertContext.data();
+    credData.paCred = m_aCertContext.data(); 
+    credData.dwCredFormat = SCH_CRED_FORMAT_CERT_HASH;
 
     winrt::check_hresult(AcquireCredentialsHandle(
         NULL,
