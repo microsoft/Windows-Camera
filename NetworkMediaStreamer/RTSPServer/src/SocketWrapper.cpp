@@ -137,7 +137,7 @@ void CSocketWrapper::InitializeSecurity()
     ZeroMemory(&credData, sizeof(credData));
     credData.dwVersion = SCHANNEL_CRED_VERSION;
     credData.cCreds = (DWORD)m_aCertContext.size();
-    credData.paCred = m_aCertContext.data(); 
+    credData.paCred = m_aCertContext.data();
     credData.dwCredFormat = SCH_CRED_FORMAT_CERT_HASH;
 
     winrt::check_hresult(AcquireCredentialsHandle(
