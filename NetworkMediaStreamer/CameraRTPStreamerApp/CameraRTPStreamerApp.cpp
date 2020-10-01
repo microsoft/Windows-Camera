@@ -40,6 +40,8 @@ constexpr uint16_t ServerPort = 8554;
 constexpr uint16_t SecureServerPort = 6554;
 
 // Uncomment the following if you want to use FrameReader API instead of the Record-to-sink APIs
+// Using FrameReader API allows the app to handle/process/modify the sample before streaming out.
+// Using Mediacapture Record-to-Sink APIs takes the per sample handling burden away from the App
 //#define USE_FR 
 
 // sample test code to get localhost test certificate
