@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+    <assemblyIdentity version="1.0.0.0" name="VirtualCamera_ConsoleApp" />
+    <file name="VirtualCameraWinrt.dll">
+      <activatableClass
+            name="WindowsSample.SimpleMediaSourceActivate"
+            threadingModel="both"
+            xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    </file>
+</assembly>
