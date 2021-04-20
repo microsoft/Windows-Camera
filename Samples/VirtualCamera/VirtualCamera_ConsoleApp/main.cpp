@@ -250,7 +250,7 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
         case 1:
         {
             SimpleMediaSourceUT test;
-            RETURN_IF_FAILED(test.CreateVirtualCamera(&spVirtualCamera));
+            RETURN_IF_FAILED(test.CreateVirtualCamera(ppVirtualCamera));
             break;
         }
         case 2: 
@@ -258,7 +258,7 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(test.CreateVirutalCamera(devInfo.Name(), &spVirtualCamera));
+            RETURN_IF_FAILED(test.CreateVirutalCamera(devInfo.Name(), ppVirtualCamera));
             break;
         }
 
@@ -287,7 +287,7 @@ void VCamAppUnInstall()
     VCamUtils::MSIUninstall(CLSID_SimpleMediaSourceWin32);
 }
 
-HRESULT VCamApp()
+HRESULT VCamApp() try
 {
     while (true)
     {
@@ -301,8 +301,7 @@ HRESULT VCamApp()
             {
                 wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
                 RETURN_IF_FAILED_MSG(SelectRegisterVirtualCamera(&spVirtualCamera), "Register Virutal Camera failed");
-                //RETURN_IF_FAILED(spVirtualCamera->Shutdown());
-
+                RETURN_IF_FAILED(spVirtualCamera->Shutdown());
                 break;
             }
             case 2: // Interactive uninstall of virutal camera
@@ -376,7 +375,7 @@ HRESULT VCamApp()
     }
 
     return S_OK;
-}
+}CATCH_RETURN_MSG("Caught unexpected exception");
 
 HRESULT TestMode()
 {

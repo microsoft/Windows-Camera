@@ -83,30 +83,6 @@ HRESULT MediaSourceUT_Common::ValidateVirtualCamera(_In_ IMFVirtualCamera* spVir
         LOG_COMMENT(L"ConfigAppPfn: %s ", val.Value().data());
     }
 
-    // INTERNAL
-    //DEVPKEY_DeviceInterface_FSM_VirtualCamera_SourceInfo - when IMFVirtualCamera::AddDeviceSourceInfo is called.
-    //wprintf(L"Validate VirtualCamera SourceInfo ... \n");
-    //HRESULT hr = VCamUtils::GetDeviceInterfaceProperty(
-    //    pwszSymLink.get(),
-    //    DEVPKEY_DeviceInterface_FSM_VirtualCamera_SourceInfo,
-    //    (DEVPROP_TYPEMOD_ARRAY | DEVPROP_TYPE_BYTE),
-    //    spBuffer,
-    //    cbBufferSize);
-    //if (hr == HRESULT_FROM_WIN32(ERROR_NOT_FOUND))
-    //{
-    //    LOG_WARN(L"SourceInfo is not set \n");
-    //}
-    //else if (SUCCEEDED(hr))
-    //{
-    //    // TODO: this is an array need to show how to walk it.
-    //    LOG_COMMENT(L"SourceInfo: %s \n", spBuffer.get());
-    //}
-    //else
-    //{
-    //    RETURN_IF_FAILED(hr);
-    //}
-
-
     LOG_COMMENT(L"Validate virtual camera present in device enumeration ...");
     wil::com_ptr_nothrow<IMFActivate> spActivate;
     RETURN_IF_FAILED_MSG(VCamUtils::GetCameraActivate(pwszSymLink.get(), &spActivate), "Fail to find VCam from camera enumeration");

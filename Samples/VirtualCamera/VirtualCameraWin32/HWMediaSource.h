@@ -26,19 +26,6 @@ namespace winrt::WindowsSample::implementation
         };
 
     public:
-        // override implementation from winrt::implementation
-        // TODO: Remove when IMFSampleAllocator is fix in devicesource.
-        impl::hresult_type __stdcall QueryInterface(impl::guid_type const& id, void** object) noexcept
-        {
-            if (FAILED(implements::QueryInterface(reinterpret_cast<guid const&>(id), object)))
-            {
-                // project interface from the device source.
-                // for internal interface like IDeviceS
-                RETURN_IF_FAILED(m_spDevSource->QueryInterface(id, object));
-            }
-            return S_OK;
-        }
-
         // IMFMediaEventGenerator (inherits by IMFMediaSource)
         IFACEMETHOD(BeginGetEvent)(_In_ IMFAsyncCallback* pCallback, _In_ IUnknown* punkState);
         IFACEMETHOD(EndGetEvent)(_In_ IMFAsyncResult* pResult, _Out_ IMFMediaEvent** ppEvent);
