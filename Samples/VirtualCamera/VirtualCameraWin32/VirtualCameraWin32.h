@@ -1,3 +1,7 @@
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
+
 #pragma once
 #ifndef VIRTUALCAMERAWIN32_H
 #define VIRTUALCAMERAWIN32_H

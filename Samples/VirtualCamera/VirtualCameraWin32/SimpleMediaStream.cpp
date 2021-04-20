@@ -23,7 +23,7 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow<IMFAttributes> attrs;
 
         RETURN_HR_IF_NULL(E_INVALIDARG, pSource);
-        _parent = pSource;
+        m_parent = pSource;
 
         m_dwStreamId = dwStreamId;
         m_allocatorUsage = allocatorUsage;
@@ -60,17 +60,17 @@ namespace winrt::WindowsSample::implementation
         MFSetAttributeRatio(spMediaType1.get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
         m_mediaTypeList[1] = spMediaType1.detach();
 
-        RETURN_IF_FAILED(MFCreateAttributes(&_spAttributes, 10));
-        RETURN_IF_FAILED(_SetStreamAttributes(_spAttributes.get()));
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 10));
+        RETURN_IF_FAILED(_SetStreamAttributes(m_spAttributes.get()));
 
-        RETURN_IF_FAILED(MFCreateEventQueue(&_spEventQueue));
+        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
 
         // Initialize stream descriptors
-        RETURN_IF_FAILED(MFCreateStreamDescriptor(m_dwStreamId /*StreamId*/, NUM_MEDIATYPES /*MT count*/, m_mediaTypeList.get(), &_spStreamDesc));
+        RETURN_IF_FAILED(MFCreateStreamDescriptor(m_dwStreamId /*StreamId*/, NUM_MEDIATYPES /*MT count*/, m_mediaTypeList.get(), &m_spStreamDesc));
 
-        RETURN_IF_FAILED(_spStreamDesc->GetMediaTypeHandler(&spTypeHandler));
+        RETURN_IF_FAILED(m_spStreamDesc->GetMediaTypeHandler(&spTypeHandler));
         RETURN_IF_FAILED(spTypeHandler->SetCurrentMediaType(m_mediaTypeList[0]));
-        RETURN_IF_FAILED(_SetStreamDescriptorAttributes(_spStreamDesc.get()));
+        RETURN_IF_FAILED(_SetStreamDescriptorAttributes(m_spStreamDesc.get()));
 
         return S_OK;
     }
@@ -84,7 +84,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->BeginGetEvent(pCallback, punkState));
+        RETURN_IF_FAILED(m_spEventQueue->BeginGetEvent(pCallback, punkState));
 
         return S_OK;
     }
@@ -97,7 +97,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->EndGetEvent(pResult, ppEvent));
+        RETURN_IF_FAILED(m_spEventQueue->EndGetEvent(pResult, ppEvent));
 
         return S_OK;
     }
@@ -117,11 +117,11 @@ namespace winrt::WindowsSample::implementation
             winrt::slim_lock_guard lock(m_Lock);
 
             RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-            spQueue = _spEventQueue;
+            spQueue = m_spEventQueue;
         }
 
         // Now get the event.
-        RETURN_IF_FAILED(_spEventQueue->GetEvent(dwFlags, ppEvent));
+        RETURN_IF_FAILED(spQueue->GetEvent(dwFlags, ppEvent));
 
         return S_OK;
     }
@@ -136,7 +136,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
 
         return S_OK;
     }
@@ -152,7 +152,7 @@ namespace winrt::WindowsSample::implementation
         *ppMediaSource = nullptr;
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_parent.copy_to(ppMediaSource));
+        RETURN_IF_FAILED(m_parent.copy_to(ppMediaSource));
 
         return S_OK;
     }
@@ -168,9 +168,9 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (_spStreamDesc != nullptr)
+        if (m_spStreamDesc != nullptr)
         {
-            RETURN_IF_FAILED(_spStreamDesc.copy_to(ppStreamDescriptor));
+            RETURN_IF_FAILED(m_spStreamDesc.copy_to(ppStreamDescriptor));
         }
         else
         {
@@ -179,39 +179,6 @@ namespace winrt::WindowsSample::implementation
 
         return S_OK;
     }
-
-    //
-    //HRESULT SimpleMediaStream::WriteSampleData(
-    //        _Inout_updates_bytes_(len) BYTE* pBuf,
-    //        _In_ DWORD len, 
-    //        _In_ LONG pitch,
-    //        _In_ DWORD width, 
-    //        _In_ DWORD height
-    //    )
-    //{
-    //    RETURN_HR_IF_NULL(E_INVALIDARG, pBuf);
-
-    //    if (IsEqualGUID(m_gCurrentSubType, MFVideoFormat_RGB32))
-    //    {
-    //        DEBUG_MSG(L"[SimpleMediaSource] RGB32 frames %s\n", winrt::to_hstring(MFVideoFormat_RGB32).data());
-
-    //        RETURN_IF_FAILED(RGB32Frame(pBuf, len, pitch, width, height, m_rgbMask));
-    //        //NUM_ROWS = len / abs(pitch);
-    //    }
-    //    else
-    //    {
-    //        DEBUG_MSG(L"[SimpleMediaSource] NV12 frames %s \n", winrt::to_hstring(MFVideoFormat_NV12).data());
-
-    //        DWORD frameBuffLen = width * height * 4;
-    //        wil::unique_cotaskmem_ptr<BYTE[]> spBuff = wil::make_unique_cotaskmem_nothrow<BYTE[]>(frameBuffLen);
-    //        RETURN_IF_NULL_ALLOC(spBuff.get());
-
-    //        RETURN_IF_FAILED(RGB32Frame(spBuff.get(), frameBuffLen, width*4, width, height, m_rgbMask));
-    //        RETURN_IF_FAILED(RGB32ToNV12(spBuff.get(), frameBuffLen, width*4, width, height, pBuf, len, pitch));
-    //    }
-
-    //    return S_OK;
-    //}
 
     IFACEMETHODIMP SimpleMediaStream::RequestSample(
             _In_ IUnknown* pToken
@@ -235,7 +202,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(m_spSampleAllocator->AllocateSample(&sample));
         RETURN_IF_FAILED(sample->GetBufferByIndex(0, &outputBuffer));
-        RETURN_IF_FAILED(outputBuffer.query_to(&buffer2D));
+        RETURN_IF_FAILED(outputBuffer->QueryInterface(IID_PPV_ARGS(&buffer2D)));
         RETURN_IF_FAILED(buffer2D->Lock2DSize(MF2DBuffer_LockFlags_Write,
             &pbuf,
             &pitch,
@@ -253,7 +220,7 @@ namespace winrt::WindowsSample::implementation
         {
             RETURN_IF_FAILED(sample->SetUnknown(MFSampleExtension_Token, pToken));
         }
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamUnk(MEMediaSample,
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(MEMediaSample,
             GUID_NULL,
             S_OK,
             sample.get()));
@@ -320,7 +287,7 @@ namespace winrt::WindowsSample::implementation
         }
 
         wil::com_ptr_nothrow<IMFMediaTypeHandler> spMTHandler;
-        RETURN_IF_FAILED(_spStreamDesc->GetMediaTypeHandler(&spMTHandler));
+        RETURN_IF_FAILED(m_spStreamDesc->GetMediaTypeHandler(&spMTHandler));
 
         wil::com_ptr_nothrow<IMFMediaType> spMediaType;
         UINT32 width, height;
@@ -339,7 +306,7 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(m_spFrameGenerator->Initialize(spMediaType.get()));
 
         // Post MEStreamStarted event to signal stream has started 
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(MEStreamStarted, GUID_NULL, S_OK, nullptr));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStarted, GUID_NULL, S_OK, nullptr));
 
         return S_OK;
     }
@@ -349,7 +316,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         // Post MEStreamStopped event to signal stream has stopped
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(MEStreamStopped, GUID_NULL, S_OK, nullptr));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStopped, GUID_NULL, S_OK, nullptr));
         return S_OK;
     }
 
@@ -357,17 +324,17 @@ namespace winrt::WindowsSample::implementation
     {
         winrt::slim_lock_guard lock(m_Lock);
 
-        _isShutdown = true;
-        _parent.reset();
+        m_bIsShutdown = true;
+        m_parent.reset();
 
-        if (_spEventQueue != nullptr)
+        if (m_spEventQueue != nullptr)
         {
-            _spEventQueue->Shutdown();
-            _spEventQueue.reset();
+            m_spEventQueue->Shutdown();
+            m_spEventQueue.reset();
         }
 
-        _spAttributes.reset();
-        _spStreamDesc.reset();
+        m_spAttributes.reset();
+        m_spStreamDesc.reset();
 
         m_streamState = MF_STREAM_STATE_STOPPED;
 
@@ -394,12 +361,12 @@ namespace winrt::WindowsSample::implementation
 
     HRESULT SimpleMediaStream::_CheckShutdownRequiresLock()
     {
-        if (_isShutdown)
+        if (m_bIsShutdown)
         {
             return MF_E_SHUTDOWN;
         }
 
-        if (_spEventQueue == nullptr)
+        if (m_spEventQueue == nullptr)
         {
             return E_UNEXPECTED;
 

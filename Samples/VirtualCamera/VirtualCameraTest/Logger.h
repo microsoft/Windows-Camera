@@ -65,7 +65,7 @@ inline void LOG(LogLevel flag, const wchar_t* fmt, ...)
         break;
     }
 #else
-    wprintf(L"\x1b[%dm%s ", flag);
+    wprintf(L"\x1b[%dm ", flag);
 #endif
     va_list argList;
     va_start(argList, fmt);
@@ -84,8 +84,10 @@ static constexpr HRESULT E_TEST_FAILED = 0xA0000002;
 #define LOG_WARN(fmt, ...)     { LOG(LogLevel::Warn, fmt, __VA_ARGS__);  }
 #ifdef GTEST
 #define LOG_ERROR(fmt, ...)    { ADD_FAILURE(); LOG(LogLevel::Error, fmt, __VA_ARGS__); }
+#define LOG_ERROR_RETURN(hr, fmt, ...)    {  const HRESULT __hresult = (hr); ADD_FAILURE(); LOG(LogLevel::Error, fmt, __VA_ARGS__); return __hresult; }
 #else
 #define LOG_ERROR(fmt, ...)    { LOG(LogLevel::Error, fmt, __VA_ARGS__); }
+#define LOG_ERROR_RETURN(hr, fmt, ...)  {  const HRESULT __hresult = (hr); LOG(LogLevel::Error, fmt, __VA_ARGS__); return __hresult; }
 #endif
 #define LOG_SUCCESS(fmt, ...)  { LOG(LogLevel::Success, fmt, __VA_ARGS__); }
 

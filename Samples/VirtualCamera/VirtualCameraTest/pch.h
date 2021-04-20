@@ -1,7 +1,7 @@
-﻿#pragma once
-//#include <winrt/Windows.Foundation.h>
-//#include <winrt/Windows.Foundation.Collections.h>
 //
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
+
 #pragma once
 
 #include <windows.h>
@@ -18,18 +18,17 @@
 #include <ksproxy.h>
 #include <ksmedia.h>
 #include <mfapi.h>
-// TODO: how to get the KSCategory for virutla camera without internal header?
-//#include <mfdeviceinternal.h>  // needed for KSCATEGORY_FSM_VIRTUAL_CAMERA
 #include <mfvirtualcamera.h>
 #include <mferror.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <nserror.h>
 #include <winmeta.h>
-#include <wrl.h>
 #include <d3d9types.h>
 
 #include <iostream>
+
+#include <XmlLite.h> // include unknown.h this must come before winrt header
 
 #define RESULT_DIAGNOSTICS_LEVEL 4 // include function name
 
@@ -47,10 +46,7 @@
 #include <winrt/Windows.Media.Devices.h>
 #include <winrt/Windows.Media.Devices.Core.h>
 #include <winrt/Windows.Media.MediaProperties.h>
-
-
 #include <winrt/Windows.ApplicationModel.h>
-
 
 namespace winrt
 {
@@ -73,8 +69,12 @@ using namespace winrt::Windows::ApplicationModel;
 
 #pragma comment(lib, "Cfgmgr32.lib")
 #pragma comment(lib, "Propsys.lib")
+#pragma comment(lib, "Shlwapi.lib")
 
+#ifdef GTEST //enable gtest logging style
 #include "gtest/gtest.h"
+#include "DataDrivenTestBase.h"
+#endif
 
-#define GTEST 1  //enable gtest logging style
 #include "Logger.h"
+

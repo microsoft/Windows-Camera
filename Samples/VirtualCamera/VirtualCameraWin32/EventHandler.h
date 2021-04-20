@@ -7,9 +7,6 @@
 
 namespace winrt::WindowsSample::implementation
 {
-    //
-    // MediaSource that wrapper real hardware
-    //
     template<class T>
     struct CAsyncCallback : winrt::implements<CAsyncCallback<T>, IMFAsyncCallback>
     {
@@ -29,7 +26,6 @@ namespace winrt::WindowsSample::implementation
             *pdwFlags = 0; 
             *pdwQueue = m_dwQueue; 
             return S_OK;
-            //return E_NOTIMPL;
         }
 
         STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult)

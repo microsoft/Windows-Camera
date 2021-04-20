@@ -13,6 +13,11 @@ Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "VirtualCamera_AppMSIX", "Vi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCameraTest", "VirtualCameraTest\VirtualCameraTest.vcxproj", "{347F4395-68F6-4936-AF83-2206F42557BF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{98D0CD87-4191-47FE-B96B-FD2CD79A2D17}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

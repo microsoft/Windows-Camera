@@ -1,36 +1,42 @@
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
+
 #include "pch.h"
 #include "HWMediaStream.h"
 
 namespace winrt::WindowsSample::implementation
 {
-    HRESULT
-        HWMediaStream::Initialize(
-            _In_ HWMediaSource* pSource,
-            _In_ IMFPresentationDescriptor* pPDesc,
-            _In_ IMFSourceReader* pSrcReader,
-            _In_ DWORD streamIndex
-        )
+    HWMediaStream::~HWMediaStream()
     {
+        Shutdown();
+    }
+
+    HRESULT HWMediaStream::Initialize(_In_ HWMediaSource* pSource, _In_ IMFStreamDescriptor* pStreamDesc, DWORD dwWorkQueue)
+    {
+        DEBUG_MSG(L"Initialize enter");
         RETURN_HR_IF_NULL(E_INVALIDARG, pSource);
-        _parent = pSource;
+        m_parent = pSource;
 
-        RETURN_HR_IF_NULL(E_INVALIDARG, pPDesc);
+        RETURN_HR_IF_NULL(E_INVALIDARG, pStreamDesc);
+        m_spStreamDesc = pStreamDesc;
 
-        RETURN_HR_IF_NULL(E_INVALIDARG, pSrcReader);
-        m_spSrcReader = pSrcReader;
-
-        m_streamIndex = streamIndex;
-
-        RETURN_IF_FAILED(MFCreateEventQueue(&_spEventQueue));
+        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
         BOOL selected = FALSE;
-        RETURN_IF_FAILED(pPDesc->GetStreamDescriptorByIndex(m_streamIndex, &selected, &_spStreamDesc));
 
+        RETURN_IF_FAILED(m_spStreamDesc->GetStreamIdentifier(&m_dwStreamIdentifier));
+
+        m_dwSerialWorkQueueId = dwWorkQueue;
+
+        auto ptr = winrt::make_self<CAsyncCallback<HWMediaStream>>(this, &HWMediaStream::OnMediaStreamEvent, m_dwSerialWorkQueueId);
+        m_xOnMediaStreamEvent.attach(ptr.detach());
+
+        DEBUG_MSG(L"Initialize exit, streamId: %d", m_dwStreamIdentifier);
         return S_OK;
     }
 
     // IMFMediaEventGenerator
-    IFACEMETHODIMP
-        HWMediaStream::BeginGetEvent(
+    IFACEMETHODIMP HWMediaStream::BeginGetEvent(
             _In_ IMFAsyncCallback* pCallback,
             _In_ IUnknown* punkState
         )
@@ -38,13 +44,12 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->BeginGetEvent(pCallback, punkState));
+        RETURN_IF_FAILED(m_spEventQueue->BeginGetEvent(pCallback, punkState));
 
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::EndGetEvent(
+    IFACEMETHODIMP HWMediaStream::EndGetEvent(
             _In_ IMFAsyncResult* pResult,
             _COM_Outptr_ IMFMediaEvent** ppEvent
         )
@@ -52,13 +57,12 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->EndGetEvent(pResult, ppEvent));
+        RETURN_IF_FAILED(m_spEventQueue->EndGetEvent(pResult, ppEvent));
 
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::GetEvent(
+    IFACEMETHODIMP HWMediaStream::GetEvent(
             DWORD dwFlags,
             _COM_Outptr_ IMFMediaEvent** ppEvent
         )
@@ -72,17 +76,16 @@ namespace winrt::WindowsSample::implementation
             winrt::slim_lock_guard lock(m_Lock);
 
             RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-            spQueue = _spEventQueue;
+            spQueue = m_spEventQueue;
         }
 
         // Now get the event.
-        RETURN_IF_FAILED(_spEventQueue->GetEvent(dwFlags, ppEvent));
+        RETURN_IF_FAILED(spQueue->GetEvent(dwFlags, ppEvent));
 
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::QueueEvent(
+    IFACEMETHODIMP HWMediaStream::QueueEvent(
             MediaEventType eventType,
             REFGUID guidExtendedType,
             HRESULT hrStatus,
@@ -92,14 +95,13 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
 
         return S_OK;
     }
 
     // IMFMediaStream
-    IFACEMETHODIMP
-        HWMediaStream::GetMediaSource(
+    IFACEMETHODIMP HWMediaStream::GetMediaSource(
             _COM_Outptr_ IMFMediaSource** ppMediaSource
         )
     {
@@ -110,14 +112,13 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        *ppMediaSource = _parent.get();
+        *ppMediaSource = m_parent.get();
         (*ppMediaSource)->AddRef();
 
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::GetStreamDescriptor(
+    IFACEMETHODIMP HWMediaStream::GetStreamDescriptor(
             _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor
         )
     {
@@ -128,9 +129,9 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (_spStreamDesc != nullptr)
+        if (m_spStreamDesc != nullptr)
         {
-            *ppStreamDescriptor = _spStreamDesc.get();
+            *ppStreamDescriptor = m_spStreamDesc.get();
             (*ppStreamDescriptor)->AddRef();
         }
         else
@@ -141,137 +142,123 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::RequestSample(
+    IFACEMETHODIMP HWMediaStream::RequestSample(
             _In_ IUnknown* pToken
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
-        wil::com_ptr_nothrow<IMFSample> spSample;
-        int retry = 3;
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        // TODO: How to handle null sample from source
-        while (retry > 0)
-        {
-            DWORD dwActualStreamIndex = 0;
-            DWORD dwControlFlags = 0;
-            DWORD dwStreamFlags = 0;
-            LONGLONG llTimestamp;
-            RETURN_IF_FAILED(m_spSrcReader->ReadSample(
-                m_streamIndex,
-                dwControlFlags,
-                &dwActualStreamIndex,
-                &dwStreamFlags,
-                &llTimestamp,
-                &spSample));
+        RETURN_IF_FAILED(m_spDevStream->RequestSample(pToken));
 
-            if (spSample == nullptr)
-            {
-                retry--;
-                continue;
-            }
-
-            if (pToken != nullptr)
-            {
-                RETURN_IF_FAILED(spSample->SetUnknown(MFSampleExtension_Token, pToken));
-            }
-
-            RETURN_IF_FAILED(_spEventQueue->QueueEventParamUnk(MEMediaSample,
-                GUID_NULL,
-                S_OK,
-                spSample.get()));
-            DEBUG_MSG(L"[HWMediaStream] Sample send");
-            break;
-        }
         return S_OK;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // IMFMediaStream2
-    IFACEMETHODIMP
-        HWMediaStream::SetStreamState(
-            MF_STREAM_STATE state
-        )
+    IFACEMETHODIMP HWMediaStream::SetStreamState(MF_STREAM_STATE state)
     {
         winrt::slim_lock_guard lock(m_Lock);
-        bool runningState = false;
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+        DEBUG_MSG(L"[%d] SetStreamState %d", m_dwStreamIdentifier, state);
 
-        switch (state)
-        {
-        case MF_STREAM_STATE_PAUSED:
-            // because not supported
-            return S_OK;
-
-        case MF_STREAM_STATE_RUNNING:
-            DEBUG_MSG(L"[HWMediaStream]  Set Stream state to running \n");
-            RETURN_IF_FAILED(m_spSrcReader->SetStreamSelection(m_streamIndex, TRUE));
-            break;
-
-        case MF_STREAM_STATE_STOPPED:
-            DEBUG_MSG(L"[HWMediaStream]  Set Stream state to stop \n");
-            RETURN_IF_FAILED(m_spSrcReader->SetStreamSelection(m_streamIndex, FALSE));
-            break;
-
-        default:
-            return MF_E_INVALID_STATE_TRANSITION;
-        }
+        wil::com_ptr_nothrow<IMFMediaStream2> spStream2;
+        RETURN_IF_FAILED(m_spDevStream->QueryInterface(IID_PPV_ARGS(&spStream2)));
+        RETURN_IF_FAILED(spStream2->SetStreamState(state));
 
         return S_OK;
     }
 
-    IFACEMETHODIMP
-        HWMediaStream::GetStreamState(
-            _Out_ MF_STREAM_STATE* pState
-        )
+    IFACEMETHODIMP HWMediaStream::GetStreamState(_Out_ MF_STREAM_STATE* pState)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_HR_IF_NULL(E_POINTER, pState);
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        BOOL selected = false;
-        RETURN_IF_FAILED(m_spSrcReader->GetStreamSelection(m_streamIndex, &selected));
-        *pState = (selected ? MF_STREAM_STATE_RUNNING : MF_STREAM_STATE_STOPPED);
+        wil::com_ptr_nothrow<IMFMediaStream2> spStream2;
+        RETURN_IF_FAILED(m_spDevStream->QueryInterface(IID_PPV_ARGS(&spStream2)));
+        RETURN_IF_FAILED(spStream2->GetStreamState(pState));
 
         return S_OK;
     }
 
-    HRESULT
-        HWMediaStream::Shutdown(
-        )
+    HRESULT HWMediaStream::OnMediaStreamEvent(_In_ IMFAsyncResult* pResult)
+    {
+        // Forward deviceStream event
+        wil::com_ptr_nothrow<IUnknown> spUnknown;
+        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
+
+        wil::com_ptr_nothrow<IMFMediaStream> spMediaStream;
+        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaStream)));
+
+        wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
+        RETURN_IF_FAILED(spMediaStream->EndGetEvent(pResult, &spEvent));
+        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
+
+        MediaEventType met;
+        RETURN_IF_FAILED(spEvent->GetType(&met));
+        DEBUG_MSG(L"[%d] OnMediaStreamEvent, streamId: %d, met:%d ", m_dwStreamIdentifier, met);
+
+        {
+            winrt::slim_lock_guard lock(m_Lock);
+            if (SUCCEEDED(_CheckShutdownRequiresLock()))
+            {
+                // Forward event
+                RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+                
+                // Continue listening to source event
+                RETURN_IF_FAILED(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+            }
+        }
+        
+        DEBUG_MSG(L"[%d] OnMediaStreamEvent exit", m_dwStreamIdentifier);
+        return S_OK;
+    }
+
+    HRESULT HWMediaStream::Shutdown()
     {
         HRESULT hr = S_OK;
         winrt::slim_lock_guard lock(m_Lock);
 
-        _isShutdown = true;
-        _parent.reset();
+        m_isShutdown = true;
+        m_parent.reset();
+        m_spDevStream.reset();
 
-        // TODO:flush?
-        m_spSrcReader.reset();
-
-        if (_spEventQueue != nullptr)
+        if (m_spEventQueue != nullptr)
         {
-            hr = _spEventQueue->Shutdown();
-            _spEventQueue.reset();
+            hr = m_spEventQueue->Shutdown();
+            m_spEventQueue.reset();
         }
 
-        _spStreamDesc.reset();
+        m_spStreamDesc.reset();
 
         return hr;
     }
 
-    HRESULT
-        HWMediaStream::_CheckShutdownRequiresLock(
-        )
+    HRESULT HWMediaStream::SetMediaStream(_In_ IMFMediaStream* pMediaStream)
     {
-        if (_isShutdown)
+        winrt::slim_lock_guard lock(m_Lock);
+        DEBUG_MSG(L"[%d] Set MediaStream %p ", m_dwStreamIdentifier, pMediaStream);
+
+        RETURN_HR_IF_NULL(E_INVALIDARG, pMediaStream);
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+
+        m_spDevStream = pMediaStream;
+        RETURN_IF_FAILED(m_spDevStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+
+        return S_OK;
+    }
+
+    HRESULT HWMediaStream::_CheckShutdownRequiresLock()
+    {
+        if (m_isShutdown)
         {
             return MF_E_SHUTDOWN;
         }
 
-        if (_spEventQueue == nullptr)
+        if (m_spEventQueue == nullptr)
         {
             return E_UNEXPECTED;
 
@@ -279,3 +266,4 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 }
+

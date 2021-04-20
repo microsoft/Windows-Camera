@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <windows.h>
 #include <propvarutil.h>
@@ -14,15 +14,12 @@
 #include <ksproxy.h>
 #include <ksmedia.h>
 #include <mfapi.h>
-// TODO: how to get the KSCategory for virutla camera without internal header?
-#include <mfdeviceinternal.h>  // needed for KSCATEGORY_FSM_VIRTUAL_CAMERA
 #include <mfvirtualcamera.h>
 #include <mferror.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
 #include <nserror.h>
 #include <winmeta.h>
-#include <wrl.h>
 #include <d3d9types.h>
 
 #include <iostream>

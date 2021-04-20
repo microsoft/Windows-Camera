@@ -8,14 +8,6 @@
 #include "SimpleMediaSource.h"
 #include "VirtualCameraWin32.h"
 
-namespace winrt
-{
-    template<> bool is_guid_of<IMFMediaStream2>(guid const& id) noexcept
-    {
-        return is_guid_of<IMFMediaStream2, IMFMediaStream, IMFMediaEventGenerator>(id);
-    }
-}
-
 namespace winrt::WindowsSample::implementation
 {
     struct SimpleMediaStream : winrt::implements<SimpleMediaStream, IMFMediaStream2>
@@ -60,14 +52,14 @@ namespace winrt::WindowsSample::implementation
     private:
         winrt::slim_mutex  m_Lock;
 
-        wil::com_ptr_nothrow<IMFMediaSource> _parent;
-        wil::com_ptr_nothrow<IMFMediaEventQueue> _spEventQueue;
-        wil::com_ptr_nothrow<IMFAttributes> _spAttributes;
-        wil::com_ptr_nothrow<IMFStreamDescriptor> _spStreamDesc;
+        wil::com_ptr_nothrow<IMFMediaSource> m_parent;
+        wil::com_ptr_nothrow<IMFMediaEventQueue> m_spEventQueue;
+        wil::com_ptr_nothrow<IMFAttributes> m_spAttributes;
+        wil::com_ptr_nothrow<IMFStreamDescriptor> m_spStreamDesc;
         wil::com_ptr_nothrow<IMFVideoSampleAllocator> m_spSampleAllocator;
        wistd::unique_ptr<SimpleFrameGenerator> m_spFrameGenerator;
 
-        bool _isShutdown = false;
+        bool m_bIsShutdown = false;
         MF_STREAM_STATE m_streamState = MF_STREAM_STATE_STOPPED;
         ULONG m_rgbMask = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_BLUE;
 

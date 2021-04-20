@@ -11,7 +11,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CreateSourceAttributes());
-        RETURN_IF_FAILED(MFCreateEventQueue(&_spEventQueue));
+        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
 
         m_streamList = wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<SimpleMediaStream>>(NUM_STREAMS);
         RETURN_IF_NULL_ALLOC(m_streamList.get());
@@ -29,9 +29,9 @@ namespace winrt::WindowsSample::implementation
             RETURN_IF_FAILED(m_streamList[i]->GetStreamDescriptor(&streamDescriptorList[i]));
         }
 
-        RETURN_IF_FAILED(MFCreatePresentationDescriptor(m_streamList.size(), streamDescriptorList.get(), &_spPresentationDescriptor));
+        RETURN_IF_FAILED(MFCreatePresentationDescriptor(m_streamList.size(), streamDescriptorList.get(), &m_spPresentationDescriptor));
 
-        _sourceState = SourceState::Stopped;
+        m_sourceState = SourceState::Stopped;
 
         return S_OK;
     }
@@ -44,7 +44,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->BeginGetEvent(pCallback, punkState));
+        RETURN_IF_FAILED(m_spEventQueue->BeginGetEvent(pCallback, punkState));
 
         return S_OK;
     }
@@ -57,7 +57,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->EndGetEvent(pResult, ppEvent));
+        RETURN_IF_FAILED(m_spEventQueue->EndGetEvent(pResult, ppEvent));
 
         return S_OK;
     }
@@ -77,11 +77,11 @@ namespace winrt::WindowsSample::implementation
             winrt::slim_lock_guard lock(m_Lock);
 
             RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-            spQueue = _spEventQueue;
+            spQueue = m_spEventQueue;
         }
 
         // Now get the event.
-        RETURN_IF_FAILED(_spEventQueue->GetEvent(dwFlags, ppEvent));
+        RETURN_IF_FAILED(spQueue->GetEvent(dwFlags, ppEvent));
 
         return S_OK;
     }
@@ -96,7 +96,7 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(eventType, guidExtendedType, hrStatus, pvValue));
 
         return S_OK;
     }
@@ -112,7 +112,7 @@ namespace winrt::WindowsSample::implementation
         *ppPresentationDescriptor = nullptr;
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(_spPresentationDescriptor->Clone(ppPresentationDescriptor));
+        RETURN_IF_FAILED(m_spPresentationDescriptor->Clone(ppPresentationDescriptor));
 
         return S_OK;
     }
@@ -143,15 +143,15 @@ namespace winrt::WindowsSample::implementation
     {
         winrt::slim_lock_guard lock(m_Lock);
 
-        _sourceState = SourceState::Shutdown;
+        m_sourceState = SourceState::Shutdown;
 
-        _spAttributes.reset();
-        _spPresentationDescriptor.reset();
+        m_spAttributes.reset();
+        m_spPresentationDescriptor.reset();
 
-        if (_spEventQueue != nullptr)
+        if (m_spEventQueue != nullptr)
         {
-            _spEventQueue->Shutdown();
-            _spEventQueue.reset();
+            m_spEventQueue->Shutdown();
+            m_spEventQueue.reset();
         }
 
         for(unsigned int i = 0; i < m_streamList.size(); i++)
@@ -185,11 +185,11 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (!(_sourceState != SourceState::Stopped || _sourceState != SourceState::Shutdown))
+        if (!(m_sourceState != SourceState::Stopped || m_sourceState != SourceState::Shutdown))
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
-        _sourceState = SourceState::Started;
+        m_sourceState = SourceState::Started;
 
         // This checks the passed in PresentationDescriptor matches the member of streams we
         // have defined internally and that at least one stream is selected
@@ -223,7 +223,7 @@ namespace winrt::WindowsSample::implementation
             if (selected)
             {
                 // Update our internal PresentationDescriptor
-                RETURN_IF_FAILED(_spPresentationDescriptor->SelectStream(streamIdx));
+                RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
 
                 // Update stream state
                 RETURN_IF_FAILED(m_streamList[streamIdx]->SetStreamState(MF_STREAM_STATE_RUNNING));
@@ -234,7 +234,7 @@ namespace winrt::WindowsSample::implementation
                 wil::com_ptr_nothrow<IUnknown> spunkStream;
                 MediaEventType met = (wasSelected ? MEUpdatedStream : MENewStream);
                 RETURN_IF_FAILED(m_streamList[streamIdx]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
-                RETURN_IF_FAILED(_spEventQueue->QueueEventParamUnk(
+                RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
                     met,
                     GUID_NULL,
                     S_OK,
@@ -243,12 +243,12 @@ namespace winrt::WindowsSample::implementation
             else if(wasSelected)
             {
                 // stream was previously selected but not selected this time.
-                RETURN_IF_FAILED(_spPresentationDescriptor->DeselectStream(streamIdx));
+                RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(streamIdx));
             }
         }
 
         // Send event that the source started. Include error code in case it failed.
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(
             MESourceStarted,
             GUID_NULL,
             S_OK,
@@ -269,13 +269,13 @@ namespace winrt::WindowsSample::implementation
         *pSelected = false;
 
         DWORD streamCount = 0;
-        RETURN_IF_FAILED(_spPresentationDescriptor->GetStreamDescriptorCount(&streamCount));
+        RETURN_IF_FAILED(m_spPresentationDescriptor->GetStreamDescriptorCount(&streamCount));
         for (unsigned int i = 0; i < streamCount; i++)
         {
             wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDescriptor;
             BOOL selected = FALSE;
 
-            RETURN_IF_FAILED(_spPresentationDescriptor->GetStreamDescriptorByIndex(i, &selected, &spStreamDescriptor));
+            RETURN_IF_FAILED(m_spPresentationDescriptor->GetStreamDescriptorByIndex(i, &selected, &spStreamDescriptor));
 
             DWORD id = 0;
             RETURN_IF_FAILED(spStreamDescriptor->GetStreamIdentifier(&id));
@@ -297,11 +297,11 @@ namespace winrt::WindowsSample::implementation
     {
         winrt::slim_lock_guard lock(m_Lock);
 
-        if (_sourceState != SourceState::Started)
+        if (m_sourceState != SourceState::Started)
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
-        _sourceState = SourceState::Stopped;
+        m_sourceState = SourceState::Stopped;
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
@@ -313,10 +313,10 @@ namespace winrt::WindowsSample::implementation
         {
             RETURN_IF_FAILED(m_streamList[i]->SetStreamState(MF_STREAM_STATE_STOPPED));
             RETURN_IF_FAILED(m_streamList[i]->Stop());
-            RETURN_IF_FAILED(_spPresentationDescriptor->DeselectStream(i));
+            RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(i));
         }
 
-        RETURN_IF_FAILED(_spEventQueue->QueueEventParamVar(MESourceStopped, GUID_NULL, S_OK, &stopTime));
+        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MESourceStopped, GUID_NULL, S_OK, &stopTime));
 
         return S_OK;
     }
@@ -332,7 +332,7 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
         RETURN_IF_FAILED(MFCreateAttributes(sourceAttributes, 1));
-        RETURN_IF_FAILED(_spAttributes->CopyAllItems(*sourceAttributes));
+        RETURN_IF_FAILED(m_spAttributes->CopyAllItems(*sourceAttributes));
 
         return S_OK;
     }
@@ -351,7 +351,7 @@ namespace winrt::WindowsSample::implementation
 
         wil::com_ptr_nothrow<SimpleMediaStream> spStream;
         RETURN_IF_FAILED(_GetMediaStreamById(dwStreamIdentifier, &spStream));
-        RETURN_IF_FAILED(spStream->_spAttributes.copy_to(ppAttributes));
+        RETURN_IF_FAILED(spStream->m_spAttributes.copy_to(ppAttributes));
 
         return S_OK;
     }
@@ -458,6 +458,7 @@ namespace winrt::WindowsSample::implementation
                     for (size_t i = 0; i < m_streamList.size(); i++)
                     {
                         m_streamList[i]->SetRGBMask(((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)pPropertyData)->ColorMode);
+                        *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
                     }
                 }
                 // Get operation
@@ -545,12 +546,12 @@ namespace winrt::WindowsSample::implementation
     /// Internal methods.
     HRESULT SimpleMediaSource::_CheckShutdownRequiresLock()
     {
-        if (_sourceState == SourceState::Shutdown)
+        if (m_sourceState == SourceState::Shutdown)
         {
             return MF_E_SHUTDOWN;
         }
 
-        if (_spEventQueue == nullptr || m_streamList.get() == nullptr)
+        if (m_spEventQueue == nullptr || m_streamList.get() == nullptr)
         {
             return E_UNEXPECTED;
         }
@@ -592,10 +593,10 @@ namespace winrt::WindowsSample::implementation
 
     HRESULT SimpleMediaSource::_CreateSourceAttributes()
     {
-        if (_spAttributes.get() == nullptr)
+        if (m_spAttributes.get() == nullptr)
         {
             // Create our source attribute store.
-            RETURN_IF_FAILED(MFCreateAttributes(&_spAttributes, 1));
+            RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
 
             wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
             wil::com_ptr_nothrow<IMFSensorProfile> profile;
@@ -623,7 +624,7 @@ namespace winrt::WindowsSample::implementation
 
 
             // Se the profile collection to the attribute store of the IMFTransform.
-            RETURN_IF_FAILED(_spAttributes->SetUnknown(
+            RETURN_IF_FAILED(m_spAttributes->SetUnknown(
                 MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
                 profileCollection.get()));
 
@@ -642,7 +643,7 @@ namespace winrt::WindowsSample::implementation
                 if (appInfo != nullptr)
                 {
                     DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                    RETURN_IF_FAILED(_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
                 }
             }
             catch (...) { DEBUG_MSG(L"Not running in app package"); }

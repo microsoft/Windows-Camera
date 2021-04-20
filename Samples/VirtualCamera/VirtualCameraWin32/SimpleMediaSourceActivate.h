@@ -5,14 +5,6 @@
 #ifndef SIMPLEMEDIASOURCEACTIVATE_H
 #define SIMPLEMEDIASOURCEACTIVATE_H
 
-namespace winrt
-{
-    template<> bool is_guid_of<IMFActivate>(guid const& id) noexcept
-    {
-        return is_guid_of<IMFActivate, IMFAttributes>(id);
-    }
-}
-
 namespace winrt::WindowsSample::implementation
 {
     struct __declspec(uuid("9812588D-5CE9-4E4C-ABC1-049138D10DCE"))
@@ -61,7 +53,7 @@ namespace winrt::WindowsSample::implementation
     private:
         wil::com_ptr_nothrow <IMFAttributes> _spActivateAttributes;
         winrt::com_ptr<winrt::WindowsSample::implementation::SimpleMediaSource> m_ptr;
-        winrt::com_ptr<winrt::WindowsSample::implementation::HWMediaSource2>m_spHWMediaSrc;
+        winrt::com_ptr<winrt::WindowsSample::implementation::HWMediaSource>m_spHWMediaSrc;
     };
 }
 

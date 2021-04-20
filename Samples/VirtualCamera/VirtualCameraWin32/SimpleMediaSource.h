@@ -5,14 +5,6 @@
 #ifndef SIMPLEMEDIASOURCE_H
 #define SIMPLEMEDIASOURCE_H
 
-namespace winrt
-{
-    template<> bool is_guid_of<IMFMediaSourceEx>(guid const& id) noexcept
-    {
-        return is_guid_of<IMFMediaSourceEx, IMFMediaSource, IMFMediaEventGenerator>(id);
-    }
-}
-
 namespace winrt::WindowsSample::implementation
 {
     // forward declaration
@@ -92,15 +84,14 @@ namespace winrt::WindowsSample::implementation
         HRESULT _GetMediaStreamById(_In_ DWORD dwStreamId, _COM_Outptr_ SimpleMediaStream** ppMediaStream);
 
         winrt::slim_mutex m_Lock;
-        SourceState _sourceState{ SourceState::Invalid };
+        SourceState m_sourceState{ SourceState::Invalid };
 
-        wil::com_ptr_nothrow<IMFMediaEventQueue> _spEventQueue;
-        wil::com_ptr_nothrow<IMFPresentationDescriptor> _spPresentationDescriptor;
-        wil::com_ptr_nothrow<IMFAttributes> _spAttributes;
+        wil::com_ptr_nothrow<IMFMediaEventQueue> m_spEventQueue;
+        wil::com_ptr_nothrow<IMFPresentationDescriptor> m_spPresentationDescriptor;
+        wil::com_ptr_nothrow<IMFAttributes> m_spAttributes;
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<SimpleMediaStream>> m_streamList;
 
         const DWORD NUM_STREAMS = 1;
-        bool bInitialize;
     };
 }
 

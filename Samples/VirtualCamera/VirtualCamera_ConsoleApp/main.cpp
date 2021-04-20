@@ -1,11 +1,10 @@
-﻿#include "pch.h"
+#include "pch.h"
 
-//#include "winrt/WindowsSample.h"
+
 #include "MediaCaptureUtils.h"
 #include "VCamUtils.h"
 #include "EVRHelper.h"
 #include "VirtualCameraWin32.h"
-
 
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
@@ -17,11 +16,6 @@
 #include "winrt\Windows.Management.Deployment.h"
 #include "winrt\Windows.ApplicationModel.Core.h"
 
-//const GUID CLSID_SIMPLEMEDIASOURCE_WIN32 = { 0x9812588D, 0x5CE9, 0x4E4C, {0xAB, 0xC1, 0x04, 0x91, 0x38, 0xD1, 0x0D, 0xCE} };
-//LPCWSTR SIMPLEMEDIASOURCE_WIN32 = L"{9812588D-5CE9-4E4C-ABC1-049138D10DCE}";
-//LPCWSTR SIMPLEMEDIASOURCE_WIN32_CLISD = L"9812588D-5CE9-4E4C-ABC1-049138D10DCE";
-//LPCWSTR SIMPLEMEDIASOURCE_WIN32_FRIENDLYNAME = L"SimpleMediaSourceWin32";
-
 typedef HRESULT(__stdcall* PDllGetActivationFactory)(void* classId, void** factory);
 typedef HRESULT(__stdcall* PDllGetClassObject)(GUID const& clsid, GUID const& iid, void** result);
 
@@ -30,54 +24,7 @@ void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
     LOG_ERROR(L"%S(%d):%S, hr=0x%08X, msg=%s",
         failure.pszFile, failure.uLineNumber, failure.pszFunction,
         failure.hr, (failure.pszMessage) ? failure.pszMessage : L"");
-
 }
-
-//
-//HRESULT LoadMediaSource(const wchar_t* pwszModuleName, IMFActivate** ppActivate)
-//{
-//    RETURN_HR_IF_NULL(E_POINTER, ppActivate);
-//    *ppActivate = nullptr;
-//
-//    HMODULE hModule = LoadLibrary(pwszModuleName);
-//    RETURN_HR_IF_NULL_MSG(E_POINTER, hModule, "Fail to load %s", pwszModuleName);
-//
-//    PDllGetActivationFactory pDllGetActivationFactory = (PDllGetActivationFactory)GetProcAddress(hModule, "DllGetActivationFactory");
-//    PDllGetClassObject pDllGetClassObject = (PDllGetClassObject)GetProcAddress(hModule, "DllGetClassObject");
-//    if ((pDllGetActivationFactory == nullptr) && (pDllGetClassObject == nullptr))
-//    {
-//        RETURN_HR_MSG(E_UNEXPECTED, "MediaSource dll must expose either DllGetActivationFactory or DllGetClassObject");
-//    }
-//    wprintf(L"DllGetActivationFactory: %p, DllGetClassObject: %p \n", pDllGetActivationFactory, pDllGetClassObject);
-//    wprintf(L"DONE!\n\n");
-//
-//    
-//    if (pDllGetClassObject)
-//    {
-//        wprintf(L"Create IMFActivate from IClassFactory ...");
-//        wil::com_ptr_nothrow<IClassFactory> spClassFactory;
-//        RETURN_IF_FAILED(pDllGetClassObject(CLSID_SIMPLEMEDIASOURCE_WIN32, IID_PPV_ARGS(&spClassFactory)));
-//        RETURN_IF_FAILED(spClassFactory->CreateInstance(nullptr, IID_PPV_ARGS(ppActivate)));
-//    }
-//    else
-//    {
-//        // activation factory
-//        wprintf(L"Create IMFActivate from IActivationFactory ...");
-//        wil::com_ptr_nothrow<IActivationFactory> spActivationFactory;
-//        RETURN_IF_FAILED(pDllGetActivationFactory((void*)VIRTUALCAMERA_ACTIVATIONCLASS, spActivationFactory.put_void()));
-//
-//        wil::com_ptr_nothrow<IInspectable> spIISpectable;
-//        RETURN_IF_FAILED(spActivationFactory->ActivateInstance(&spIISpectable));
-//        RETURN_IF_FAILED(spIISpectable.query_to(ppActivate));
-//    }
-//
-//    return S_OK;
-//}
-
-
-//
-// Use EVR to render frames from input mediasource.
-//
 
 HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType)
 {
@@ -265,15 +212,15 @@ winrt::hstring SelectVirtualCamera()
     return strSymLink;
 }
 
-DeviceInformation SelectRealCamera()
+DeviceInformation SelectPhysicalCamera()
 {
     winrt::hstring strSymLink;
     DeviceInformation devInfo{ nullptr };
 
     std::vector<DeviceInformation> camList;
-    if (FAILED(VCamUtils::GetRealCameras(camList)) || (camList.size() == 0))
+    if (FAILED(VCamUtils::GetPhysicalCameras(camList)) || (camList.size() == 0))
     {
-        LOG_COMMENT(L"No real Camera found");
+        LOG_COMMENT(L"No physical Camera found");
         return devInfo;
     }
 
@@ -304,7 +251,6 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
         std::wcin >> select;
 
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-        winrt::hstring realCamSymLink;
         switch (select)
         {
         case 1:
@@ -315,7 +261,7 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
         }
         case 2: 
         {
-            auto devInfo = SelectRealCamera();
+            auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
             RETURN_IF_FAILED(test.CreateVirutalCamera(devInfo.Name(), &spVirtualCamera));
@@ -340,29 +286,6 @@ HRESULT SelectUnInstallVirtualCamera()
 
     return S_OK;
 }
-//
-//HRESULT TestLaunchApp()
-//{
-//    auto strSymLink = SelectVirtualCamera();
-//    //DEVPKEY_DeviceInterface_FSM_VirtualCamera_ConfigAppPfn - UWPapp only?
-//    wprintf(L"Get VirtualCamera ConfigAppPfn ... \n");
-//    winrt::hstring _DEVPKEY_DeviceInterface_FSM_VirtualCamera_ConfigAppPfn(L"{b3e34238-3393-4bd0-adfc-39dc9e32bcf1} 16");
-//
-//    winrt::Windows::Foundation::IReference<winrt::hstring> val;
-//    CMediaCaptureUtils::GetDeviceProperty(strSymLink.data(), _DEVPKEY_DeviceInterface_FSM_VirtualCamera_ConfigAppPfn, DeviceInformationKind::DeviceInterface, val);
-//
-//    if (val == nullptr || val.Value().empty())
-//    {
-//        LOG_WARN(L"ConfigAppPfn not supported \n ")
-//    }
-//    else
-//    {
-//        LOG_COMMENT(L"ConfigAppPfn: %s \n", val.Value().data());
-//        LaunchApp(val.Value());
-//        //LaunchApp(L"2b247293-4880-40b1-a135-45db3d1b442b_1tzsa3cqwev0m");
-//    }
-//    return S_OK;
-//}
 
 void VCamAppUnInstall()
 {
@@ -473,7 +396,7 @@ HRESULT TestMode()
         {
         case 1:  // Run unit test on HWMediaSource
         {
-            auto devInfo = SelectRealCamera();
+            auto devInfo = SelectPhysicalCamera();
             if (devInfo)
             {
                 HWMediaSourceUT test(devInfo.Id());
@@ -529,94 +452,5 @@ int wmain(int argc, wchar_t* argv[])
         RETURN_IF_FAILED(VCamApp());
     }
 
-    // test winrt component
-    //RETURN_IF_FAILED(TestSimpleMediaSourceWinrt_Win32RegFree());
-    //RETURN_IF_FAILED(TestSimpleMediaSourceWin32());
-    //RETURN_IF_FAILED(TestValidateMediaSourceStream());
-    //while (true)
-    //{
-    //    wprintf(L"\n select opitions: \n 1 - register \n 2 - remove \n 3 - TestVCam \n 4 - HWMediaSourceUT  \n 5 - SimpleMediaSourceUT \n 6 - MsiUninstall \n 8 - TestCustomControl \n 9 - quit \n");
-    //    int select = 0;
-    //    std::wcin >> select;
-
-    //    switch (select)
-    //    {
-    //    case 1: // Interactive install of virutal camera
-    //    {
-    //        wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-    //        RETURN_IF_FAILED_MSG(SelectRegisterVirtualCamera(&spVirtualCamera), "Register Virutal Camera failed");
-    //        //RETURN_IF_FAILED(spVirtualCamera->Shutdown());
-
-    //        break;
-    //    }
-    //    case 2: // Interactive uninstall of virutal camera
-    //    {
-    //        HRESULT hr = SelectUnInstallVirtualCamera();
-    //        if (FAILED(hr))
-    //        {
-    //            LOG_ERROR(L"Uinstall Virutal Camera failed: 0x%08x", hr);
-    //        }
-    //        break;
-    //    }
-    //    
-    //    case 3: // Stream test of selected virutal camera
-    //    {
-    //        winrt::hstring strSymlink = SelectVirtualCamera();
-
-    //        if (!strSymlink.empty())
-    //        {
-    //            wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    //            RETURN_IF_FAILED(VCamUtils::InitializeVirtualCamera(strSymlink.data(), &spMediaSource));
-    //            RETURN_IF_FAILED(RenderMediaSource(spMediaSource.get()));
-    //        }
-    //        break;
-    //    }
-
-    //    case 4:  // Run unit test on HWMediaSource
-    //    {
-    //        auto devInfo = SelectRealCamera();
-    //        if (devInfo)
-    //        {
-    //            HWMediaSourceUT test(devInfo.Id());
-    //            RETURN_IF_FAILED(test.TestMediaSource());
-    //            RETURN_IF_FAILED(test.TestMediaSourceStream());
-    //        }
-    //        break;
-    //    }
-
-    //    case 5: // Run unit test on SimpleMediaSource
-    //    {
-    //        SimpleMediaSourceUT test;
-    //        RETURN_IF_FAILED(test.TestMediaSource());
-    //        RETURN_IF_FAILED(test.TestMediaSourceStream());
-    //        RETURN_IF_FAILED(test.TestKSProperty());
-    //        RETURN_IF_FAILED(test.TestVirtualCamera());
-    //        break;
-    //    }
-
-    //    case 6:
-    //    {
-    //        //HRESULT hr = VCamUtils::MSIUninstall(CLSID_SIMPLEMEDIASOURCE_WIN32);
-    //        /*if (FAILED(hr))
-    //        {
-    //            LOG_ERROR(L"Register MSIUInstall: 0x%08x", hr);
-    //        }*/
-    //        break;
-    //    }
-
-    //    case 8:
-    //    {
-    //        winrt::hstring strSymlink = SelectVirtualCamera();
-    //        if (!strSymlink.empty())
-    //        {
-    //            //RETURN_IF_FAILED(TestCustomControl(strSymlink));
-    //        }
-    //        break;
-    //        
-    //    }
-    //    default:
-    //        return 0;
-    //    }
-    //}
     return S_OK;
 }

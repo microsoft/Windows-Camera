@@ -1,14 +1,12 @@
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
+
+#ifndef  HWMEDIASTREAM_H
+#define  HWMEDIASTREAM_H
+
 #pragma once
 #include "HWMediaSource.h"
-
-// this is declare in SimpleMediaSource
-//namespace winrt
-//{
-//    template<> bool is_guid_of<IMFMediaStream2>(guid const& id) noexcept
-//    {
-//        return is_guid_of<IMFMediaStream2, IMFMediaStream, IMFMediaEventGenerator>(id);
-//    }
-//}
 
 namespace winrt::WindowsSample::implementation
 {
@@ -17,6 +15,8 @@ namespace winrt::WindowsSample::implementation
         friend struct HWMediaSource;
 
     public:
+        ~HWMediaStream();
+
         // IMFMediaEventGenerator
         IFACEMETHOD(BeginGetEvent)(IMFAsyncCallback* pCallback, IUnknown* punkState);
         IFACEMETHOD(EndGetEvent)(IMFAsyncResult* pResult, IMFMediaEvent** ppEvent);
@@ -33,27 +33,29 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHOD(GetStreamState)(_Out_ MF_STREAM_STATE* pState);
 
         // Non-interface methods.
-        HRESULT Initialize(_In_ HWMediaSource* pSource, _In_ IMFPresentationDescriptor* pPDesc, _In_ IMFSourceReader* pSrcReader, _In_ DWORD streamIndex);
+        HRESULT Initialize(_In_ HWMediaSource* pSource, _In_ IMFStreamDescriptor* pStreamDesc, _In_ DWORD dwWorkQueue);
         HRESULT Shutdown();
+        DWORD StreamIdentifier() { return m_dwStreamIdentifier; };
+        HRESULT SetMediaStream(_In_ IMFMediaStream* pMediaStream);
+
+        HRESULT OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
 
     protected:
         HRESULT _CheckShutdownRequiresLock();
 
-        // TODO: change to std
+        wil::com_ptr_nothrow<CAsyncCallback<HWMediaStream>> m_xOnMediaStreamEvent;
+
         winrt::slim_mutex  m_Lock;
 
-        wil::com_ptr_nothrow<IMFMediaSource> _parent;
-        wil::com_ptr_nothrow<IMFStreamDescriptor> _spStreamDesc;
-        wil::com_ptr_nothrow<IMFSourceReader> m_spSrcReader;
+        wil::com_ptr_nothrow<IMFMediaSource> m_parent;
+        wil::com_ptr_nothrow<IMFMediaStream> m_spDevStream;
+        wil::com_ptr_nothrow<IMFStreamDescriptor> m_spStreamDesc;
+        wil::com_ptr_nothrow<IMFMediaEventQueue> m_spEventQueue;
 
-        wil::com_ptr_nothrow<IMFMediaEventQueue> _spEventQueue;
-        //wil::com_ptr_nothrow<IMFAttributes> _spAttributes;
-        //wil::com_ptr_nothrow<IMFMediaType> _spMediaType;
-        
-        bool _isShutdown = false;
-        bool _isSelected = false;
-        DWORD m_streamIndex;
+        bool m_isShutdown = false;
+        DWORD m_dwStreamIdentifier = 0;
+        DWORD m_dwSerialWorkQueueId = 0;
     };
 }
 
-
+#endif

@@ -12,16 +12,16 @@ namespace winrt::WindowsSample::implementation
         *ppv = nullptr;
 
         bool bHWMediaSource = false;
-        wil::unique_cotaskmem_string spszRealSymLink;
+        wil::unique_cotaskmem_string spwszPhysicalSymLink;
         UINT32 cch = 0;
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
         RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
 
         if (_spActivateAttributes)
         {
-            if (SUCCEEDED(_spActivateAttributes->GetAllocatedString(VCAM_DEVICE_INFO, &spszRealSymLink, &cch)))
+            if (SUCCEEDED(_spActivateAttributes->GetAllocatedString(VCAM_DEVICE_INFO, &spwszPhysicalSymLink, &cch)))
             {
-                DEBUG_MSG(L"Set DeviceSymLink: %s", spszRealSymLink.get());
+                DEBUG_MSG(L"Set DeviceSymLink: %s", spwszPhysicalSymLink.get());
                 bHWMediaSource = true;
             }
         }
@@ -29,8 +29,8 @@ namespace winrt::WindowsSample::implementation
         if (bHWMediaSource)
         {
             DEBUG_MSG(L"Activate HWMediaSource");
-            m_spHWMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::HWMediaSource2>();
-            RETURN_IF_FAILED(m_spHWMediaSrc->Initialize(spszRealSymLink.get()));
+            m_spHWMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::HWMediaSource>();
+            RETURN_IF_FAILED(m_spHWMediaSrc->Initialize(spwszPhysicalSymLink.get()));
             RETURN_IF_FAILED(m_spHWMediaSrc->QueryInterface(riid, ppv));
         }
         else

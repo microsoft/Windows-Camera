@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros">
-    <OSROOT>K:\os.2020_2\public\</OSROOT>
-    <OSOBJ>k:\os.2020_2\obj</OSOBJ>
-  </PropertyGroup>
   <!--
     To customize common C++/WinRT project properties: 
     * right-click the project node
@@ -15,18 +11,6 @@
     https://github.com/Microsoft/cppwinrt/tree/master/nuget 
     -->
   <PropertyGroup />
-  <ItemGroup>
-    <BuildMacro Include="OSROOT">
-      <Value>$(OSROOT)</Value>
-      <EnvironmentVariable>true</EnvironmentVariable>
-    </BuildMacro>
-    <BuildMacro Include="OSOBJ">
-      <Value>$(OSOBJ)</Value>
-    </BuildMacro>
-  </ItemGroup>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\internal\avcore\inc;$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\private\avcore\inc;$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\internal\avcore\inc;$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\external\shared\inc;$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;</AdditionalIncludeDirectories>
-    </ClCompile>
-  </ItemDefinitionGroup>
+  <ItemGroup />
+  <ItemDefinitionGroup />
 </Project>

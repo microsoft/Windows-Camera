@@ -1,12 +1,10 @@
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
 #pragma once
+
 #ifndef HWMEDIASOIURCE_H
 #define HWMEDIASOIURCE_H
-
-#include <vector>
-
-// TODO: Rename SimpleMediaSource -> SWMediaSource private
-// TODO: Rename public source to VCamSource (use either HWMediaSource / SimpleMediaSource base on the activation)
-// TODO: Add IMFSampleAllocatorControl
 
 namespace winrt::WindowsSample::implementation
 {
@@ -14,11 +12,12 @@ namespace winrt::WindowsSample::implementation
     struct HWMediaStream;
 
     //
-    // MediaSource that wrapper real hardware
+    // MediaSource that wraps physical hardware
     //
-    struct HWMediaSource : winrt::implements<HWMediaSource, IMFMediaSourceEx, IMFGetService, IKsControl>
+    struct HWMediaSource : winrt::implements<HWMediaSource, IMFMediaSourceEx, IMFGetService, IKsControl, IMFSampleAllocatorControl>
     {
         HWMediaSource() = default;
+        ~HWMediaSource();
 
     private:
         enum class SourceState
@@ -27,6 +26,19 @@ namespace winrt::WindowsSample::implementation
         };
 
     public:
+        // override implementation from winrt::implementation
+        // TODO: Remove when IMFSampleAllocator is fix in devicesource.
+        impl::hresult_type __stdcall QueryInterface(impl::guid_type const& id, void** object) noexcept
+        {
+            if (FAILED(implements::QueryInterface(reinterpret_cast<guid const&>(id), object)))
+            {
+                // project interface from the device source.
+                // for internal interface like IDeviceS
+                RETURN_IF_FAILED(m_spDevSource->QueryInterface(id, object));
+            }
+            return S_OK;
+        }
+
         // IMFMediaEventGenerator (inherits by IMFMediaSource)
         IFACEMETHOD(BeginGetEvent)(_In_ IMFAsyncCallback* pCallback, _In_ IUnknown* punkState);
         IFACEMETHOD(EndGetEvent)(_In_ IMFAsyncResult* pResult, _Out_ IMFMediaEvent** ppEvent);
@@ -49,42 +61,60 @@ namespace winrt::WindowsSample::implementation
         // IMFGetService
         IFACEMETHOD(GetService)(_In_ REFGUID guidService, _In_ REFIID riid, _Out_ LPVOID* ppvObject);
 
-
         // IKsControl
-        IFACEMETHOD(KsProperty)(_In_reads_bytes_(ulPropertyLength) PKSPROPERTY pProperty,
+        IFACEMETHOD(KsProperty)(
+            _In_reads_bytes_(ulPropertyLength) PKSPROPERTY pProperty,
             _In_ ULONG ulPropertyLength,
             _Inout_updates_to_(ulDataLength, *pBytesReturned) LPVOID pPropertyData,
             _In_ ULONG ulDataLength,
             _Out_ ULONG* pBytesReturned);
-        IFACEMETHOD(KsMethod)(_In_reads_bytes_(ulMethodLength) PKSMETHOD pMethod,
+        IFACEMETHOD(KsMethod)(
+            _In_reads_bytes_(ulMethodLength) PKSMETHOD pMethod,
             _In_ ULONG ulMethodLength,
             _Inout_updates_to_(ulDataLength, *pBytesReturned) LPVOID pMethodData,
             _In_ ULONG ulDataLength,
             _Out_ ULONG* pBytesReturned);
-        IFACEMETHOD(KsEvent)(_In_reads_bytes_opt_(ulEventLength) PKSEVENT pEvent,
+        IFACEMETHOD(KsEvent)(
+            _In_reads_bytes_opt_(ulEventLength) PKSEVENT pEvent,
             _In_ ULONG ulEventLength,
             _Inout_updates_to_(ulDataLength, *pBytesReturned) LPVOID pEventData,
             _In_ ULONG ulDataLength,
             _Out_opt_ ULONG* pBytesReturned);
+        
+        // IMFSampleAlloactorControl
+        IFACEMETHOD(SetDefaultAllocator)(
+            _In_  DWORD dwOutputStreamID,
+            _In_  IUnknown* pAllocator);
+
+        IFACEMETHOD(GetAllocatorUsage)(
+            _In_  DWORD dwOutputStreamID,
+            _Out_  DWORD* pdwInputStreamID,
+            _Out_  MFSampleAllocatorUsage* peUsage);
 
         HRESULT Initialize(LPCWSTR pwszSymLink);
 
     private:
         HRESULT _CheckShutdownRequiresLock();
+        HRESULT _CreateSourceAttributes();
+        HRESULT _CreateMediaStreams();
+
+        HRESULT OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
+        wil::com_ptr_nothrow<CAsyncCallback<HWMediaSource>> m_xOnMediaSourceEvent;
+
+        HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
+        HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
+        HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
 
         winrt::slim_mutex m_Lock;
-        SourceState _sourceState{ SourceState::Invalid };
-        wil::com_ptr_nothrow<IMFMediaEventQueue> _spEventQueue;
-        wil::com_ptr_nothrow<IMFAttributes> _spAttributes;
-        wil::com_ptr_nothrow<IMFPresentationDescriptor>_spPresentationDescriptor;
+        SourceState m_sourceState{ SourceState::Invalid };
+        wil::com_ptr_nothrow<IMFMediaEventQueue> m_spEventQueue;
+        wil::com_ptr_nothrow<IMFAttributes> m_spAttributes;
+        wil::com_ptr_nothrow<IMFPresentationDescriptor> m_spPDesc;
 
-        bool _wasStreamPreviouslySelected; // maybe makes more sense as a property of the stream
-        wil::com_ptr_nothrow<IMFMediaSource> _devSource;
-        wil::com_ptr_nothrow<IMFSourceReader> m_spSourceReader;
-        bool bInitialize;
+        wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
+        DWORD m_dwSerialWorkQueueId;
 
-        wil::com_ptr_nothrow<HWMediaStream> m_spStream;
-        const DWORD NUM_STREAMS = 1;
+        wil::unique_cotaskmem_array_ptr<wil::com_ptr<HWMediaStream>> m_streamList;
     };
 }
 

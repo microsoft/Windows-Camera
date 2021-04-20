@@ -75,10 +75,10 @@ HRESULT SimpleFrameGenerator::_CreateRGB32Frame(
     LONGLONG curSysTimeInS = MFGetSystemTime() / (MFTIME)10000000;
     int offset = curSysTimeInS % height;
 
-    for (int r = 0; r < height; r++)
+    for (unsigned int r = 0; r < height; r++)
     {
         uint32_t* p = (uint32_t*)(pBuf + (r * pitch));
-        for (int c = 0; c < width; c++)
+        for (unsigned int c = 0; c < width; c++)
         {
             BYTE gray = (BYTE)r + offset;
             *p = ((uint32_t)gray << 16 | (uint32_t)gray << 8 | (uint32_t)gray) & rgbMask;

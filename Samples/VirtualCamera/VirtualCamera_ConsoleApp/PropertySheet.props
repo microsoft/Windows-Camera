@@ -1,57 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
-  <PropertyGroup Label="UserMacros">
-    <OSROOT>K:\os.2020_2\public</OSROOT>
-    <OSOBJ>K:\os.2020_2\obj</OSOBJ>
-  </PropertyGroup>
-  
-    <!--
-    To customize common C++/WinRT project properties: 
-    * right-click the project node
-    * expand the Common Properties item
-    * select the C++/WinRT property page
-
-    For more advanced scenarios, and complete documentation, please see:
-    https://github.com/Microsoft/cppwinrt/tree/master/nuget 
-    -->
   <PropertyGroup />
-  
-  <ItemGroup>
-    <BuildMacro Include="OSROOT">
-      <Value>$(OSROOT)</Value>
-    </BuildMacro>
-    <BuildMacro Include="OSOBJ">
-      <Value>$(OSOBJ)</Value>
-    </BuildMacro>
-  </ItemGroup>
-  
-  <ItemDefinitionGroup />
-
-  <ItemGroup>
-    <!-- TODO update $(SolutionDir)CppWinrtComponent\bin\WindowsTest.MediaCaptureDataParser.winmd-->
-    <Reference Include ="$(SolutionDir)x64\$(Configuration)\VirtualCameraWinrt\WindowsSample.winmd">
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
-    
-    <!-- TODO update $(SolutionDir)CppWinrtComponent\bin\$(arch)\MediaCaptureDataParser.dll-->
-    <!--
-    <ReferenceCopyLocalPaths Include="$(SolutionDir)x64\$(Configuration)\VirtualCameraWinrt\VirtualCameraWinrt.dll">
-      <IsWinMDFile>false</IsWinMDFile>
-    </ReferenceCopyLocalPaths>
-
-    <ReferenceCopyLocalPaths Include="$(SolutionDir)x64\$(Configuration)\VirtualCameraWinrt\VirtualCameraWinrt.pdb">
-      <IsWinMDFile>false</IsWinMDFile>
-    </ReferenceCopyLocalPaths>
-    -->
-    
-    <!-- TODO update $(SolutionDir)CppWinrtComponent\bin\$(arch)\MediaCaptureDataParser.dll-->
-    <ReferenceCopyLocalPaths Include="$(SolutionDir)x64\$(Configuration)\VirtualCameraWin32\VirtualCameraWin32.dll">
-      <IsWinMDFile>false</IsWinMDFile>
-    </ReferenceCopyLocalPaths>
-
-    <ReferenceCopyLocalPaths Include="$(SolutionDir)x64\$(Configuration)\VirtualCameraWin32\VirtualCameraWin32.pdb">
-      <IsWinMDFile>false</IsWinMDFile>
-    </ReferenceCopyLocalPaths>
-  </ItemGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\VirtualCameraWin32; ..\VirtualCameraTest</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup />
 </Project>

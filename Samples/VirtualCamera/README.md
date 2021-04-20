@@ -1,20 +1,22 @@
 # Virtual Camera project
+### Requirement:
+Minimum OS version: 10.0.21361.0
 
-This is a sample on how to create a virtual camera on windows. This project is consists of 5 parts
+This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
 1. VirtualCameraWin32 <br>
 MediaSource for the virtual camera. 
 
 2. VirtualCamera_ConsoleApp <br>
-Application use to create virtual camera on the system.
+Application to be used to create virtual camera on the system.
 
 3. VirtualCamera_AppMSI <br>
-Installable application to deploy and remove media source from the system
+Installable application to deploy or remove media source from the system
 
 4. VirtualCamera_AppMSIX <br>
-Package win32 console appliaction in to UWP
+Packaged win32 console appliaction in to UWP
 
 5. VirtualCameraTest <br>
-Set of unit test to validate virtual camera.
+Set of unit tests to validate virtual camera.
 
 ## Getting started
 Download the project 
@@ -22,14 +24,19 @@ Download the project
 2. Build VirtualCamera_AppMSIX
 3. Install VirtualCamera_AppMSI 
 4. Install VirtualCamera_AppMSIX
-5. From start -> type VirtualCameraApp -> Launc the application
+5. From start -> type VirtualCameraApp -> Launch the application
 
-The console application has 3 options, 1 - register virtual camera, 2 - remove virtual camera, 3 - TestVirtualCamera.  To start select option 1 to create a virtual camera, one the virtual camera is installed on the system.  To test the virtual camera you can run option 3 from the console application or simply launch the inbox camera app or other camera application of your choice.
+The console application has 3 options, 
+1 - register virtual camera, 
+2 - remove virtual camera, 
+3 - TestVirtualCamera. <br>
+To start select option 1 to create a virtual camera, one the virtual camera is installed on the system. <br>
+To test the virtual camera you can run option 3 from the console application or simply launch the inbox camera app or other camera application of your choice.
 
 ## VirtualCameraWin32 
 ----
 MediaSource for Virtual Camera
-In this exmaple, the mediasource is able to run with synethsize frames (SimpleMediaSource) or as a wrapper of existing hardware camera (HWMediaSource) <br> <br>
+In this exmaple, the mediasource is run with synethsize frames (SimpleMediaSource) or as a wrapper of existing hardware camera (HWMediaSource) <br> <br>
 Documentation on media source [link](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/frame-server-custom-media-source#custom-media-source-dll)
 
 

@@ -24,7 +24,8 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{ed70b5ef-e0a8-4dca-a01d-5305c509394b}</ProjectGuid>
     <RootNamespace>VirtualCameraWin32</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.21364.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.21361.0</WindowsTargetPlatformMinVersion>
     <ProjectName>VirtualCameraWin32</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -61,23 +62,19 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="PropertySheet.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="PropertySheet.props" />
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="PropertySheet.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -103,18 +100,13 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\private\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\external\shared\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
-%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>mf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -128,7 +120,7 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>K:\os.2020\obj\amd64fre\avcore\published\mf\daytona\objfre\amd64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -136,7 +128,7 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>mf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -148,12 +140,7 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\private\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\external\shared\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
-%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -161,7 +148,7 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>VirtualCameraWin32.def</ModuleDefinitionFile>
       <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>mf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -175,12 +162,7 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\private\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\internal\avcore\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecore\external\shared\inc;
-$(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
-%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <SupportJustMyCode>true</SupportJustMyCode>
     </ClCompile>
     <Link>
@@ -190,26 +172,24 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <ModuleDefinitionFile>VirtualCameraWin32.def</ModuleDefinitionFile>
-      <AdditionalOptions>/FORCE:MULTIPLE %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>mf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="SimpleFrameGenerator.h" />
     <ClInclude Include="VirtualCameraWin32.h" />
     <ClInclude Include="EventHandler.h" />
-    <ClInclude Include="HWMediaSource2.h" />
-    <ClInclude Include="HWMediaStream2.h" />
+    <ClInclude Include="HWMediaSource.h" />
+    <ClInclude Include="HWMediaStream.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="SimpleMediaSource.h" />
     <ClInclude Include="SimpleMediaSourceActivate.h" />
     <ClInclude Include="SimpleMediaStream.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="HWMediaSource2.cpp" />
-    <ClCompile Include="HWMediaStream2.cpp" />
+    <ClCompile Include="HWMediaSource.cpp" />
+    <ClCompile Include="HWMediaStream.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -220,14 +200,12 @@ $(OSRoot)\$(ProcessorArchitecture)fre.nocil\onecoreuap\external\sdk\inc;
     <ClCompile Include="SimpleMediaSource.cpp" />
     <ClCompile Include="SimpleMediaSourceActivate.cpp" />
     <ClCompile Include="SimpleMediaStream.cpp" />
+    <ClCompile Include="winrtCommon.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
     <None Include="VirtualCameraWin32.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="readme.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

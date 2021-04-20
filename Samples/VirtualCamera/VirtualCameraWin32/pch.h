@@ -22,7 +22,6 @@
 #include <mfreadwrite.h>
 #include <nserror.h>
 #include <winmeta.h>
-#include <wrl.h>
 #include <d3d9types.h>
 
 #include "mfVirtualCamera.h"
@@ -39,8 +38,8 @@
 #include "SimpleFrameGenerator.h"
 #include "SimpleMediaSource.h"
 #include "SimpleMediaStream.h"
-#include "HWMediaSource2.h"
-#include "HWMediaStream2.h"
+#include "HWMediaSource.h"
+#include "HWMediaStream.h"
 #include "VirtualCameraWin32.h"
 #include "SimpleMediaSourceActivate.h"
 
@@ -89,3 +88,19 @@ namespace wilEx
         return arr;
     }
 };
+
+WINRT_EXPORT namespace winrt
+{
+    template<> bool is_guid_of<IMFMediaSourceEx>(guid const& id) noexcept;
+
+    template<> bool is_guid_of<IMFMediaStream2>(guid const& id) noexcept;
+
+    template<> bool is_guid_of<IMFActivate>(guid const& id) noexcept;
+
+}
+//
+//namespace winrt
+//{
+//    
+//}
+
