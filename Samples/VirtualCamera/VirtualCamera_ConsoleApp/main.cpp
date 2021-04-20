@@ -287,7 +287,7 @@ void VCamAppUnInstall()
     VCamUtils::MSIUninstall(CLSID_SimpleMediaSourceWin32);
 }
 
-HRESULT VCamApp() try
+HRESULT VCamApp()
 {
     while (true)
     {
@@ -375,7 +375,7 @@ HRESULT VCamApp() try
     }
 
     return S_OK;
-}CATCH_RETURN_MSG("Caught unexpected exception");
+}
 
 HRESULT TestMode()
 {
