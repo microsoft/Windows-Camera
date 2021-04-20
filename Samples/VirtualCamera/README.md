@@ -1,6 +1,6 @@
-# Virtual Camera project
+# Virtual Camera project #
 ### Requirement:
-Minimum OS version: 10.0.21361.0
+&emsp;&emsp;Minimum OS version: 10.0.21364.0
 
 This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
 1. VirtualCameraWin32 <br>
@@ -79,7 +79,7 @@ This should include mediasource dll and the executable that is responsbile for t
 This project package the desktop VirtualCamera_ConsoleApp executable into a UWP application.
 This is a sample configuration application that is responsible of create / remove / configure the virtual camera related to the mediasource install via VirtualCamera_AppMSI.
 
-Altnertatively you can create a UWP application 
+Alternatively you can create a UWP application 
 
 ## VirtualCameraTest
 ----
@@ -87,7 +87,7 @@ Basic unit test run VirutalCameraWin32 media soource implemented with Google tes
 Both HWMediaSourceUT and SimpleMediaSourceUT unit tests are used to validate the implementation of the media source is confined with guideline [here] (https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/frame-server-custom-media-source#custom-media-source-dll).  These tests will load the media source in the test process ensure the basic functionality of the media source. <br> <br>
 VirtualCameraUnit required installation will create a virtual camera.  The media source in this case will be loaded in FrameServer process.  To debub the media source running as virtual camera you will need to attach debugger to FrameServer process.
 
-### How to run test
+### How to run test 
 1. Build VirtualCamera_AppMSI
 2. Install the application
 
@@ -98,3 +98,13 @@ Run test from Visual Studio
 Run test from console
 1. Build VirtualCameraTest project
 2. Run VirtualCameraTest.exe  
+
+<b>List tests </b>
+``` 
+VirtualCameraTest.exe --gtest_list_tests
+```
+
+<b>Run Selected test </b>
+```
+VirtualCameraTest.exe --gtest_filter=<test name>
+```
