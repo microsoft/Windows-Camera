@@ -1,5 +1,8 @@
-#include "pch.h"
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
 
+#include "pch.h"
 
 #include "MediaCaptureUtils.h"
 #include "VCamUtils.h"
@@ -9,15 +12,7 @@
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
 
-//!! WARNING: DON'T DO THIS, there will be conflict of IUknown vs winrt::Windows::Foundation::IUnknown
-// winrt::Windows::Foundation is flatten to winrt (see pch.h)
-//using namespace winrt;
-//using namespace Windows::Foundation;
-#include "winrt\Windows.Management.Deployment.h"
 #include "winrt\Windows.ApplicationModel.Core.h"
-
-typedef HRESULT(__stdcall* PDllGetActivationFactory)(void* classId, void** factory);
-typedef HRESULT(__stdcall* PDllGetClassObject)(GUID const& clsid, GUID const& iid, void** result);
 
 void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
 {
@@ -28,7 +23,7 @@ void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
 
 HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType)
 {
-    // Create SVR
+    // Create EVR
     wistd::unique_ptr<EVRHelper> spEVRHelper(new (std::nothrow)EVRHelper());
     if (FAILED(spEVRHelper->Initialize(pMediaType)))
     {
@@ -80,7 +75,7 @@ HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMe
 
     if (validSample == 0 || invalidStream)
     {
-        LOG_ERROR(L"Received valid: %d, invalid %d frames, sample from wrong stream: %s \n", validSample, invalidSample, (invalidStream ? L"true" : L"false"));
+        LOG_ERROR_RETURN(E_TEST_FAILED, L"Received valid: %d, invalid %d frames, sample from wrong stream: %s \n", validSample, invalidSample, (invalidStream ? L"true" : L"false"));
     }
     else
     {
@@ -112,7 +107,7 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
 
         if (streamIdx >= streamCount)
         {
-            // invalid stream selection
+            // invalid stream selection, exit selection
             break;
         }
 
@@ -161,7 +156,7 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
         std::wcin >> mtIdx;
         if (mtIdx >= mtCount)
         {
-            // invalid media type selection
+            // invalid media type selection, exit selection
             break;
         }
 
@@ -177,7 +172,6 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
     }
     return S_OK;
 }
-
 
 //
 // CONSOLE
