@@ -29,7 +29,6 @@
 #include <wil/cppwinrt.h> // must be before the first C++ WinRT header, ref:https://github.com/Microsoft/wil/wiki/Error-handling-helpers
 #include <wil/result.h>
 #include "wil/com.h"
-#include "winrt/base.h"
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -40,7 +39,6 @@
 #include <winrt/Windows.Media.Devices.h>
 #include <winrt/Windows.Media.Devices.Core.h>
 #include <winrt/Windows.Media.MediaProperties.h>
-
 #include <winrt/Windows.ApplicationModel.h>
 
 namespace winrt

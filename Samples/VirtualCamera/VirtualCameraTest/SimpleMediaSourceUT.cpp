@@ -4,7 +4,7 @@
 
 #include "pch.h"
 #include "SimpleMediaSourceUT.h"
-#include "VirtualCameraWin32.h"
+#include "VirtualCameraMediaSource.h"
 #include "VCamutils.h"
 
 static const winrt::hstring strCustomControl(L" {0CE2EF73-4800-4F53-9B8E-8C06790FC0C7},0");
@@ -12,7 +12,7 @@ static const winrt::hstring strInvalidControl(L"{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFF
 
 HRESULT SimpleMediaSourceUT::TestMediaSource()
 {
-    RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_SimpleMediaSourceWin32, nullptr));
+    RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, nullptr));
 
     return S_OK;
 }
@@ -22,7 +22,7 @@ HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
     // SimpleMediaSource 1 stream, with 2 mediatype
     // This test validate we can 1. access the stream, 2. stream from each mediatype
     wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_SimpleMediaSourceWin32, nullptr, &spMediaSource));
+    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
 
     wil::com_ptr_nothrow<IMFPresentationDescriptor> spPD;
     RETURN_IF_FAILED(spMediaSource->CreatePresentationDescriptor(&spPD));
@@ -34,6 +34,8 @@ HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
         LOG_ERROR(L"Unexpected stream count: %d (expected: %d)", streamCount, 1);
         RETURN_HR(E_TEST_FAILED);
     }
+
+    
 
     // Validate Streaming with sourcereader
     wil::com_ptr_nothrow<IMFAttributes> spAttributes;
@@ -51,11 +53,37 @@ HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
 
         RETURN_IF_FAILED(spPD->GetStreamDescriptorByIndex(streamIdx, &selected, &spStreamDescriptor));
         RETURN_IF_FAILED(spStreamDescriptor->GetMediaTypeHandler(&spMediaTypeHandler));
+
         RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeCount(&mediaTypeCount));
         if (mediaTypeCount != 2)
         {
-            LOG_ERROR(L"Unexpected stream count: %d (expected: %d) ", mediaTypeCount, 2);
-            RETURN_HR(E_TEST_FAILED);
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: %d) ", mediaTypeCount, 2);
+        }
+
+        GUID category;
+        RETURN_IF_FAILED(spStreamDescriptor->GetGUID(MF_DEVICESTREAM_STREAM_CATEGORY, &category));
+        if (category == PINNAME_IMAGE)
+        {
+            LOG_COMMENT(L"Skip stream test on streamCateogry: PINNAME_IMAGE");
+            continue;
+        }
+
+        // Set sampe allocator 
+        DWORD dwStreamId;
+        RETURN_IF_FAILED(spStreamDescriptor->GetStreamIdentifier(&dwStreamId));
+
+        wil::com_ptr_nothrow<IMFSampleAllocatorControl> spAllocatorControl;
+        RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spAllocatorControl)));
+        MFSampleAllocatorUsage eUsage;
+        DWORD dwInputStreamId;
+        RETURN_IF_FAILED(spAllocatorControl->GetAllocatorUsage(dwStreamId, &dwInputStreamId, &eUsage));
+        if (eUsage == MFSampleAllocatorUsage_UsesProvidedAllocator)
+        {
+            wil::com_ptr_nothrow<IMFVideoSampleAllocator>spSampleAllocator;
+            RETURN_IF_FAILED(MFCreateVideoSampleAllocatorEx(IID_PPV_ARGS(&spSampleAllocator)));
+            wil::com_ptr_nothrow<IUnknown> spUnknown;
+            RETURN_IF_FAILED(spSampleAllocator->QueryInterface(&spUnknown));
+            RETURN_IF_FAILED(spAllocatorControl->SetDefaultAllocator(dwStreamId, spUnknown.get()));
         }
         
         for (unsigned int mtIdx = 0; mtIdx < mediaTypeCount; mtIdx++)
@@ -82,7 +110,7 @@ HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
             {
                 LOG_ERROR(L"Media type set failed.");
             }
-            RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, false));  // trigger SetStreamState(stop)
+            RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, false));
         }
     }
 
@@ -92,7 +120,7 @@ HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
 HRESULT SimpleMediaSourceUT::TestKSProperty()
 {
     wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_SimpleMediaSourceWin32, nullptr, &spMediaSource));
+    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
 
     wil::com_ptr_nothrow<IKsControl> spKsControl;
     RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));

@@ -4,7 +4,7 @@
 
 #include "pch.h"
 #include "HWMediaSourceUT.h"
-#include "VirtualCameraWin32.h"
+#include "VirtualCameraMediaSource.h"
 #include "VCamutils.h"
 
 HRESULT HWMediaSourceUT::TestMediaSource()
@@ -13,7 +13,7 @@ HRESULT HWMediaSourceUT::TestMediaSource()
     RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
     RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
 
-    RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_SimpleMediaSourceWin32, spAttributes.get()));
+    RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, spAttributes.get()));
 
     return S_OK;
 }
@@ -25,7 +25,7 @@ HRESULT HWMediaSourceUT::TestMediaSourceStream()
     RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
 
     wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_SimpleMediaSourceWin32, spAttributes.get(), &spMediaSource));
+    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, spAttributes.get(), &spMediaSource));
 
     wil::com_ptr_nothrow<IMFMediaSource> spCameraSource;
     RETURN_IF_FAILED(_CreateCameraDeviceSource(m_devSymlink, &spCameraSource));

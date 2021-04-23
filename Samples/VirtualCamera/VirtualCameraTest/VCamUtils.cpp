@@ -115,7 +115,7 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     RETURN_IF_FAILED(MFCreateVirtualCamera(
         vcamType,
         vcamLifetime, 
-        vcamAccess, 
+        vcamAccess,  
         strFriendlyName.data(),
         strMediaSource.data(),
         nullptr, /*Catetgorylist*/

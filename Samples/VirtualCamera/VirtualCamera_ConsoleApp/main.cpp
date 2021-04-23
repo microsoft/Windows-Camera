@@ -7,7 +7,7 @@
 #include "MediaCaptureUtils.h"
 #include "VCamUtils.h"
 #include "EVRHelper.h"
-#include "VirtualCameraWin32.h"
+#include "VirtualCameraMediaSource.h"
 
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
@@ -193,7 +193,7 @@ winrt::hstring SelectVirtualCamera()
         LOG_COMMENT(L"[%d] %s (%s) ", i + 1, dev.Id().data(), dev.Name().data());
     }
     LOG_COMMENT(L"select device ");
-    int devIdx = 0;
+    uint32_t devIdx = 0;
     std::wcin >> devIdx;
 
     if (devIdx <= 0 && devIdx > vcamList.size())
@@ -224,7 +224,7 @@ DeviceInformation SelectPhysicalCamera()
         LOG_COMMENT(L"[%d] %s \n", i + 1, dev.Id().data());
     }
     LOG_COMMENT(L"select device");
-    int devIdx = 0;
+    uint32_t devIdx = 0;
     std::wcin >> devIdx;
 
     if (devIdx <= 0 && devIdx > camList.size())
@@ -241,7 +241,7 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
     while (true)
     {
         LOG_COMMENT(L"\n select opitions: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - quit \n");
-        int select = 0;
+        uint32_t select = 0;
         std::wcin >> select;
 
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
@@ -284,7 +284,7 @@ HRESULT SelectUnInstallVirtualCamera()
 void VCamAppUnInstall()
 {
     LOG_COMMENT(L"Uninstall mode");
-    VCamUtils::MSIUninstall(CLSID_SimpleMediaSourceWin32);
+    VCamUtils::MSIUninstall(CLSID_VirtualCameraMediaSource);
 }
 
 HRESULT VCamApp()
