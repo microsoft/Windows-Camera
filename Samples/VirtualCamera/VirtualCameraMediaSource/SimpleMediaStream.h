@@ -6,7 +6,7 @@
 #define SIMPLEMEDIASTREAM_H
 
 #include "SimpleMediaSource.h"
-#include "VirtualCameraWin32.h"
+#include "VirtualCameraMediaSource.h"
 
 namespace winrt::WindowsSample::implementation
 {

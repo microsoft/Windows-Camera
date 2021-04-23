@@ -221,10 +221,6 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
         HRESULT hr = S_OK;
 
-        PROPVARIANT stopTime;
-
-        MF_STREAM_STATE state;
-
         if (m_sourceState != SourceState::Started)
         {
             return MF_E_INVALID_STATE_TRANSITION;

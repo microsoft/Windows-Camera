@@ -32,15 +32,13 @@
 #include <wil\result.h>
 #include "wil\com.h"
 
-#include <winrt\base.h>
-
 #include "EventHandler.h"
 #include "SimpleFrameGenerator.h"
 #include "SimpleMediaSource.h"
 #include "SimpleMediaStream.h"
 #include "HWMediaSource.h"
 #include "HWMediaStream.h"
-#include "VirtualCameraWin32.h"
+#include "VirtualCameraMediaSource.h"
 #include "SimpleMediaSourceActivate.h"
 
 #include "winrt\Windows.ApplicationModel.h"

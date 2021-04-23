@@ -7,7 +7,8 @@
 
 namespace winrt::WindowsSample::implementation
 {
-    struct __declspec(uuid("9812588D-5CE9-4E4C-ABC1-049138D10DCE"))
+    //SIMPLEMEDIASOURCE_WIN32_CLISD
+    struct __declspec(uuid("7B89B92E-FE71-42D0-8A41-E137D06EA184"))
         SimpleMediaSourceActivate : winrt::implements<SimpleMediaSourceActivate, IMFActivate>
     {
         SimpleMediaSourceActivate() = default;

@@ -41,7 +41,7 @@ namespace winrt::WindowsSample::implementation
         MFSetAttributeSize(spMediaType0.get(), MF_MT_FRAME_SIZE, NUM_IMAGE_COLS, NUM_IMAGE_ROWS);
         MFSetAttributeRatio(spMediaType0.get(), MF_MT_FRAME_RATE, 30, 1);
         // frame size * pixle bit size * framerate
-        uint32_t bitrate = NUM_IMAGE_COLS * 1.5 * NUM_IMAGE_ROWS * 8* 30;
+        uint32_t bitrate = (uint32_t)(NUM_IMAGE_COLS * 1.5 * NUM_IMAGE_ROWS * 8* 30);
         spMediaType0->SetUINT32(MF_MT_AVG_BITRATE, bitrate);
         MFSetAttributeRatio(spMediaType0.get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
         m_mediaTypeList[0] = spMediaType0.detach();
@@ -55,7 +55,7 @@ namespace winrt::WindowsSample::implementation
         MFSetAttributeSize(spMediaType1.get(), MF_MT_FRAME_SIZE, NUM_IMAGE_COLS, NUM_IMAGE_ROWS);
         MFSetAttributeRatio(spMediaType1.get(), MF_MT_FRAME_RATE, 30, 1);
         // frame size * pixle bit size * framerate
-         bitrate = NUM_IMAGE_COLS * NUM_IMAGE_ROWS * 24* 30;
+         bitrate = (uint32_t)(NUM_IMAGE_COLS * NUM_IMAGE_ROWS * 24* 30);
          spMediaType1->SetUINT32(MF_MT_AVG_BITRATE, bitrate);
         MFSetAttributeRatio(spMediaType1.get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
         m_mediaTypeList[1] = spMediaType1.detach();

@@ -200,6 +200,25 @@ namespace winrt::WindowsSample::implementation
         MediaEventType met;
         RETURN_IF_FAILED(spEvent->GetType(&met));
         DEBUG_MSG(L"[%d] OnMediaStreamEvent, streamId: %d, met:%d ", m_dwStreamIdentifier, met);
+        
+        //
+        if (met == MEMediaSample)
+        {
+            wil::com_ptr_nothrow<IMFSample> spSample;
+            wil::com_ptr_nothrow<IUnknown> spToken;
+            wil::com_ptr_nothrow<IUnknown> spSampleUnk;
+
+            wil::unique_prop_variant propVar = {};
+            RETURN_IF_FAILED(spEvent->GetValue(&propVar));
+            if (VT_UNKNOWN != propVar.vt)
+            {
+                RETURN_HR(MF_E_UNEXPECTED);
+            }
+            spSampleUnk = propVar.punkVal;
+            RETURN_IF_FAILED(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)));
+        }
+        
+
 
         {
             winrt::slim_lock_guard lock(m_Lock);

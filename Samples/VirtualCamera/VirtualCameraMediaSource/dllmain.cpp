@@ -185,7 +185,7 @@ STDAPI DllRegisterServer(void)
     size_t cch = 0;
 
     // Create the name of the key from the object's CLSID
-    RETURN_IF_FAILED(CreateObjectKeyName(CLSID_SimpleMediaSourceWin32, wzBuffer, MAX_PATH, &cch));
+    RETURN_IF_FAILED(CreateObjectKeyName(CLSID_VirtualCameraMediaSource, wzBuffer, MAX_PATH, &cch));
 
     // Create HKEY_LOCAL_MACHINE\SOFTWARE\Classes\CLSID\{???}
     RETURN_IF_FAILED(CreateRegKey(HKEY_LOCAL_MACHINE, wzBuffer, &hKey));
@@ -210,7 +210,7 @@ STDAPI DllUnregisterServer(void)
     WCHAR wzBuffer[MAX_PATH] = {};
     size_t cch = 0;
 
-    RETURN_IF_FAILED(CreateObjectKeyName(CLSID_SimpleMediaSourceWin32, wzBuffer, MAX_PATH, &cch));
+    RETURN_IF_FAILED(CreateObjectKeyName(CLSID_VirtualCameraMediaSource, wzBuffer, MAX_PATH, &cch));
 
     // Delete the key recursively.
     RETURN_IF_WIN32_ERROR(RegDeleteTree(HKEY_LOCAL_MACHINE, wzBuffer));

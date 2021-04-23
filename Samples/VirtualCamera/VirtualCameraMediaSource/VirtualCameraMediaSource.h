@@ -3,22 +3,25 @@
 //
 
 #pragma once
-#ifndef VIRTUALCAMERAWIN32_H
-#define VIRTUALCAMERAWIN32_H
+#ifndef VIRTUALCAMERA_MEDIASOURCE_H
+#define VIRTUALCAMERA_MEDIASOURCE_H
 
 #include <initguid.h>
 
-DEFINE_GUID(CLSID_SimpleMediaSourceWin32,
-    0x9812588D, 0x5CE9, 0x4E4C, 0xAB, 0xC1, 0x04, 0x91, 0x38, 0xD1, 0x0D, 0xCE);
+// {7B89B92E-FE71-42D0-8A41-E137D06EA184}
+DEFINE_GUID(CLSID_VirtualCameraMediaSource ,
+    0x7b89b92e, 0xfe71, 0x42d0, 0x8a, 0x41, 0xe1, 0x37, 0xd0, 0x6e, 0xa1, 0x84);
 
-// {3C31A5F8-2795-4FB9-A0A1-C733A65C0CE8}
-DEFINE_GUID(VCAM_DEVICE_INFO,
-    0x3c31a5f8, 0x2795, 0x4fb9, 0xa0, 0xa1, 0xc7, 0x33, 0xa6, 0x5c, 0xc, 0xe8);
-
-static LPCWSTR SIMPLEMEDIASOURCE_WIN32 = L"{9812588D-5CE9-4E4C-ABC1-049138D10DCE}";
-static LPCWSTR SIMPLEMEDIASOURCE_WIN32_CLISD = L"9812588D-5CE9-4E4C-ABC1-049138D10DCE";
+static LPCWSTR SIMPLEMEDIASOURCE_WIN32 = L"{7B89B92E-FE71-42D0-8A41-E137D06EA184}";
+static LPCWSTR SIMPLEMEDIASOURCE_WIN32_CLISD = L"7B89B92E-FE71-42D0-8A41-E137D06EA184";
 static LPCWSTR SIMPLEMEDIASOURCE_WIN32_FRIENDLYNAME = L"SimpleMediaSourceWin32";
 
+// {3C31A5F8-2795-4FB9-A0A1-C733A65C0CE8}
+// VirtualCameraMediaSource activation attributes.
+// The value of this attribute is the physcial camera symboliclink name that the VirutalCameraMediaSource
+// will be using.
+DEFINE_GUID(VCAM_DEVICE_INFO,
+    0x3c31a5f8, 0x2795, 0x4fb9, 0xa0, 0xa1, 0xc7, 0x33, 0xa6, 0x5c, 0xc, 0xe8);
 
 // Example Custom Property implemented by SimpleMediaSource
 // 
