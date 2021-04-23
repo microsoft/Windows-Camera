@@ -116,14 +116,14 @@ function Debug-Service_Interal
             {
                 Add-Type -assemblyname System.ServiceProcess
                 [ServiceProcess.ServiceControllerStatus] $status = [ServiceProcess.ServiceControllerStatus]::Running
-                $fixTimeout = 10;
-                $loopCount = [int]($timeout_s / $fixTimeout);
+                $timeout_slice = 10;
+                $loopCount = [int]($timeout_s / $timeout_slice);
 
                 [ServiceProcess.ServiceController]$sc = New-Object "ServiceProcess.ServiceController" $serviceName
 
                 for($it = 0; $it -lt $loopCount; $it++) 
                 {
-                    [TimeSpan]$timeOut = New-Object TimeSpan(0,0,0,$fixTimeout,0)
+                    [TimeSpan]$timeOut = New-Object TimeSpan(0,0,0,$timeout_slice,0)
                     
                     # WaitFor-ServiceStatus with timeout
                     $sc.WaitForStatus($status, $timeOut)
@@ -151,7 +151,7 @@ function Debug-Service_Interal
         $processId = 0
      
         while ($continue -eq $true)
-        {          
+        {
             $host.UI.RawUI.FlushInputBuffer()
 
             $completedJob = Wait-Job -Job $debugFSJob -Any -Timeout 1 -ErrorAction SilentlyContinue
