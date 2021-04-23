@@ -15,43 +15,13 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_05634FE26136451DB19FC55C4E489418"
+        "MsmKey" = "8:_0C52DEC5395E44BEA63DD5710DE27464"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_1E6F96CD0DEC4FEBAF74F126932271EC"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_33E5A91171F44DCD92E399059B6F1F45"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_3FA1E95F80CC48AE9E7A6F47A53499AD"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_47775299904A4F06B016C55895C1A063"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_4872672CBED741CA8435F64233F6B2BD"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_6C81C20929FD40328A5FEA60355A7789"
+        "MsmKey" = "8:_4C01C188D5E348379442FCE17007D358"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -63,43 +33,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_877763D3011543578B01463D5CB5159A"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_9315183EC79D467F80A6D063CA8165F4"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_A1B5DE48C18F458693AAF74A1AD6510E"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_A2183A2F79E44FF8BCE1A9385B819614"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C165F9D3F3A24AFBB9CE0CBD68474B5B"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DC950C9106E348FBBF06186154079C80"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_F685A9DDECB043DD964309AEB2C84D1D"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -134,6 +68,16 @@
                     {
                     "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm64"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM64)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm64"
                     }
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x64"
                     {
@@ -177,10 +121,25 @@
                     "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
                     }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm64"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM64)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm64"
+                    }
                     "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x64"
                     {
                     "Name" = "8:Visual C++ \"14\" Runtime Libraries (x64)"
                     "ProductCode" = "8:Microsoft.Visual.C++.14.0.x64"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x86"
+                    {
+                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x86)"
+                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x86"
                     }
                 }
             }
@@ -227,10 +186,10 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_05634FE26136451DB19FC55C4E489418"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0C52DEC5395E44BEA63DD5710DE27464"
             {
-            "SourcePath" = "8:..\\x64\\Release\\concrt140_app.dll"
-            "TargetName" = "8:concrt140_app.dll"
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraMediaSource.dll"
+            "TargetName" = "8:VirtualCameraMediaSource.dll"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
             "Condition" = "8:"
@@ -247,110 +206,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1E6F96CD0DEC4FEBAF74F126932271EC"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4C01C188D5E348379442FCE17007D358"
             {
-            "SourcePath" = "8:..\\x64\\Release\\msvcp140_app.dll"
-            "TargetName" = "8:msvcp140_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_33E5A91171F44DCD92E399059B6F1F45"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\vcruntime140_1_app.dll"
-            "TargetName" = "8:vcruntime140_1_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3FA1E95F80CC48AE9E7A6F47A53499AD"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\msvcp140_2_app.dll"
-            "TargetName" = "8:msvcp140_2_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_47775299904A4F06B016C55895C1A063"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_ConsoleApp.iobj"
-            "TargetName" = "8:VirtualCamera_ConsoleApp.iobj"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4872672CBED741CA8435F64233F6B2BD"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\vccorlib140_app.dll"
-            "TargetName" = "8:vccorlib140_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6C81C20929FD40328A5FEA60355A7789"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_ConsoleApp.ipdb"
-            "TargetName" = "8:VirtualCamera_ConsoleApp.ipdb"
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraMediaSource.pdb"
+            "TargetName" = "8:VirtualCameraMediaSource.pdb"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
             "Condition" = "8:"
@@ -387,130 +246,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_877763D3011543578B01463D5CB5159A"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\vcruntime140_app.dll"
-            "TargetName" = "8:vcruntime140_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9315183EC79D467F80A6D063CA8165F4"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\msvcp140_1_app.dll"
-            "TargetName" = "8:msvcp140_1_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A1B5DE48C18F458693AAF74A1AD6510E"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\vcomp140_app.dll"
-            "TargetName" = "8:vcomp140_app.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A2183A2F79E44FF8BCE1A9385B819614"
             {
             "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_ConsoleApp.exe"
             "TargetName" = "8:VirtualCamera_ConsoleApp.exe"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C165F9D3F3A24AFBB9CE0CBD68474B5B"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraWin32.pdb"
-            "TargetName" = "8:VirtualCameraWin32.pdb"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DC950C9106E348FBBF06186154079C80"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraWin32.dll"
-            "TargetName" = "8:VirtualCameraWin32.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F685A9DDECB043DD964309AEB2C84D1D"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\vcamp140_app.dll"
-            "TargetName" = "8:vcamp140_app.dll"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
             "Condition" = "8:"
@@ -584,7 +323,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:VirtualCamera_AppMSI"
         "ProductCode" = "8:{D81F80EA-B35F-49DB-9398-91671C70BDA5}"
-        "PackageCode" = "8:{4E910623-E65A-44D3-AB3B-590E9226B12F}"
+        "PackageCode" = "8:{FA2FC763-23E6-4A34-AFBB-6BF2B8483C89}"
         "UpgradeCode" = "8:{962DDC31-5A49-460C-9796-B4F8674A6211}"
         "AspNetVersion" = "8:"
         "RestartWWWService" = "11:FALSE"
@@ -595,7 +334,7 @@
         "Manufacturer" = "8:MSCamera"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:VirtualCaemra_AppMSI"
+        "Title" = "8:VirtualCamera_AppMSI"
         "Subject" = "8:"
         "ARPCONTACT" = "8:MSCamera"
         "Keywords" = "8:"
@@ -645,7 +384,7 @@
                                         {
                                             "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_9F0F14231D7041E6B69DC9C3D572F7F2"
                                             {
-                                            "Name" = "8:{9812588D-5CE9-4E4C-ABC1-049138D10DCE}"
+                                            "Name" = "8:{7B89B92E-FE71-42D0-8A41-E137D06EA184}"
                                             "Condition" = "8:"
                                             "AlwaysCreate" = "11:TRUE"
                                             "DeleteAtUninstall" = "11:TRUE"
@@ -678,7 +417,7 @@
                                                             "Condition" = "8:"
                                                             "Transitive" = "11:FALSE"
                                                             "ValueTypes" = "3:1"
-                                                            "Value" = "8:[TARGETDIR]VirtualCameraWin32.dll"
+                                                            "Value" = "8:[TARGETDIR]VirtualCameraMediaSource.dll"
                                                             }
                                                         }
                                                     }
