@@ -15,25 +15,25 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_0C52DEC5395E44BEA63DD5710DE27464"
+        "MsmKey" = "8:_1D56110B874C4189B1BEECDD99E73625"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4C01C188D5E348379442FCE17007D358"
+        "MsmKey" = "8:_2DADCC489B9849C1A24FBCCED8F3CAC9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_80715D7713504834A00500F9516DD4B2"
+        "MsmKey" = "8:_3C550E2465D746A98958E221CA44485A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_A2183A2F79E44FF8BCE1A9385B819614"
+        "MsmKey" = "8:_7A116F48B0044B88995D7D6135CCC8B4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -97,7 +97,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\VirtualCaemra_AppMSI.msi"
+        "OutputFilename" = "8:Release\\VirtualCaemra_MSI.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -149,17 +149,17 @@
     {
         "CustomAction"
         {
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_4CF822DB1FF947D89D091C9DE934FA96"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_A619B127EF244D798250C4E794554651"
             {
-            "Name" = "8:VirtualCamera_ConsoleApp.exe"
+            "Name" = "8:VirtualCamera_Installer.exe"
             "Condition" = "8:"
-            "Object" = "8:_A2183A2F79E44FF8BCE1A9385B819614"
+            "Object" = "8:_7A116F48B0044B88995D7D6135CCC8B4"
             "FileType" = "3:2"
             "InstallAction" = "3:4"
             "Arguments" = "8:/Uninstall"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_8DABCC2F_F2E5_4366_A4AA_9A73A074FCA9"
+            "Identifier" = "8:_5EA4FE88_20F7_4F6E_B2DD_99C47489E1B4"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
@@ -186,29 +186,9 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_0C52DEC5395E44BEA63DD5710DE27464"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_1D56110B874C4189B1BEECDD99E73625"
             {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraMediaSource.dll"
-            "TargetName" = "8:VirtualCameraMediaSource.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4C01C188D5E348379442FCE17007D358"
-            {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraWin32\\VirtualCameraMediaSource.pdb"
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraMediaSource.pdb"
             "TargetName" = "8:VirtualCameraMediaSource.pdb"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
@@ -226,10 +206,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_80715D7713504834A00500F9516DD4B2"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_2DADCC489B9849C1A24FBCCED8F3CAC9"
             {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_ConsoleApp.pdb"
-            "TargetName" = "8:VirtualCamera_ConsoleApp.pdb"
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCameraMediaSource.dll"
+            "TargetName" = "8:VirtualCameraMediaSource.dll"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
             "Condition" = "8:"
@@ -246,10 +226,30 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A2183A2F79E44FF8BCE1A9385B819614"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3C550E2465D746A98958E221CA44485A"
             {
-            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_ConsoleApp.exe"
-            "TargetName" = "8:VirtualCamera_ConsoleApp.exe"
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_Installer.pdb"
+            "TargetName" = "8:VirtualCamera_Installer.pdb"
+            "Tag" = "8:"
+            "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7A116F48B0044B88995D7D6135CCC8B4"
+            {
+            "SourcePath" = "8:..\\x64\\Release\\VirtualCamera_Installer.exe"
+            "TargetName" = "8:VirtualCamera_Installer.exe"
             "Tag" = "8:"
             "Folder" = "8:_81ED6BA2EE5A4CE69AC73EC5650401A4"
             "Condition" = "8:"
@@ -321,9 +321,9 @@
         "Product"
         {
         "Name" = "8:Microsoft Visual Studio"
-        "ProductName" = "8:VirtualCamera_AppMSI"
+        "ProductName" = "8:VirtualCamera_MSI"
         "ProductCode" = "8:{D81F80EA-B35F-49DB-9398-91671C70BDA5}"
-        "PackageCode" = "8:{FA2FC763-23E6-4A34-AFBB-6BF2B8483C89}"
+        "PackageCode" = "8:{16CCA8D5-5248-47C0-BDA4-0419F0ABDF21}"
         "UpgradeCode" = "8:{962DDC31-5A49-460C-9796-B4F8674A6211}"
         "AspNetVersion" = "8:"
         "RestartWWWService" = "11:FALSE"
@@ -334,7 +334,7 @@
         "Manufacturer" = "8:MSCamera"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
-        "Title" = "8:VirtualCamera_AppMSI"
+        "Title" = "8:VirtualCamera_MSI"
         "Subject" = "8:"
         "ARPCONTACT" = "8:MSCamera"
         "Keywords" = "8:"
