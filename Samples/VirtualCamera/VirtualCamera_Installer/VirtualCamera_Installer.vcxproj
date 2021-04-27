@@ -9,10 +9,10 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{b667f063-ae21-4a50-b233-debe044f2223}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>MediaCaptureTest</RootNamespace>
+    <RootNamespace>VirtualCamera_Installer</RootNamespace>
     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.21364.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.21364.0</WindowsTargetPlatformMinVersion>
-    <ProjectName>VirtualCamera_ConsoleApp</ProjectName>
+    <ProjectName>VirtualCamera_Installer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ItemGroup Label="ProjectConfigurations">
@@ -149,9 +149,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="PropertySheet.props" />
-  </ItemGroup>
-  <ItemGroup>
-    <Manifest Include="VirtualCamera_ConsoleApp.exe.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
