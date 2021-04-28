@@ -12,77 +12,13 @@
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
 
-#include "winrt\Windows.ApplicationModel.Core.h"
+using namespace VirtualCameraTest::impl;
 
 void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
 {
     LOG_ERROR(L"%S(%d):%S, hr=0x%08X, msg=%s",
         failure.pszFile, failure.uLineNumber, failure.pszFunction,
         failure.hr, (failure.pszMessage) ? failure.pszMessage : L"");
-}
-
-HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType)
-{
-    // Create EVR
-    wistd::unique_ptr<EVRHelper> spEVRHelper(new (std::nothrow)EVRHelper());
-    if (FAILED(spEVRHelper->Initialize(pMediaType)))
-    {
-        spEVRHelper = nullptr;
-    }
-
-    bool invalidStream = false;
-    uint32_t validSample = 0;
-    uint32_t invalidSample = 0;
-
-    for (int i = 0; i <= 500; i++)
-    {
-        //wprintf(L"reading sample: %d ", i);
-        DWORD actualStreamIdx = 0;
-        DWORD flags = 0;
-        LONGLONG llTimeStamp = 0;
-        wil::com_ptr_nothrow<IMFSample> spSample;
-        RETURN_IF_FAILED(pSourceReader->ReadSample(
-            streamIdx,
-            0,                              // Flags.
-            &actualStreamIdx,               // Receives the actual stream index. 
-            &flags,                         // Receives status flags.
-            &llTimeStamp,                   // Receives the time stamp.
-            &spSample                       // Receives the sample or NULL.
-        ));
-
-        if (i % 100 == 0)
-        {
-            LOG_COMMENT(L"Frame recieved: %d ...", i + 1);
-        }
-
-        if (streamIdx != actualStreamIdx)
-        {
-            invalidStream = true;
-        }
-        else if (spSample.get() != nullptr)
-        {
-            validSample++;
-            if (spEVRHelper)
-            {
-                spEVRHelper->WriteSample(spSample.get());
-            }
-        }
-        else
-        {
-            invalidSample++;
-        }
-    }
-
-    if (validSample == 0 || invalidStream)
-    {
-        LOG_ERROR_RETURN(E_TEST_FAILED, L"Received valid: %d, invalid %d frames, sample from wrong stream: %s \n", validSample, invalidSample, (invalidStream ? L"true" : L"false"));
-    }
-    else
-    {
-        LOG_COMMENT(L"Received valid: %d, invalid %d frames, sample from wrong stream: %s \n", validSample, invalidSample, (invalidStream ? L"true" : L"false"));
-    }
-
-    return S_OK;
 }
 
 HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
@@ -129,27 +65,7 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
         {
             wil::com_ptr_nothrow<IMFMediaType> spMediaType;
             RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeByIndex(i, &spMediaType));
-
-            GUID majorType = GUID_NULL;
-            spMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-            winrt::hstring strMajorType = (majorType == MFMediaType_Video) ? L"MFMediaType_Video" : winrt::to_hstring(majorType);
-
-            GUID subtype = GUID_NULL;
-            spMediaType->GetGUID(MF_MT_SUBTYPE, &subtype);
-
-            UINT32 width, height;
-            MFGetAttributeSize(spMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-            UINT32 num, den;
-            MFGetAttributeRatio(spMediaType.get(), MF_MT_FRAME_RATE, &num, &den);
-
-
-            LOG_COMMENT(L"%d - majorType: %s, subType: %s, framesize: %dx%d, framerate: %d/%d",
-                i,
-                strMajorType.data(),
-                winrt::to_hstring(subtype).data(),
-                width, height,
-                num, den);
+            MediaSourceUT_Common::LogMediaType(spMediaType.get());
         }
 
         DWORD mtIdx = 0;
@@ -166,7 +82,7 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
         // Test Stream
         RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, TRUE));
         RETURN_IF_FAILED(spSourceReader->SetCurrentMediaType(streamIdx, NULL, spMediaType.get()));
-        RETURN_IF_FAILED_MSG(ValidateStreaming(spSourceReader.get(), streamIdx, spMediaType.get()), "Streaming validation failed");
+        RETURN_IF_FAILED_MSG(MediaSourceUT_Common::ValidateStreaming(spSourceReader.get(), streamIdx, spMediaType.get()), "Streaming validation failed");
         RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, FALSE));
         LOG_COMMENT(L"Streaming validation passed!");
     }
@@ -196,7 +112,7 @@ winrt::hstring SelectVirtualCamera()
     uint32_t devIdx = 0;
     std::wcin >> devIdx;
 
-    if (devIdx <= 0 && devIdx > vcamList.size())
+    if (devIdx <= 0 || devIdx > vcamList.size())
     {
         LOG_COMMENT(L"Invalid device selection ");
         return strSymLink;
@@ -227,7 +143,7 @@ DeviceInformation SelectPhysicalCamera()
     uint32_t devIdx = 0;
     std::wcin >> devIdx;
 
-    if (devIdx <= 0 && devIdx > camList.size())
+    if (devIdx <= 0 || devIdx > camList.size())
     {
         LOG_COMMENT(L"Invalid device selection");
         return devInfo;
@@ -258,7 +174,7 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(test.CreateVirutalCamera(devInfo.Name(), ppVirtualCamera));
+            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), ppVirtualCamera));
             break;
         }
 
@@ -297,24 +213,24 @@ HRESULT VCamApp()
 
         switch (select)
         {
-            case 1: // Interactive install of virutal camera
+            case 1: // Interactive install of virtual camera
             {
                 wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-                RETURN_IF_FAILED_MSG(SelectRegisterVirtualCamera(&spVirtualCamera), "Register Virutal Camera failed");
+                RETURN_IF_FAILED_MSG(SelectRegisterVirtualCamera(&spVirtualCamera), "Register Virtual Camera failed");
                 RETURN_IF_FAILED(spVirtualCamera->Shutdown());
                 break;
             }
-            case 2: // Interactive uninstall of virutal camera
+            case 2: // Interactive uninstall of virtual camera
             {
                 HRESULT hr = SelectUnInstallVirtualCamera();
                 if (FAILED(hr))
                 {
-                    LOG_ERROR(L"UnInstall Virutal Camera failed: 0x%08x", hr);
+                    LOG_ERROR(L"UnInstall Virtual Camera failed: 0x%08x", hr);
                 }
             }
             break;
 
-            case 3: // Stream test of selected virutal camera
+            case 3: // Stream test of selected virtual camera
             {
                 winrt::hstring strSymlink = SelectVirtualCamera();
 
@@ -358,7 +274,7 @@ HRESULT VCamApp()
                         break;
                     default: 
                         colorMode = 0;
-                        LOG_WARN(L"Invalid color mode!");
+                        LOG_WARNING(L"Invalid color mode!");
                         break;
                     }
                     if (colorMode != 0)
@@ -404,7 +320,7 @@ HRESULT TestMode()
             SimpleMediaSourceUT test;
             RETURN_IF_FAILED(test.TestMediaSource());
             RETURN_IF_FAILED(test.TestMediaSourceStream());
-            RETURN_IF_FAILED(test.TestKSProperty());
+            RETURN_IF_FAILED(test.TestKsControl());
             RETURN_IF_FAILED(test.TestVirtualCamera());
             break;
         }
@@ -422,7 +338,7 @@ int wmain(int argc, wchar_t* argv[])
     EnableVTMode();
     wil::SetResultLoggingCallback(WilFailureLog);
 
-    LOG_COMMENT(L"Hello, start...%d !\n", argc);
+    LOG_COMMENT(L"Virtual Camera simple application !");
     RETURN_IF_FAILED(MFStartup(MF_VERSION));
 
     if (argc == 2)
@@ -437,6 +353,10 @@ int wmain(int argc, wchar_t* argv[])
             // MSI Uninstall mode
             VCamAppUnInstall();
             return 0;
+        }
+        else if (_wcsicmp(argv[1], L"/?") == 0)
+        {
+            LOG_COMMENT(L"\n default - Simple application to install//test//remove VirtualCamera, \n run  /uninstall  to test MIS uninstallation function.  ");
         }
     }
     else
