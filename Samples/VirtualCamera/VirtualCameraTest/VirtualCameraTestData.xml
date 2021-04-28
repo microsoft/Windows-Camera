@@ -13,6 +13,25 @@
       <Parameter Name="vidDeviceIndex">0</Parameter>
     </Row>
   </Table>
-  
+
+  <Table Id="CustomMediaSourceTest">
+    <!-- 
+    clsid: clsid of media source in this format  {7B89B92E-FE71-42D0-8A41-E137D06EA184} 
+    -->
+    <Row >
+      <Parameter Name="clsid">{7B89B92E-FE71-42D0-8A41-E137D06EA184}</Parameter>
+    </Row>
+  </Table>
+
+  <Table Id="VirtualCameraCustomMediaSourceTest">
+    <!-- 
+    clsid: clsid of media source in this format {7B89B92E-FE71-42D0-8A41-E137D06EA184} 
+    friendname: friendname of the vcam, optional.
+    -->
+    <Row >
+      <Parameter Name="clsid">{7B89B92E-FE71-42D0-8A41-E137D06EA184}</Parameter>
+      <Parameter Name="friendlyname">testMediaSourceVCam</Parameter>
+    </Row>
+  </Table>
 </Data>
 

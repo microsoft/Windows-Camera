@@ -19,7 +19,7 @@ namespace VirtualCameraTest::impl
         HRESULT TestKsControl();
 
         // virtualcamera with simplemediasource test
-        HRESULT TestVirtualCamera();
+        HRESULT TestCreateVirtualCamera();
 
         // Helper functions for SimpleMediaSource
         HRESULT CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera);

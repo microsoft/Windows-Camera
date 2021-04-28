@@ -117,6 +117,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CustomMediaSourceUT.h" />
     <ClInclude Include="DataDrivenTestBase.h" />
     <ClInclude Include="EVRHelper.h" />
     <ClInclude Include="HWMediaSourceUT.h" />
@@ -128,6 +129,7 @@
     <ClInclude Include="VCamUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CustomMediaSourceUT.cpp" />
     <ClCompile Include="DataDriveTestBase.cpp" />
     <ClCompile Include="EVRHelper.cpp" />
     <ClCompile Include="HWMediaSourceUT.cpp" />

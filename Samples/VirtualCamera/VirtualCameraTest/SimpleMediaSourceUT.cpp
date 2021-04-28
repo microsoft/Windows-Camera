@@ -163,7 +163,7 @@ namespace VirtualCameraTest::impl
         return S_OK;
     }
 
-    HRESULT SimpleMediaSourceUT::TestVirtualCamera()
+    HRESULT SimpleMediaSourceUT::TestCreateVirtualCamera()
     {
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
         auto exit = wil::scope_exit_log(WI_DIAGNOSTICS_INFO, [&]
@@ -184,7 +184,7 @@ namespace VirtualCameraTest::impl
     HRESULT SimpleMediaSourceUT::CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera)
     {
         winrt::hstring physicalCamSymLink;
-        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE, L"SWVCamMediaSource", physicalCamSymLink, nullptr, ppVirtualCamera));
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, L"SWVCamMediaSource", physicalCamSymLink, nullptr, ppVirtualCamera));
 
         return S_OK;
     }

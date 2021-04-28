@@ -12,5 +12,9 @@
     -->
   <PropertyGroup />
   <ItemGroup />
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <Link>
+      <ModuleDefinitionFile>VirtualCameraMediaSource.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
 </Project>

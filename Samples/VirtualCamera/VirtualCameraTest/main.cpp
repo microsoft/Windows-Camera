@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
+#include "CustomMediaSourceUT.h"
 #include "VCamUtils.h"
 
 using namespace winrt;
@@ -34,16 +35,18 @@ TEST(SimpleMediaSourceTest, TestKsControl)
 //
 // Define VirtualCamera_SimpleMediaSource test case
 //
-TEST(VirtualCameraSimpleMediaSourceTest, TestVirtualCamera)
+TEST(VirtualCameraSimpleMediaSourceTest, TestCreateVirtualCamera)
 {
     VirtualCameraTest::impl::SimpleMediaSourceUT test;
-    EXPECT_HRESULT_SUCCEEDED(test.TestVirtualCamera());
+    EXPECT_HRESULT_SUCCEEDED(test.TestCreateVirtualCamera());
 }
 
 //
 // Define HWMediaSource test case
 //
-class HWMediaSourceTest : public DataDrivenTestBase, public VirtualCameraTest::impl::HWMediaSourceUT
+class HWMediaSourceTest : 
+    public DataDrivenTestBase, 
+    public VirtualCameraTest::impl::HWMediaSourceUT
 {
 public:
     HRESULT TestSetup()
@@ -102,13 +105,76 @@ INSTANTIATE_DATADRIVENTEST_CASE_P(HWMediaSourceTest, L"VirtualCameraTestData.xml
 // Define VirtualCameraHWMediaSource test case
 //
 using VirtualCameraHWMediaSourceTest = HWMediaSourceTest;
-TEST_P(VirtualCameraHWMediaSourceTest, TestVirtualCamera)
+TEST_P(VirtualCameraHWMediaSourceTest, TestCreateVirtualCamera)
 {
-    EXPECT_HRESULT_SUCCEEDED(TestVirtualCamera());
+    EXPECT_HRESULT_SUCCEEDED(TestCreateVirtualCamera());
 };
 
 INSTANTIATE_DATADRIVENTEST_CASE_P(VirtualCameraHWMediaSourceTest, L"VirtualCameraTestData.xml", L"VirtualCameraHWMediaSourceTest");
 
+//
+// Define CustomMediaSource test case
+//
+class CustomMediaSourceTest : 
+     public DataDrivenTestBase,
+     public VirtualCameraTest::impl::CustomMediaSourceUT
+{
+public:
+    HRESULT TestSetup()
+    {
+        auto value = TestData().find(L"Clsid");
+        if (TestData().end() != value)
+        {
+            m_strClsid = value->second;
+            RETURN_IF_FAILED(CLSIDFromString(m_strClsid.data(), &m_clsid));
+        }
+        else
+        {
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Test setup failed, missing data");
+        }
+        LOG_COMMENT(L"Testing media source with clsid: %s", m_strClsid.data());
+
+        value = TestData().find(L"Friendlyname");
+        if (TestData().end() != value)
+        {
+            m_vcamFriendlyName = value->second;
+        }
+        return S_OK;
+    }
+
+    virtual void SetUp()
+    {
+        ASSERT_TRUE(SUCCEEDED(TestSetup()));
+    };
+};
+
+TEST_P(CustomMediaSourceTest, TestMediaSource)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestMediaSource());
+};
+
+TEST_P(CustomMediaSourceTest, TestMediaSourceStream)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestMediaSourceStream());
+};
+
+TEST_P(CustomMediaSourceTest, TestKsControl)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestKsControl());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(CustomMediaSourceTest, L"VirtualCameraTestData.xml", L"CustomMediaSourceTest");
+
+//
+// Define VirtualCameraCustomMediaSource test case
+//
+using VirtualCameraCustomMediaSourceTest = CustomMediaSourceTest;
+TEST_P(VirtualCameraCustomMediaSourceTest, TestCreateVirtualCamera)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestCreateVirtualCamera());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(VirtualCameraCustomMediaSourceTest, L"VirtualCameraTestData.xml", L"VirtualCameraCustomMediaSourceTest");
 
 
 void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT

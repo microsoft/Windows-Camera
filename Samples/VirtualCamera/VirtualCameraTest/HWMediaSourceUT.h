@@ -21,7 +21,7 @@ namespace VirtualCameraTest::impl
         HRESULT TestMediaSourceStream();
         HRESULT TestKsControl();
 
-        HRESULT TestVirtualCamera();
+        HRESULT TestCreateVirtualCamera();
         
         HRESULT CreateVirtualCamera(winrt::hstring const& postfix, IMFVirtualCamera** ppVirtualCamera);
 

@@ -221,6 +221,7 @@ namespace VirtualCameraTest::impl
     {
         LOG_COMMENT(L"Validate KSProperty return ERROR_SET_NOT_FOUND when control is not suported ...");
         KSPROPERTY ksProperty = { 0 };
+        ksProperty.Flags = KSPROPERTY_TYPE_GET;
         winrt::com_array<BYTE> arr(8);
         ULONG byteReturns = 0;
 
@@ -237,7 +238,7 @@ namespace VirtualCameraTest::impl
         }
         else
         {
-            LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the expected error: 0x%08x (expected: 0x%08x / 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND), HRESULT_FROM_WIN32(E_NOTIMPL));
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the expected error: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
         }
 
         return S_OK;

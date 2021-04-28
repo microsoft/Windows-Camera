@@ -69,7 +69,7 @@ namespace VirtualCameraTest::impl
         return S_OK;
     }
 
-    HRESULT HWMediaSourceUT::TestVirtualCamera()
+    HRESULT HWMediaSourceUT::TestCreateVirtualCamera()
     {
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
         auto cleanup = wil::scope_exit_log(WI_DIAGNOSTICS_INFO, [&]() {
@@ -110,7 +110,7 @@ namespace VirtualCameraTest::impl
         RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
         RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
 
-        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE, friendlyname, m_devSymlink, spAttributes.get(), ppVirtualCamera));
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, friendlyname, m_devSymlink, spAttributes.get(), ppVirtualCamera));
 
         return S_OK;
     }

@@ -83,8 +83,9 @@ To debug the media source simply attached debugger to the test process.
 
 * SimpleMediaSourceTest
 * HWMediaSourceTest
+* CustomMediaSourceTest
 
-HWMediaSource is required to run with physical camera presence on the system.  You configure the test by modifing the content in VirtualCameraTestData.xml (TableId: HWMediaSourceTest)<br>
+HWMediaSourceTest is required to run with physical camera presence on the system.  You configure the test by modifing the content in VirtualCameraTestData.xml (TableId: HWMediaSourceTest)<br>
 For example, if you have more than one camera on the system you can specify the camera with one of the two options
 
 By Device enumeration index
@@ -106,13 +107,30 @@ By Device Symbolic link name
     </Row>
   </Table>
 ```
+
+CustomMediaSourceTest can use to test your media source implementation.  To run this against your media source dll, modify the content in 
+VirutalCameraTestData.xml (TableId: CustomMediaSourceTest).  Set the clsid parameter with the clsid of your media source
+
+```
+<Table Id="CustomMediaSourceTest">
+    <!-- 
+    clsid of media source: example {7B89B92E-FE71-42D0-8A41-E137D06EA184} 
+    -->
+    <Row >
+      <Parameter Name="clsid">{7B89B92E-FE71-42D0-8A41-E137D06EA184}</Parameter>
+    </Row>
+  </Table>
+```
+
 The below two test groups are used to validate virtual camera created with the media source.
 The mediasource will be loaded in FrameServerMonitor or FrameServer services.  To debug the mediasource 
 see [How to debug issues with media source](#faq)
 * VirtualCameraSimpleMediaSourceTest
 * VirtualCameraHWMediaSourceTest
+* VirtualCameraCustommediaSource
 
 Similar to HWMediaSourceTest, VirtualCameraHWMediaSourceTest is required to run with physical camera presence on the system.  To configure the physical camera selection, modify the content VirtualCameraTestData.xml (TableId: VirtualCameraHWMediaSourceTest) per instruction above 
+VirtualCameraCustommediaSource can be configure to run against your mediasource as virtual camera.  To run this against your media source dll, modify the content in VirutalCameraTestData.xml (TableId: VirtualCameraCustomMediaSourceTest) per instruction above.
 
 ### <b>How to run test </b>
 1. Build VirtualCamera_MSI
