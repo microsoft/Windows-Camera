@@ -26,7 +26,7 @@
     .EXAMPLE  
     PS > Debug-FrameServer -timeout 60 
 
-    If frameserver doesn't startm in 60s, wait will stop.
+    If frameserver doesn't start in 60s, wait will stop.
 
     .EXAMPLE
     PS > Debug-FrameServer -forcestart
