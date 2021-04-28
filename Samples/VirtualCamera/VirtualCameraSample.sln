@@ -3,16 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30517.126
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCameraMediaSource", "VirtualCameraMediaSource\VirtualCameraMediaSource.vcxproj", "{ED70B5EF-E0A8-4DCA-A01D-5305C509394B}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCamera_ConsoleApp", "VirtualCamera_ConsoleApp\VirtualCamera_ConsoleApp.vcxproj", "{B667F063-AE21-4A50-B233-DEBE044F2223}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCamera_ConsoleApp", "VirtualCamera_Installer\VirtualCamera_Installer.vcxproj", "{B667F063-AE21-4A50-B233-DEBE044F2223}"
 	ProjectSection(ProjectDependencies) = postProject
 		{ED70B5EF-E0A8-4DCA-A01D-5305C509394B} = {ED70B5EF-E0A8-4DCA-A01D-5305C509394B}
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VirtualCamera_AppMSI", "VirtualCamera_AppMSI\VirtualCamera_AppMSI.vdproj", "{37F6BEB5-ED2C-4071-AC71-FB45E8356492}"
-EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "VirtualCamera_AppMSIX", "VirutalCamera_AppMSIX\VirtualCamera_AppMSIX.wapproj", "{0CABBAAF-8DA7-4DBB-9953-31553107C9F2}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VirtualCamera_MSI", "VirtualCamera_MSI\VirtualCamera_MSI.vdproj", "{37F6BEB5-ED2C-4071-AC71-FB45E8356492}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCameraTest", "VirtualCameraTest\VirtualCameraTest.vcxproj", "{347F4395-68F6-4936-AF83-2206F42557BF}"
 EndProject
@@ -20,6 +16,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Scripts", "Scripts", "{F9CF8530-E538-4AC3-B513-4644C8E85756}"
+	ProjectSection(SolutionItems) = preProject
+		Scripts\Debug-FrameServer.ps1 = Scripts\Debug-FrameServer.ps1
+		Scripts\Debug-FrameServerMonitor.ps1 = Scripts\Debug-FrameServerMonitor.ps1
+		Scripts\Utils.ps1 = Scripts\Utils.ps1
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VirtualCameraMediaSource", "VirtualCameraMediaSource\VirtualCameraMediaSource.vcxproj", "{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +118,24 @@ Global
 		{347F4395-68F6-4936-AF83-2206F42557BF}.Release|ARM64.ActiveCfg = Release|Win32
 		{347F4395-68F6-4936-AF83-2206F42557BF}.Release|x64.ActiveCfg = Release|x64
 		{347F4395-68F6-4936-AF83-2206F42557BF}.Release|x86.ActiveCfg = Release|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|ARM.ActiveCfg = Debug|ARM
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|ARM.Build.0 = Debug|ARM
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|ARM64.Build.0 = Debug|ARM64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|x64.ActiveCfg = Debug|x64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|x64.Build.0 = Debug|x64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|x86.ActiveCfg = Debug|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Debug|x86.Build.0 = Debug|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|Any CPU.ActiveCfg = Release|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|ARM.ActiveCfg = Release|ARM
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|ARM.Build.0 = Release|ARM
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|ARM64.ActiveCfg = Release|ARM64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|ARM64.Build.0 = Release|ARM64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|x64.ActiveCfg = Release|x64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|x64.Build.0 = Release|x64
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|x86.ActiveCfg = Release|Win32
+		{5C0C46DA-5780-4224-99D0-06A4D5F84A5F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
