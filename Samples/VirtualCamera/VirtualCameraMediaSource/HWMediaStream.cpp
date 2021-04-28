@@ -22,7 +22,6 @@ namespace winrt::WindowsSample::implementation
         m_spStreamDesc = pStreamDesc;
 
         RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
-        BOOL selected = FALSE;
 
         RETURN_IF_FAILED(m_spStreamDesc->GetStreamIdentifier(&m_dwStreamIdentifier));
 
@@ -112,8 +111,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        *ppMediaSource = m_parent.get();
-        (*ppMediaSource)->AddRef();
+        RETURN_IF_FAILED(m_parent.copy_to(ppMediaSource));
 
         return S_OK;
     }
@@ -131,8 +129,7 @@ namespace winrt::WindowsSample::implementation
 
         if (m_spStreamDesc != nullptr)
         {
-            *ppStreamDescriptor = m_spStreamDesc.get();
-            (*ppStreamDescriptor)->AddRef();
+            RETURN_IF_FAILED(m_spStreamDesc.copy_to(ppStreamDescriptor));
         }
         else
         {
@@ -201,7 +198,10 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(spEvent->GetType(&met));
         DEBUG_MSG(L"[%d] OnMediaStreamEvent, streamId: %d, met:%d ", m_dwStreamIdentifier, met);
         
-        //
+        // This shows how to intercept sample from physical camera
+        // and do custom processin gon the sample.
+        // 
+        bool bForwardEvent = true;
         if (met == MEMediaSample)
         {
             wil::com_ptr_nothrow<IMFSample> spSample;
@@ -216,23 +216,45 @@ namespace winrt::WindowsSample::implementation
             }
             spSampleUnk = propVar.punkVal;
             RETURN_IF_FAILED(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)));
-        }
-        
 
+            RETURN_IF_FAILED(ProcessSample(spSample.get()));
+            bForwardEvent = false;
+        }
 
         {
             winrt::slim_lock_guard lock(m_Lock);
             if (SUCCEEDED(_CheckShutdownRequiresLock()))
             {
                 // Forward event
-                RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
-                
+                if (bForwardEvent)
+                {
+                    RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+                }
+
                 // Continue listening to source event
                 RETURN_IF_FAILED(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
             }
         }
         
         DEBUG_MSG(L"[%d] OnMediaStreamEvent exit", m_dwStreamIdentifier);
+        return S_OK;
+    }
+
+    HRESULT HWMediaStream::ProcessSample(_In_ IMFSample* inputSample)
+    {
+        winrt::slim_lock_guard lock(m_Lock);
+
+        // Do custom processing on the sample from the physical camera
+
+        if (SUCCEEDED(_CheckShutdownRequiresLock()))
+        {
+            // queue event
+            RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
+                MEMediaSample,
+                GUID_NULL,
+                S_OK,
+                inputSample));
+        }
         return S_OK;
     }
 

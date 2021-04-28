@@ -57,7 +57,7 @@ HRESULT __stdcall DllGetClassObject(GUID const& clsid, GUID const& iid, void** r
 
         if (clsid == __uuidof(winrt::WindowsSample::implementation::SimpleMediaSourceActivate))
         {
-            return winrt::make<SimpleMediaSourceActivateFactory>()->QueryInterface(iid, result);
+            return winrt::make_self<SimpleMediaSourceActivateFactory>()->QueryInterface(iid, result);
         }
 
 #ifdef _WRL_MODULE_H_
@@ -147,7 +147,7 @@ HRESULT SetRegKeyStringValue(
         0,
         REG_SZ,
         (const BYTE*)pwzData,
-        cch * sizeof(WCHAR)));
+        (DWORD)(cch * sizeof(WCHAR))));
 
     return S_OK;
 }

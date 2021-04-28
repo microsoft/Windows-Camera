@@ -172,7 +172,6 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
-        DWORD count = 0;
 
         wil::com_ptr_nothrow<IMFStreamDescriptor> streamDesc;
 
@@ -219,7 +218,6 @@ namespace winrt::WindowsSample::implementation
     IFACEMETHODIMP HWMediaSource::Stop()
     {
         winrt::slim_lock_guard lock(m_Lock);
-        HRESULT hr = S_OK;
 
         if (m_sourceState != SourceState::Started)
         {
@@ -448,7 +446,7 @@ namespace winrt::WindowsSample::implementation
     HRESULT HWMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
     {
         MediaEventType met = MEUnknown;
-        HRESULT hrEventStatus = S_OK;
+
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
         wil::com_ptr_nothrow<IUnknown> spUnknown;
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;

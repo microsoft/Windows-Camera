@@ -20,7 +20,7 @@ namespace winrt::WindowsSample::implementation
         {}
 
         // IMFAsyncCallback
-        STDMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue)
+        IFACEMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) override
         {
             // Implementation of this method is optional.
             *pdwFlags = 0; 
@@ -28,7 +28,7 @@ namespace winrt::WindowsSample::implementation
             return S_OK;
         }
 
-        STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult)
+        IFACEMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override
         {
             RETURN_IF_FAILED((m_pParent->*m_pInvokeFn)(pAsyncResult));
             return S_OK;

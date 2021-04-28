@@ -2,7 +2,6 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 //
 #pragma once
-
 #include <unknwn.h>
 #include <windows.h>
 #include <propvarutil.h>
@@ -24,13 +23,13 @@
 #include <winmeta.h>
 #include <d3d9types.h>
 
-#include "mfVirtualCamera.h"
+#include <mfvirtualcamera.h>
 
 #define RESULT_DIAGNOSTICS_LEVEL 4 // include function name
 
 #include <wil\cppwinrt.h> // must be before the first C++ WinRT header, ref:https://github.com/Microsoft/wil/wiki/Error-handling-helpers
 #include <wil\result.h>
-#include "wil\com.h"
+#include <wil\com.h>
 
 #include "EventHandler.h"
 #include "SimpleFrameGenerator.h"
@@ -87,18 +86,11 @@ namespace wilEx
     }
 };
 
-WINRT_EXPORT namespace winrt
+namespace winrt
 {
     template<> bool is_guid_of<IMFMediaSourceEx>(guid const& id) noexcept;
 
     template<> bool is_guid_of<IMFMediaStream2>(guid const& id) noexcept;
 
     template<> bool is_guid_of<IMFActivate>(guid const& id) noexcept;
-
-}
-//
-//namespace winrt
-//{
-//    
-//}
-
+};

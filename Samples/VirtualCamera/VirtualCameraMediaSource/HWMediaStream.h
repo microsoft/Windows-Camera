@@ -18,22 +18,23 @@ namespace winrt::WindowsSample::implementation
         ~HWMediaStream();
 
         // IMFMediaEventGenerator
-        IFACEMETHOD(BeginGetEvent)(IMFAsyncCallback* pCallback, IUnknown* punkState);
-        IFACEMETHOD(EndGetEvent)(IMFAsyncResult* pResult, IMFMediaEvent** ppEvent);
-        IFACEMETHOD(GetEvent)(DWORD dwFlags, IMFMediaEvent** ppEvent);
-        IFACEMETHOD(QueueEvent)(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT* pvValue);
+        IFACEMETHODIMP BeginGetEvent(IMFAsyncCallback* pCallback, IUnknown* punkState) override;
+        IFACEMETHODIMP EndGetEvent(IMFAsyncResult* pResult, IMFMediaEvent** ppEvent) override;
+        IFACEMETHODIMP GetEvent(DWORD dwFlags, IMFMediaEvent** ppEvent) override;
+        IFACEMETHODIMP QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, const PROPVARIANT* pvValue) override;
 
         // IMFMediaStream
-        IFACEMETHOD(GetMediaSource)(IMFMediaSource** ppMediaSource);
-        IFACEMETHOD(GetStreamDescriptor)(IMFStreamDescriptor** ppStreamDescriptor);
-        IFACEMETHOD(RequestSample)(IUnknown* pToken);
+        IFACEMETHODIMP GetMediaSource(IMFMediaSource** ppMediaSource) override;
+        IFACEMETHODIMP GetStreamDescriptor(IMFStreamDescriptor** ppStreamDescriptor) override;
+        IFACEMETHODIMP RequestSample(IUnknown* pToken) override;
 
         // IMFMediaStream2
-        IFACEMETHOD(SetStreamState)(MF_STREAM_STATE state);
-        IFACEMETHOD(GetStreamState)(_Out_ MF_STREAM_STATE* pState);
+        IFACEMETHODIMP SetStreamState(MF_STREAM_STATE state) override;
+        IFACEMETHODIMP GetStreamState(_Out_ MF_STREAM_STATE* pState) override;
 
         // Non-interface methods.
         HRESULT Initialize(_In_ HWMediaSource* pSource, _In_ IMFStreamDescriptor* pStreamDesc, _In_ DWORD dwWorkQueue);
+        HRESULT ProcessSample(_In_ IMFSample* inputSample);
         HRESULT Shutdown();
         DWORD StreamIdentifier() { return m_dwStreamIdentifier; };
         HRESULT SetMediaStream(_In_ IMFMediaStream* pMediaStream);
