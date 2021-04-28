@@ -34,8 +34,7 @@
 
 #include <wil/cppwinrt.h> // must be before the first C++ WinRT header, ref:https://github.com/Microsoft/wil/wiki/Error-handling-helpers
 #include <wil/result.h>
-#include "wil/com.h"
-#include "winrt/base.h"
+#include <wil/com.h>
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -77,4 +76,3 @@ using namespace winrt::Windows::ApplicationModel;
 #endif
 
 #include "Logger.h"
-

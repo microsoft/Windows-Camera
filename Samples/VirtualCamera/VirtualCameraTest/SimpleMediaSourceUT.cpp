@@ -7,329 +7,246 @@
 #include "VirtualCameraMediaSource.h"
 #include "VCamutils.h"
 
-static const winrt::hstring strCustomControl(L" {0CE2EF73-4800-4F53-9B8E-8C06790FC0C7},0");
-static const winrt::hstring strInvalidControl(L"{FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF},0");
-
-HRESULT SimpleMediaSourceUT::TestMediaSource()
+namespace VirtualCameraTest::impl
 {
-    RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, nullptr));
+    static const winrt::hstring strCustomControl(L" {0CE2EF73-4800-4F53-9B8E-8C06790FC0C7},0");
 
-    return S_OK;
-}
-
-HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
-{
-    // SimpleMediaSource 1 stream, with 2 mediatype
-    // This test validate we can 1. access the stream, 2. stream from each mediatype
-    wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
-
-    wil::com_ptr_nothrow<IMFPresentationDescriptor> spPD;
-    RETURN_IF_FAILED(spMediaSource->CreatePresentationDescriptor(&spPD));
-    
-    DWORD streamCount = 0;
-    RETURN_IF_FAILED(spPD->GetStreamDescriptorCount(&streamCount));
-    if (streamCount != 1)
+    HRESULT SimpleMediaSourceUT::TestMediaSource()
     {
-        LOG_ERROR(L"Unexpected stream count: %d (expected: %d)", streamCount, 1);
-        RETURN_HR(E_TEST_FAILED);
+        RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, nullptr));
+
+        return S_OK;
     }
 
-    
-
-    // Validate Streaming with sourcereader
-    wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-    RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
-
-    wil::com_ptr_nothrow<IMFSourceReader> spSourceReader;
-    RETURN_IF_FAILED(MFCreateSourceReaderFromMediaSource(spMediaSource.get(), spAttributes.get(), &spSourceReader));
-    
-    for (unsigned int streamIdx= 0; streamIdx < streamCount; streamIdx++)
+    HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
     {
-        DWORD mediaTypeCount = 0;
-        BOOL selected = FALSE;
-        wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDescriptor;
-        wil::com_ptr_nothrow<IMFMediaTypeHandler> spMediaTypeHandler;
+        // SimpleMediaSource 1 stream, with 2 mediatype
+        // This test validate we can 1. access the stream, 2. stream from each mediatype
+        wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
+        RETURN_IF_FAILED(CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
 
-        RETURN_IF_FAILED(spPD->GetStreamDescriptorByIndex(streamIdx, &selected, &spStreamDescriptor));
-        RETURN_IF_FAILED(spStreamDescriptor->GetMediaTypeHandler(&spMediaTypeHandler));
+        wil::com_ptr_nothrow<IMFPresentationDescriptor> spPD;
+        RETURN_IF_FAILED(spMediaSource->CreatePresentationDescriptor(&spPD));
 
-        RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeCount(&mediaTypeCount));
-        if (mediaTypeCount != 2)
+        DWORD streamCount = 0;
+        RETURN_IF_FAILED(spPD->GetStreamDescriptorCount(&streamCount));
+        if (streamCount != 1)
         {
-            LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: %d) ", mediaTypeCount, 2);
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: %d)", streamCount, 1);
         }
 
-        GUID category;
-        RETURN_IF_FAILED(spStreamDescriptor->GetGUID(MF_DEVICESTREAM_STREAM_CATEGORY, &category));
-        if (category == PINNAME_IMAGE)
+        for (unsigned int streamIdx = 0; streamIdx < streamCount; streamIdx++)
         {
-            LOG_COMMENT(L"Skip stream test on streamCateogry: PINNAME_IMAGE");
-            continue;
-        }
+            DWORD mediaTypeCount = 0;
+            BOOL selected = FALSE;
+            wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDescriptor;
+            wil::com_ptr_nothrow<IMFMediaTypeHandler> spMediaTypeHandler;
 
-        // Set sampe allocator 
-        DWORD dwStreamId;
-        RETURN_IF_FAILED(spStreamDescriptor->GetStreamIdentifier(&dwStreamId));
+            RETURN_IF_FAILED(spPD->GetStreamDescriptorByIndex(streamIdx, &selected, &spStreamDescriptor));
+            RETURN_IF_FAILED(spStreamDescriptor->GetMediaTypeHandler(&spMediaTypeHandler));
 
-        wil::com_ptr_nothrow<IMFSampleAllocatorControl> spAllocatorControl;
-        RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spAllocatorControl)));
-        MFSampleAllocatorUsage eUsage;
-        DWORD dwInputStreamId;
-        RETURN_IF_FAILED(spAllocatorControl->GetAllocatorUsage(dwStreamId, &dwInputStreamId, &eUsage));
-        if (eUsage == MFSampleAllocatorUsage_UsesProvidedAllocator)
-        {
-            wil::com_ptr_nothrow<IMFVideoSampleAllocator>spSampleAllocator;
-            RETURN_IF_FAILED(MFCreateVideoSampleAllocatorEx(IID_PPV_ARGS(&spSampleAllocator)));
-            wil::com_ptr_nothrow<IUnknown> spUnknown;
-            RETURN_IF_FAILED(spSampleAllocator->QueryInterface(&spUnknown));
-            RETURN_IF_FAILED(spAllocatorControl->SetDefaultAllocator(dwStreamId, spUnknown.get()));
-        }
-        
-        for (unsigned int mtIdx = 0; mtIdx < mediaTypeCount; mtIdx++)
-        {
-            RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, true));
-
-            wil::com_ptr_nothrow<IMFMediaType> spMediaType;
-            RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeByIndex(mtIdx, &spMediaType));
-
-            LOG_COMMENT(L"Set mediatype on stream:");
-            LogMediaType(spMediaType.get());
-
-            RETURN_IF_FAILED(spSourceReader->SetCurrentMediaType(streamIdx, NULL, spMediaType.get()));
-            RETURN_IF_FAILED(ValidateStreaming(spSourceReader.get(), streamIdx, spMediaType.get()));
-
-            wil::com_ptr_nothrow<IMFMediaType> spSetMediaType;
-            RETURN_IF_FAILED(spSourceReader->GetCurrentMediaType(streamIdx, &spSetMediaType));
-
-            if (MFCompareFullToPartialMediaType(spMediaType.get(), spSetMediaType.get()))
+            RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeCount(&mediaTypeCount));
+            if (mediaTypeCount != 2)
             {
-                LOG_COMMENT(L"Media type set succeeded.");
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected media type count: %d (expected: %d) ", mediaTypeCount, 2);
+            }
+        }
+        RETURN_IF_FAILED(MediaSourceUT_Common::TestMediaSourceStream(spMediaSource.get()));
+
+        return S_OK;
+    }
+
+    HRESULT SimpleMediaSourceUT::TestKsControl()
+    {
+        wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
+        RETURN_IF_FAILED(CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
+
+        wil::com_ptr_nothrow<IKsControl> spKsControl;
+        RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
+
+        RETURN_IF_FAILED(ValidateKsControl_UnSupportedControl(spKsControl.get()));
+        
+        // Validate Supported Control
+        {
+            LOG_COMMENT(L"Validate KSProperty return data size ...")
+                KSPROPERTY ksProperty;
+            ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
+            ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
+            ksProperty.Flags = KSPROPERTY_TYPE_GET;
+
+            ULONG byteReturns = 0;
+            HRESULT hr = spKsControl->KsProperty(
+                &ksProperty,
+                sizeof(KSPROPERTY),
+                nullptr,
+                0,
+                &byteReturns);
+
+            if (hr == HRESULT_FROM_WIN32(ERROR_MORE_DATA))
+            {
+                if (byteReturns == sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
+                {
+                    LOG_COMMENT(L"Function returns expected hr: 0x%08x, byteReturn:%d)", hr, byteReturns);
+                }
+                else
+                {
+                    LOG_ERROR(L"Function returns incorrect byteReturn:%d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+                }
             }
             else
             {
-                LOG_ERROR(L"Media type set failed.");
+                LOG_COMMENT(L"Function returns unexpected hr: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
             }
-            RETURN_IF_FAILED(spSourceReader->SetStreamSelection(streamIdx, false));
+
+            LOG_COMMENT(L"Validate KSProperty return error on invalid data size ...")
+                winrt::com_array<BYTE> arr(sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+            hr = spKsControl->KsProperty(
+                &ksProperty,
+                sizeof(KSPROPERTY),
+                arr.data(),
+                0,
+                &byteReturns);
+            if (FAILED(hr))
+            {
+                LOG_SUCCESS(L"Function returns failed hr: 0x%08x on incorrect datalength)", hr);
+            }
+            else
+            {
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Function did not return failed hr on incorrect datalength, hr:0x%08x", hr);
+            }
+
+
+            // Validate Get Control
+            ksProperty.Flags |= KSPROPERTY_TYPE_GET;
+            hr = spKsControl->KsProperty(
+                &ksProperty,
+                sizeof(KSPROPERTY),
+                arr.data(),
+                arr.size(),
+                &byteReturns);
+
+            if (FAILED(hr))
+            {
+                LOG_ERROR_RETURN(hr, L"Function failed to get support control hr: 0x%08x)", hr);
+            }
+            else if (byteReturns != sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
+            {
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the correct byteReturn: %d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+            }
+            else
+            {
+                LOG_SUCCESS(L"Get Support control succeeded, byteReturn: %d, colorMode: 0x%08x", byteReturns, ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.data())->ColorMode);
+            }
+
+            ksProperty.Flags |= KSPROPERTY_TYPE_SET;
+            hr = spKsControl->KsProperty(
+                &ksProperty,
+                sizeof(KSPROPERTY),
+                arr.data(),
+                arr.size(),
+                &byteReturns);
+
+            if (FAILED(hr))
+            {
+                LOG_ERROR_RETURN(hr, L"Function failed to get support control hr: 0x%08x)", hr);
+            }
+            else if (byteReturns != sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
+            {
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the correct byteReturn: %d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+            }
+            else
+            {
+                LOG_SUCCESS(L"Set Support control succeeded, byteReturn: %d, colorMode: 0x%08x", byteReturns, ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.data())->ColorMode);
+            }
         }
+
+        return S_OK;
     }
 
-    return S_OK;
-}
-
-HRESULT SimpleMediaSourceUT::TestKSProperty()
-{
-    wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(_CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
-
-    wil::com_ptr_nothrow<IKsControl> spKsControl;
-    RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
-
+    HRESULT SimpleMediaSourceUT::TestVirtualCamera()
     {
-        LOG_COMMENT(L"Validate KSProperty return ERROR_SET_NOT_FOUND when control is not suported ...");
-        KSPROPERTY ksProperty = { 0 };
-        winrt::com_array<BYTE> arr(8);
-        ULONG byteReturns = 0;
+        wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+        auto exit = wil::scope_exit_log(WI_DIAGNOSTICS_INFO, [&]
+            {
+                if (spVirtualCamera.get() != nullptr)
+                {
+                    VCamUtils::UnInstallDevice(spVirtualCamera.get());
+                }
+            });
+        RETURN_IF_FAILED(CreateVirtualCamera(&spVirtualCamera));
+        RETURN_IF_FAILED(ValidateVirtualCamera(spVirtualCamera.get()));
 
-        HRESULT hr = spKsControl->KsProperty(
-            &ksProperty,
-            sizeof(KSPROPERTY),
-            arr.data(),
-            arr.size(),
-            &byteReturns);
-
-        if (hr == HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND))
-        {
-            LOG_COMMENT(L"Function return ERROR_SET_NOT_FOUND on invalid control");
-        }
-        else
-        {
-            LOG_ERROR(L"Function didn't return the expected error: 0x%08x (expected: 0x%08x / 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND), HRESULT_FROM_WIN32(E_NOTIMPL));
-            RETURN_HR(E_TEST_FAILED);
-        }
+        return S_OK;
     }
-    
+
+    ////////////////////////////////////////////////////////////////////
+    // helper function
+    HRESULT SimpleMediaSourceUT::CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera)
     {
-        LOG_COMMENT(L"Validate KSProperty return data size ...")
+        winrt::hstring physicalCamSymLink;
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE, L"SWVCamMediaSource", physicalCamSymLink, nullptr, ppVirtualCamera));
+
+        return S_OK;
+    }
+
+    HRESULT SimpleMediaSourceUT::GetColorMode(IMFMediaSource* pMediaSource, uint32_t* pColorMode)
+    {
+        RETURN_HR_IF_NULL(E_INVALIDARG, pMediaSource);
+        RETURN_HR_IF_NULL(E_POINTER, pColorMode);
+        *pColorMode = 0;
+
+        wil::com_ptr_nothrow<IKsControl> spKsControl;
+        RETURN_IF_FAILED(pMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
+
         KSPROPERTY ksProperty;
+        ksProperty.Flags |= KSPROPERTY_TYPE_GET;
         ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
         ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
-        ksProperty.Flags = KSPROPERTY_TYPE_GET;
+
+        wil::unique_cotaskmem_ptr<BYTE[]> arr = wil::make_unique_cotaskmem_nothrow<BYTE[]>(sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+        RETURN_IF_NULL_ALLOC(arr.get());
 
         ULONG byteReturns = 0;
-        HRESULT hr = spKsControl->KsProperty(
-            &ksProperty,
-            sizeof(KSPROPERTY),
-            nullptr,
-            0,
-            &byteReturns);
 
-        if(hr == HRESULT_FROM_WIN32(ERROR_MORE_DATA))
-        {
-            if (byteReturns == sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
-            {
-                LOG_COMMENT(L"Function returns expected hr: 0x%08x, byteReturn:%d)", hr, byteReturns);
-            }
-            else
-            {
-                LOG_ERROR(L"Function returns incorrect byteReturn:%d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-            }
-        }
-        else
-        {
-            LOG_COMMENT(L"Function returns unexpected hr: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
-        }
-
-        LOG_COMMENT(L"Validate KSProperty return error on invalid data size ...")
-        winrt::com_array<BYTE> arr(sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-        hr = spKsControl->KsProperty(
-            &ksProperty,
-            sizeof(KSPROPERTY),
-            arr.data(),
-            0,
-            &byteReturns);
-        if (FAILED(hr))
-        {
-            LOG_COMMENT(L"Function returns failed hr: 0x%08x on incorrect datalength)", hr);
-        }
-        else
-        {
-            LOG_ERROR(L"Function did not return failed hr on incorrect datalength, hr:0x%08x", hr);
-        }
-
-        
         // Validate Get Control
-        ksProperty.Flags |= KSPROPERTY_TYPE_GET;
-        hr = spKsControl->KsProperty(
+        RETURN_IF_FAILED(spKsControl->KsProperty(
             &ksProperty,
             sizeof(KSPROPERTY),
-            arr.data(),
-            arr.size(),
-            &byteReturns);
+            arr.get(),
+            sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S),
+            &byteReturns));
 
-        if (FAILED(hr))
-        {
-            LOG_ERROR(L"Function failed to get support control hr: 0x%08x)", hr);
-        }
-        else if(byteReturns != sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
-        {
-            LOG_ERROR(L"Function didn't return the correct byteReturn: %d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-            RETURN_HR(E_TEST_FAILED);
-        }
-        else
-        { 
-            LOG_COMMENT(L"Get Support control succeeded, byteReturn: %d, colorMode: 0x%08x", byteReturns, ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.data())->ColorMode);
-        }
+        *pColorMode = ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.get())->ColorMode;
 
-        ksProperty.Flags |= KSPROPERTY_TYPE_SET;
-        hr = spKsControl->KsProperty(
-            &ksProperty,
-            sizeof(KSPROPERTY),
-            arr.data(),
-            arr.size(),
-            &byteReturns);
-
-        if (FAILED(hr))
-        {
-            LOG_ERROR(L"Function failed to get support control hr: 0x%08x)", hr);
-        }
-        else if (byteReturns != sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
-        {
-            LOG_ERROR(L"Function didn't return the correct byteReturn: %d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-            RETURN_HR(E_TEST_FAILED);
-        }
-        else
-        {
-            LOG_COMMENT(L"Set Support control succeeded, byteReturn: %d, colorMode: 0x%08x", byteReturns, ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.data())->ColorMode);
-        }
+        return S_OK;
     }
-    
-    return S_OK;
-}
 
-HRESULT SimpleMediaSourceUT::TestVirtualCamera()
-{
-    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-    auto exit = wil::scope_exit_log(WI_DIAGNOSTICS_INFO, [&]
-        {
-            if (spVirtualCamera.get() != nullptr)
-            {
-                VCamUtils::UnInstallDevice(spVirtualCamera.get());
-            }
-        });
-    RETURN_IF_FAILED(CreateVirtualCamera(&spVirtualCamera));
-    RETURN_IF_FAILED(ValidateVirtualCamera(spVirtualCamera.get()));
+    HRESULT SimpleMediaSourceUT::SetColorMode(IMFMediaSource* pMediaSource, uint32_t colorMode)
+    {
+        RETURN_HR_IF_NULL(E_INVALIDARG, pMediaSource);
 
-    return S_OK;
-}
+        wil::com_ptr_nothrow<IKsControl> spKsControl;
+        RETURN_IF_FAILED(pMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
 
-////////////////////////////////////////////////////////////////////
-// helper function
-HRESULT SimpleMediaSourceUT::CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera)
-{
-    winrt::hstring physicalCamSymLink;
-    RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(SIMPLEMEDIASOURCE_WIN32, L"SWVCamMediaSource", physicalCamSymLink, nullptr, ppVirtualCamera));
+        KSPROPERTY ksProperty;
+        ksProperty.Flags |= KSPROPERTY_TYPE_SET;
+        ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
+        ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
 
-    return S_OK;
-}
+        KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S data;
+        data.ColorMode = colorMode;
 
-HRESULT SimpleMediaSourceUT::GetColorMode(IMFMediaSource* pMediaSource, uint32_t* pColorMode)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pMediaSource);
-    RETURN_HR_IF_NULL(E_POINTER, pColorMode);
-    *pColorMode = 0;
+        ULONG byteReturns = 0;
 
-    wil::com_ptr_nothrow<IKsControl> spKsControl;
-    RETURN_IF_FAILED(pMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
+        // Validate Set Control
+        RETURN_IF_FAILED(spKsControl->KsProperty(
+            &ksProperty,
+            sizeof(KSPROPERTY),
+            &data,
+            sizeof(data),
+            &byteReturns));
 
-    KSPROPERTY ksProperty;
-    ksProperty.Flags |= KSPROPERTY_TYPE_GET;
-    ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
-    ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
-
-    wil::unique_cotaskmem_ptr<BYTE[]> arr = wil::make_unique_cotaskmem_nothrow<BYTE[]>(sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-    RETURN_IF_NULL_ALLOC(arr.get());
-
-    ULONG byteReturns = 0;
-
-    // Validate Get Control
-    RETURN_IF_FAILED(spKsControl->KsProperty(
-        &ksProperty,
-        sizeof(KSPROPERTY),
-        arr.get(),
-        sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S),
-        &byteReturns));
-
-    *pColorMode = ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.get())->ColorMode;
-
-    return S_OK;
-}
-
-HRESULT SimpleMediaSourceUT::SetColorMode(IMFMediaSource* pMediaSource, uint32_t colorMode)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, pMediaSource);
-
-    wil::com_ptr_nothrow<IKsControl> spKsControl;
-    RETURN_IF_FAILED(pMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl)));
-
-    KSPROPERTY ksProperty;
-    ksProperty.Flags |= KSPROPERTY_TYPE_SET;
-    ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
-    ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
-   
-    KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S data;
-    data.ColorMode = colorMode;
-
-    ULONG byteReturns = 0;
-
-    // Validate Set Control
-    RETURN_IF_FAILED(spKsControl->KsProperty(
-        &ksProperty,
-        sizeof(KSPROPERTY),
-        &data,
-        sizeof(data),
-        &byteReturns));
-
-    return S_OK;
+        return S_OK;
+    }
 }
 

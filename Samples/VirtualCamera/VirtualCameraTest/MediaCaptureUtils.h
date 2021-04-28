@@ -73,8 +73,7 @@ private:
         case winrt::Windows::Foundation::AsyncStatus::Started:
             op.Cancel();
 
-            LOG_WARN(L"Cancel task timeout: %d ms", timeoutMs);
-            //CreateCrashDump();
+            LOG_WARNING(L"Cancel task timeout: %d ms", timeoutMs);
 
             winrt::throw_hresult(E_TIMEOUT);
             break;
@@ -99,20 +98,22 @@ public:
         requestedProps.Append(devPropKey);
 
         DeviceInformation devObj{ nullptr };
-        TRY_RETURN_CAUGHT_EXCEPTION_MSG(devObj = MediaCaptureTaskHelper::RunTaskWithTimeout(DeviceInformation::CreateFromIdAsync(strDevSymLink, requestedProps, DeviceInformationKind::DeviceInterface)).get(),
-            "");
+        TRY_RETURN_CAUGHT_EXCEPTION_MSG(devObj = MediaCaptureTaskHelper::RunTaskWithTimeout(DeviceInformation::CreateFromIdAsync(strDevSymLink, requestedProps, kind)).get(),
+            "Fail to get device property");
 
         auto obj = devObj.Properties().TryLookup(devPropKey);
         if (obj != nullptr)
         {
-            if (obj.try_as<winrt::Windows::Foundation::IReference<T>>())
-            {
-                value = obj.as<winrt::Windows::Foundation::IReference<T>>();
-            }
-            else
+            value = obj.try_as<winrt::Windows::Foundation::IReference<T>>();
+           
+            if(!value)
             {
                 return HRESULT_FROM_WIN32(ERROR_DATATYPE_MISMATCH);
             }
+        }
+        else
+        {
+            return HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
         }
         return S_OK;
     };

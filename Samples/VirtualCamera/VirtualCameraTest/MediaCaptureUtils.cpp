@@ -29,6 +29,3 @@ HRESULT CMediaCaptureUtils::GetDeviceInfo(winrt::hstring const& strDevSymLink, D
 
     return S_OK;
 }
-
-
-

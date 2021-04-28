@@ -8,24 +8,27 @@
 #define HWMEDIASOURCEUT_H
 
 #include "MediaSourceUT_Common.h"
-
-class HWMediaSourceUT : MediaSourceUT_Common
+namespace VirtualCameraTest::impl
 {
-public:
-    HWMediaSourceUT(winrt::hstring const& devSymlink)
-        : m_devSymlink(devSymlink)
-    {};
+    class HWMediaSourceUT : MediaSourceUT_Common
+    {
+    public:
+        HWMediaSourceUT(winrt::hstring const& devSymlink)
+            : m_devSymlink(devSymlink)
+        {};
 
-    HRESULT TestMediaSource();
-    HRESULT TestMediaSourceStream();
-    HRESULT TestCreateVirtualCamera();
-    HRESULT TestKSPropertyImp();
+        HRESULT TestMediaSource();
+        HRESULT TestMediaSourceStream();
+        HRESULT TestKsControl();
 
-    HRESULT CreateVirutalCamera(winrt::hstring const& postfix, IMFVirtualCamera** ppVirtualCamera);
+        HRESULT TestVirtualCamera();
+        
+        HRESULT CreateVirtualCamera(winrt::hstring const& postfix, IMFVirtualCamera** ppVirtualCamera);
 
-protected:
-    HWMediaSourceUT() {};
-    winrt::hstring m_devSymlink;
-};
+    protected:
+        HWMediaSourceUT() {};
+        winrt::hstring m_devSymlink;
+    };
+}
 
 #endif

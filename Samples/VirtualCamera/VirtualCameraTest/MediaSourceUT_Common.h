@@ -7,22 +7,25 @@
 #ifndef MEDIASOURCEUT_COMMON_H
 #define MEDIASOURCEUT_COMMON_H
 
-class MediaSourceUT_Common
+namespace VirtualCameraTest::impl
 {
-public:
-    static void LogMediaType(IMFMediaType* pMediaType);
+    class MediaSourceUT_Common
+    {
+    public:
+        static void LogMediaType(IMFMediaType* pMediaType);
+        static HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType);
 
-protected:
-     HRESULT TestMediaSourceRegistration(GUID clsid, IMFAttributes* pAttributes);
-     HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType);
-     HRESULT ValidateVirtualCamera(_In_ IMFVirtualCamera* spVirtualCamera);
+    protected:
+        HRESULT TestMediaSourceRegistration(GUID clsid, IMFAttributes* pAttributes);
+        HRESULT TestMediaSourceStream(IMFMediaSource* pMediaSource);
+        HRESULT ValidateKsControl_UnSupportedControl(IKsControl* pKsControl);
+        HRESULT ValidateVirtualCamera(_In_ IMFVirtualCamera* spVirtualCamera);
+        HRESULT CoCreateAndActivateMediaSource(GUID clsid, IMFAttributes* pAttributes, IMFMediaSource** ppMediaSource);
+        HRESULT CreateCameraDeviceSource(winrt::hstring const& devSymLink, IMFMediaSource** ppMediaSource);
 
-     HRESULT _CoCreateAndActivateMediaSource(GUID clsid, IMFAttributes* pAttributes, IMFMediaSource** ppMediaSource);
-
-     HRESULT _CreateCameraDeviceSource(winrt::hstring const& devSymLink, IMFMediaSource** ppMediaSource);
-
-private: 
-    static HRESULT ValidateInterfaces(IMFMediaSource* pMediaSource);
-};
+    private:
+        static HRESULT ValidateInterfaces(IMFMediaSource* pMediaSource);
+    };
+}
 
 #endif

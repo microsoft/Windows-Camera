@@ -19,7 +19,6 @@ class EVRHelper
 {
 public:
     HRESULT Initialize(IMFMediaType* pMediaType);
-    //HRESULT Initialize(GUID subType, UINT32 width, UINT32 height);
     HRESULT WriteSample(IMFSample* pSample);
 
     ~EVRHelper();

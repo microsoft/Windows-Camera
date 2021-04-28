@@ -81,7 +81,7 @@ inline void LOG(LogLevel flag, const wchar_t* fmt, ...)
 static constexpr HRESULT E_TEST_FAILED = 0xA0000002;
 
 #define LOG_COMMENT(fmt, ...)  { LOG(LogLevel::Info, fmt, __VA_ARGS__);  }
-#define LOG_WARN(fmt, ...)     { LOG(LogLevel::Warn, fmt, __VA_ARGS__);  }
+#define LOG_WARNING(fmt, ...)     { LOG(LogLevel::Warn, fmt, __VA_ARGS__);  }
 #ifdef GTEST
 #define LOG_ERROR(fmt, ...)    { ADD_FAILURE(); LOG(LogLevel::Error, fmt, __VA_ARGS__); }
 #define LOG_ERROR_RETURN(hr, fmt, ...)    {  const HRESULT __hresult = (hr); ADD_FAILURE(); LOG(LogLevel::Error, fmt, __VA_ARGS__); return __hresult; }

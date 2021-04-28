@@ -1,20 +1,18 @@
 <?xml version="1.0" ?>
 <Data>
-  <Table Id="HWMediaSourceUTSetup">
-  <!-- VidDeviceSymLink or VidDeviceIndex--> 
-    <Row >
-      <Parameter Name="vidDeviceIndex">1</Parameter>
-    </Row>
-    <Row>
-      <Parameter Name="vidDeviceSymLink"> testparamValue1 </Parameter>
+  <Table Id="HWMediaSourceTest">
+    <!-- VidDeviceSymLink or VidDeviceIndex--> 
+    <Row Name="DeviceIndex0">
+      <Parameter Name="vidDeviceIndex">0</Parameter>
     </Row>
   </Table>
 
-  <Table Id="HWMediaSourceUTSetup2">
+  <Table Id="VirtualCameraHWMediaSourceTest">
     <!-- VidDeviceSymLink or VidDeviceIndex-->
-    <Row >
-      <Parameter Name="vidDeviceIndex">1</Parameter>
+    <Row Name="DeviceIndex0">
+      <Parameter Name="vidDeviceIndex">0</Parameter>
     </Row>
   </Table>
+  
 </Data>
 

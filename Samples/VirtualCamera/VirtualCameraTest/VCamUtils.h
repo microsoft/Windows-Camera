@@ -40,7 +40,7 @@ public:
         _Outptr_ IMFVirtualCamera** ppVirtualCamera);
         
     static HRESULT UnInstallVirtualCamera(_In_ winrt::hstring const& strDevSymLink);
-    static HRESULT UnInstallDevice(IMFVirtualCamera* pVirutalCamera);
+    static HRESULT UnInstallDevice(IMFVirtualCamera* pVirtualCamera);
     static HRESULT UnInstallDeviceWin32(const wchar_t* pwszDeviceSymLink);
     static HRESULT MSIUninstall(GUID const& clsid);
 

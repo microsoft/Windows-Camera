@@ -30,14 +30,14 @@
 // </Table>
 //</Data>
 //
-// Each Test can reference a table, and testcases will be generate for each row.
+// Each Test can reference a table, and testcases will be generated for each row.
 // To define test use the follow:
 //
 //    class TestClass : public DataDrivenTestBase { ... };
 //    TEST_P(TestClass, TestName) { ...};
 //    INSTANTIATE_DATADRIVENTEST_CASE_P(TestClass, Table.xml, TableName);
 //
-//  The test cases generate will have the following naming convention
+//  The test cases generate will have the follow naming convention
 //  Note: row name is optional, if no row name is provided, the default name
 //        is the row index
 // 
@@ -90,7 +90,7 @@ private:
 
 # define INSTANTIATE_DATADRIVENTEST_CASE_P(test_class_name, dataFile, dataTable)         \
 INSTANTIATE_TEST_CASE_P(                                                                \
-    prefix, /*Prefix*/                                                                        \
+    , /*Prefix*/                                                                        \
     test_class_name, /*TestClass*/                                                       \
     testing::ValuesIn(DataDrivenTestBase::LoadDataFromTable(dataFile, dataTable)),      \
     [](const testing::TestParamInfo<DataDrivenTestBase::ParamType>& info) {           \

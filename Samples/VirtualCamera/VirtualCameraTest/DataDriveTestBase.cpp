@@ -16,8 +16,6 @@ HRESULT DataDrivenTestBase::LoadDataFromXml(LPCWSTR pwszXmlFile, LPCWSTR pwszTab
     wcscat(wszXmlPath, L"\\");
     wcscat(wszXmlPath, pwszXmlFile);
 
-    LOG_COMMENT(L"Initializing from XML %s\n", wszXmlPath);
-
     wil::com_ptr_nothrow<IXmlReader> spXmlReader;
 
     RETURN_IF_FAILED(LoadXml(wszXmlPath, &spXmlReader));

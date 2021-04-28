@@ -1,4 +1,4 @@
-//
+
 // Copyright (C) Microsoft Corporation. All rights reserved.
 //
 
@@ -13,35 +13,37 @@ using namespace winrt::Windows::Foundation;
 //
 // Define SimpleMediaSource test case
 //
-TEST(SimpleMediaSource, TestMediaSource) {
+TEST(SimpleMediaSourceTest, TestMediaSource) {
 
-    SimpleMediaSourceUT test;
+    VirtualCameraTest::impl::SimpleMediaSourceUT test;
     EXPECT_HRESULT_SUCCEEDED(test.TestMediaSource());
 }
 
-TEST(SimpleMediaSource, TestMediaSourceStream)
+TEST(SimpleMediaSourceTest, TestMediaSourceStream)
 {
-    SimpleMediaSourceUT test;
+    VirtualCameraTest::impl::SimpleMediaSourceUT test;
     EXPECT_HRESULT_SUCCEEDED(test.TestMediaSourceStream());
 }
 
-TEST(SimpleMediaSource, TestKSProperty)
+TEST(SimpleMediaSourceTest, TestKsControl)
 {
-    SimpleMediaSourceUT test;
-    EXPECT_HRESULT_SUCCEEDED(test.TestKSProperty());
+    VirtualCameraTest::impl::SimpleMediaSourceUT test;
+    EXPECT_HRESULT_SUCCEEDED(test.TestKsControl());
 }
 
-TEST(VirtuaCamera_SimpleMediaSource, TestVirtualCamera)
+//
+// Define VirtualCamera_SimpleMediaSource test case
+//
+TEST(VirtualCameraSimpleMediaSourceTest, TestVirtualCamera)
 {
-    SimpleMediaSourceUT test;
+    VirtualCameraTest::impl::SimpleMediaSourceUT test;
     EXPECT_HRESULT_SUCCEEDED(test.TestVirtualCamera());
 }
 
-
 //
-// Define HWMediaSource TestCase test case
+// Define HWMediaSource test case
 //
-class GTestHWMediaSourceUT : public DataDrivenTestBase, public HWMediaSourceUT
+class HWMediaSourceTest : public DataDrivenTestBase, public VirtualCameraTest::impl::HWMediaSourceUT
 {
 public:
     HRESULT TestSetup()
@@ -69,68 +71,49 @@ public:
         {
             LOG_ERROR_RETURN(E_TEST_FAILED, L"Test setup failed, missing data");
         }
+        LOG_COMMENT(L"Using physical camera: %s", m_devSymlink.data());
         return S_OK;
     }
 
     virtual void SetUp()
     {
-        ASSERT_TRUE(TestSetup());
+        ASSERT_TRUE(SUCCEEDED(TestSetup()));
     };
 };
 
-TEST_P(GTestHWMediaSourceUT, TestMediaSource)
+TEST_P(HWMediaSourceTest, TestMediaSource)
 {
     EXPECT_HRESULT_SUCCEEDED(TestMediaSource());
 };
 
-TEST_P(GTestHWMediaSourceUT, TestMediaSourceStream)
+TEST_P(HWMediaSourceTest, TestMediaSourceStream)
 {
     EXPECT_HRESULT_SUCCEEDED(TestMediaSourceStream());
 };
 
-INSTANTIATE_DATADRIVENTEST_CASE_P(GTestHWMediaSourceUT, L"VirtualCameraTestData.xml", L"HWMediaSourceUTSetup");
+TEST_P(HWMediaSourceTest, TestKsControl)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestKsControl());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(HWMediaSourceTest, L"VirtualCameraTestData.xml", L"HWMediaSourceTest");
+
+//
+// Define VirtualCameraHWMediaSource test case
+//
+using VirtualCameraHWMediaSourceTest = HWMediaSourceTest;
+TEST_P(VirtualCameraHWMediaSourceTest, TestVirtualCamera)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestVirtualCamera());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(VirtualCameraHWMediaSourceTest, L"VirtualCameraTestData.xml", L"VirtualCameraHWMediaSourceTest");
 
 
-
-//
-//class SampleDataDrivenTest : public DataDrivenTestBase
-//{
-//public:
-//    SampleDataDrivenTest() {};
-//    bool InitMyTestData() { return false; }
-//
-//    virtual void SetUp() {
-//        ASSERT_TRUE(InitMyTestData());
-//    }
-//    void Test1()
-//    {
-//        auto value = TestData().find(L"VidDeviceSymLink");
-//        if (TestData().end() != value)
-//        {
-//            LOG_COMMENT(L"use device symlink");
-//        }
-//        else if(TestData().end() != (value = TestData().find(L"VidDeviceIndex")))
-//        {
-//            LOG_COMMENT(L"use device INDEX");
-//        }
-//        else
-//        {
-//            LOG_COMMENT(L"missing data");
-//        }
-//    }
-//};
-//
-//
-//TEST_P(SampleDataDrivenTest, Test1)
-//{
-//    Test1();
-//};
-//
-//INSTANTIATE_DATADRIVENTEST_CASE_P(SampleDataDrivenTest, L"TestXml.xml", L"Test");
 
 void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
 {
-    LOG_ERROR(L"%S(%d):%S, hr=0x%08X, msg=%s",
+    LOG_WARNING(L"%S(%d):%S, hr=0x%08X, msg=%S",
         failure.pszFile, failure.uLineNumber, failure.pszFunction,
         failure.hr, (failure.pszMessage) ? failure.pszMessage : L"");
 }

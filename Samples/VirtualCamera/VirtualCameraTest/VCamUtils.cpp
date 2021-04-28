@@ -79,17 +79,11 @@ HRESULT VCamUtils::GetDeviceInterfaceRegistryEntry(
 
 bool VCamUtils::IsVirtualCamera(winrt::hstring const& strDevSymLink)
 {
-    // ref: https://docs.microsoft.com/en-us/windows/uwp/devices-sensors/device-information-properties
-    //custom GUID format{744e3bed-3684-4e16-9f8a-07953a8bf2ab} 7   
-    
     bool isVCam = false;
     winrt::Windows::Foundation::IReference<bool> val;
     if (SUCCEEDED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_IsVirtualCamera, DeviceInformationKind::DeviceInterface, val)))
     {
-        if (val != nullptr)
-        {
-            isVCam = val.Value();
-        }
+        isVCam = val.Value();
     }
     return isVCam;
 }
@@ -103,9 +97,9 @@ HRESULT VCamUtils::RegisterVirtualCamera(
 {
     RETURN_HR_IF_NULL(E_POINTER, ppVirtualCamera);
 
-    LOG_COMMENT(L"Register virtual camera...\n");
-    LOG_COMMENT(L"device string: %s \n", strMediaSource.data());
-    LOG_COMMENT(L"friendly name: %s \n", strFriendlyName.data());
+    LOG_COMMENT(L"Register virtual camera...");
+    LOG_COMMENT(L"device string: %s ", strMediaSource.data());
+    LOG_COMMENT(L"friendly name: %s ", strFriendlyName.data());
 
     MFVirtualCameraType vcamType = MFVirtualCameraType_SoftwareCameraSource;
     MFVirtualCameraLifetime vcamLifetime = MFVirtualCameraLifetime_System;
@@ -125,7 +119,7 @@ HRESULT VCamUtils::RegisterVirtualCamera(
 
     if(!strPhysicalCamSymLink.empty())
     {
-        LOG_COMMENT(L"Add physical cam: %s \n", strPhysicalCamSymLink.data());
+        LOG_COMMENT(L"Add physical cam: %s ", strPhysicalCamSymLink.data());
         RETURN_IF_FAILED(spVirtualCamera->AddDeviceSourceInfo(strPhysicalCamSymLink.data()));
     }
     
@@ -133,17 +127,17 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     {
         uint32_t cItems = 0;
         RETURN_IF_FAILED(pAttributes->GetCount(&cItems));
-        LOG_COMMENT(L"Set attributes on virtual cameras: %d items \n", cItems);
+        LOG_COMMENT(L"Set attributes on virtual cameras: %d items ", cItems);
         for (uint32_t i = 0; i < cItems; i++)
         {
             wil::unique_prop_variant prop;
             GUID guidKey = GUID_NULL;
             RETURN_IF_FAILED(pAttributes->GetItemByIndex(i, &guidKey, &prop));
-            LOG_COMMENT(L"%i - %s \n", i, winrt::to_hstring(guidKey).data());
+            LOG_COMMENT(L"%i - %s ", i, winrt::to_hstring(guidKey).data());
             RETURN_IF_FAILED(spVirtualCamera->SetItem(guidKey, prop));
         }
     }
-    LOG_COMMENT(L"Succeeded (%p)! \n", spVirtualCamera.get());
+    LOG_COMMENT(L"Succeeded (%p)! ", spVirtualCamera.get());
 
     try 
     {
@@ -151,10 +145,10 @@ HRESULT VCamUtils::RegisterVirtualCamera(
         LOG_COMMENT(L"AppInfo: %p ", appInfo);
         if (appInfo != nullptr)
         {
-            LOG_COMMENT(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+            LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
         }
     }
-    catch (...) { LOG_WARN(L"not running in app package\n"); }
+    catch (...) { LOG_WARNING(L"not running in app package"); }
 
 
     HRESULT hr = spVirtualCamera->AddProperty(
@@ -165,21 +159,21 @@ HRESULT VCamUtils::RegisterVirtualCamera(
 
     if (hr == HRESULT_FROM_WIN32(ERROR_ACCESS_DENIED))
     {
-        LOG_WARN(L"Please run application in elevated mode");
+        LOG_WARNING(L"Please run application in elevated mode");
         return hr;
     }
-    RETURN_IF_FAILED_MSG(hr, "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_SourceId \n");
+    RETURN_IF_FAILED_MSG(hr, "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_SourceId ");
 
     RETURN_IF_FAILED_MSG(spVirtualCamera->AddProperty(
         &DEVPKEY_DeviceInterface_VCamCreate_FriendlyName,
         DEVPROP_TYPE_STRING,
         (BYTE*)strFriendlyName.data(),
         sizeof(winrt::hstring::value_type) * (strFriendlyName.size() + 1)), 
-        "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_FriendlyName \n");
+        "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_FriendlyName ");
 
     LOG_COMMENT(L"Start camera ");
     RETURN_IF_FAILED(spVirtualCamera->Start(nullptr));
-    LOG_COMMENT(L"Succeeded! \n");
+    LOG_COMMENT(L"Succeeded!");
 
     *ppVirtualCamera = spVirtualCamera.detach();
 
@@ -189,17 +183,17 @@ HRESULT VCamUtils::RegisterVirtualCamera(
 HRESULT VCamUtils::UnInstallVirtualCamera(
     _In_ winrt::hstring const& strDevSymLink)
 {
-    LOG_COMMENT(L"Removing device: %s\n", strDevSymLink.data());
+    LOG_COMMENT(L"Removing device: %s", strDevSymLink.data());
 
     winrt::Windows::Foundation::IReference<winrt::hstring> friendlyName;
     RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_FriendlyName, DeviceInformationKind::DeviceInterface, friendlyName));
     RETURN_HR_IF_NULL(E_INVALIDARG, friendlyName);
-    LOG_COMMENT(L"friendlyname: %s\n", friendlyName.Value().data());
+    LOG_COMMENT(L"friendlyname: %s", friendlyName.Value().data());
 
     winrt::Windows::Foundation::IReference<winrt::hstring> sourceId;
     RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_SourceId, DeviceInformationKind::DeviceInterface, sourceId));
     RETURN_HR_IF_NULL(E_INVALIDARG, sourceId);
-    LOG_COMMENT(L"sourceId: %s\n", sourceId.Value().data());
+    LOG_COMMENT(L"sourceId: %s", sourceId.Value().data());
 
     wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
     RETURN_IF_FAILED(MFCreateVirtualCamera(
@@ -213,19 +207,19 @@ HRESULT VCamUtils::UnInstallVirtualCamera(
         &spVirtualCamera));
     RETURN_HR_IF_NULL_MSG(E_FAIL, spVirtualCamera.get(), "Fail to create virtual camera");
 
-    LOG_COMMENT(L"remove virtual camera ");
+    LOG_COMMENT(L"remove virtual camera");
     RETURN_IF_FAILED(spVirtualCamera->Remove());
     RETURN_IF_FAILED(spVirtualCamera->Shutdown());
-    LOG_COMMENT(L"succeeded! \n");
+    LOG_COMMENT(L"succeeded!");
 
     return S_OK;
 }
 
-HRESULT VCamUtils::UnInstallDevice(IMFVirtualCamera* pVirutalCamera)
+HRESULT VCamUtils::UnInstallDevice(IMFVirtualCamera* pVirtualCamera)
 {
     wil::unique_cotaskmem_string spwszSymLink;
     UINT32 cch = 0;
-    RETURN_IF_FAILED(pVirutalCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &spwszSymLink, &cch));
+    RETURN_IF_FAILED(pVirtualCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &spwszSymLink, &cch));
     RETURN_IF_FAILED(UnInstallDeviceWin32(spwszSymLink.get()));
 
     return S_OK;
@@ -233,7 +227,7 @@ HRESULT VCamUtils::UnInstallDevice(IMFVirtualCamera* pVirutalCamera)
 
 HRESULT VCamUtils::UnInstallDeviceWin32(const wchar_t* pwszDeviceSymLink)
 {
-    LOG_COMMENT(L"Uninstalling device: %s \n", pwszDeviceSymLink);
+    LOG_COMMENT(L"Uninstalling device: %s ", pwszDeviceSymLink);
 
     wistd::unique_ptr<BYTE[]> spBuffer;
     ULONG cbBufferSize = 0;
@@ -257,7 +251,7 @@ HRESULT VCamUtils::UnInstallDeviceWin32(const wchar_t* pwszDeviceSymLink)
     cr = CM_Uninstall_DevNode(hDevInstance, 0);
     RETURN_IF_FAILED_MSG(HRESULT_FROM_WIN32(CM_MapCrToWin32Err(cr, ERROR_INVALID_DATA)), "Failed to CM_Uninstall_DevNode");
 
-    LOG_COMMENT(L"succeeded \n");
+    LOG_COMMENT(L"succeeded");
 
     return S_OK;
 }
@@ -265,7 +259,6 @@ HRESULT VCamUtils::UnInstallDeviceWin32(const wchar_t* pwszDeviceSymLink)
 HRESULT VCamUtils::MSIUninstall(GUID const& clsid)
 {
     wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-    IMFActivate** ppActivates;
     wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFActivate>> spActivates;
     UINT32 numActivates = 0;
 
@@ -331,17 +324,9 @@ HRESULT VCamUtils::GetCameraActivate(const wchar_t* pwszSymLink, IMFActivate** p
 
 HRESULT VCamUtils::InitializeVirtualCamera(const wchar_t* pwszSymLink, IMFMediaSource** ppMediaSource)
 {
-    /*wil::com_ptr_nothrow<IMFAttributes> spCreateAttribute;
-    RETURN_IF_FAILED(MFCreateAttributes(&spCreateAttribute, 2));
-    RETURN_IF_FAILED(spCreateAttribute->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
-    RETURN_IF_FAILED(spCreateAttribute->SetString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, pwszSymLink));
-
-    wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
-    RETURN_IF_FAILED(MFCreateDeviceSource(spCreateAttribute.get(), &spMediaSource));*/
-
     wil::com_ptr_nothrow<IMFActivate> spActivate;
     RETURN_IF_FAILED(GetCameraActivate(pwszSymLink, &spActivate));
-    LOG_COMMENT(L"Activate virtualcamera %s ", pwszSymLink);
+    LOG_COMMENT(L"Activate virtualcamera %s", pwszSymLink);
     RETURN_IF_FAILED(spActivate->ActivateObject(IID_PPV_ARGS(ppMediaSource)));
 
     return S_OK;
