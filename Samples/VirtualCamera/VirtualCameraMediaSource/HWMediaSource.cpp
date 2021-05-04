@@ -569,9 +569,6 @@ namespace winrt::WindowsSample::implementation
 
     HRESULT HWMediaSource::_CreateMediaStreams()
     {
-        // stream should only get created once at initialization
-        //ASSERT(!m_streamList.get());
-
         wil::com_ptr_nothrow<IMFPresentationDescriptor> spPDesc;
         RETURN_IF_FAILED(m_spDevSource->CreatePresentationDescriptor(&spPDesc));
 
