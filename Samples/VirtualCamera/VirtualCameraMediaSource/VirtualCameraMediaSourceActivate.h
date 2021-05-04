@@ -7,11 +7,11 @@
 
 namespace winrt::WindowsSample::implementation
 {
-    //SIMPLEMEDIASOURCE_WIN32_CLISD
+    //CLSID_VirtualCameraMediaSource
     struct __declspec(uuid("7B89B92E-FE71-42D0-8A41-E137D06EA184"))
-        SimpleMediaSourceActivate : winrt::implements<SimpleMediaSourceActivate, IMFActivate>
+        VirtualCameraMediaSourceActivate : winrt::implements<VirtualCameraMediaSourceActivate, IMFActivate>
     {
-        SimpleMediaSourceActivate() = default;
+        VirtualCameraMediaSourceActivate() = default;
 
     public:
         // IMFActivate
@@ -61,7 +61,7 @@ namespace winrt::WindowsSample::implementation
 //
 // cocreatable class
 //
-struct SimpleMediaSourceActivateFactory : public winrt::implements<SimpleMediaSourceActivateFactory, IClassFactory>
+struct VirtualCameraMediaSourceActivateFactory : public winrt::implements<VirtualCameraMediaSourceActivateFactory, IClassFactory>
 {
 public:
     STDMETHODIMP CreateInstance(_In_ IUnknown*, _In_ REFIID riid, _COM_Outptr_ void** result) noexcept final try
@@ -69,7 +69,7 @@ public:
         RETURN_HR_IF_NULL(E_POINTER, result);
         *result = nullptr;
 
-        winrt::com_ptr<winrt::WindowsSample::implementation::SimpleMediaSourceActivate> ptr = winrt::make_self<winrt::WindowsSample::implementation::SimpleMediaSourceActivate>();
+        winrt::com_ptr<winrt::WindowsSample::implementation::VirtualCameraMediaSourceActivate> ptr = winrt::make_self<winrt::WindowsSample::implementation::VirtualCameraMediaSourceActivate>();
         return ptr->QueryInterface(riid, result);
     } CATCH_RETURN()
 

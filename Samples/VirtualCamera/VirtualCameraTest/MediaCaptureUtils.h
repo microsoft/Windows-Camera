@@ -82,6 +82,24 @@ private:
     }
 };
 
+namespace winrt
+{
+    extern inline winrt::hstring StringFormat(const wchar_t* format, ...)
+    {
+        wchar_t str[MAX_PATH];
+        va_list argList;
+        va_start(argList, format);
+        if (SUCCEEDED(vswprintf(str, MAX_PATH, format, argList)))
+        {
+            return winrt::hstring(str);
+        }
+        else
+        {
+            return L"";
+        }
+    };
+}
+
 class CMediaCaptureUtils
 {
 public:

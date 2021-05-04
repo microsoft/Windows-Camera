@@ -16,7 +16,7 @@ using namespace VirtualCameraTest::impl;
 
 void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
 {
-    LOG_ERROR(L"%S(%d):%S, hr=0x%08X, msg=%s",
+    LOG_WARNING(L"%S(%d):%S, hr=0x%08X, msg=%s",
         failure.pszFile, failure.uLineNumber, failure.pszFunction,
         failure.hr, (failure.pszMessage) ? failure.pszMessage : L"");
 }
@@ -37,19 +37,28 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
     spSourceReader->SetStreamSelection(0, FALSE);
     while (true)
     {
-        LOG_COMMENT(L"Select stream index: 0 - %d", streamCount - 1);
-        DWORD streamIdx = 0;
-        std::wcin >> streamIdx;
+        LOG_COMMENT(L"Select stream index: 1 - %d", streamCount);
+        DWORD selection = 0;
+        std::wcin >> selection;
 
-        if (streamIdx >= streamCount)
+        if (selection <= 0 || selection > streamCount)
         {
             // invalid stream selection, exit selection
             break;
         }
+        DWORD streamIdx = selection - 1;
 
         wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDescriptor;
         BOOL selected = FALSE;
         RETURN_IF_FAILED(spPD->GetStreamDescriptorByIndex(streamIdx, &selected, &spStreamDescriptor));
+
+        GUID category;
+        RETURN_IF_FAILED(spStreamDescriptor->GetGUID(MF_DEVICESTREAM_STREAM_CATEGORY, &category));
+        if (category == PINNAME_IMAGE)
+        {
+            LOG_WARNING(L"Skip stream test on streamCateogry: PINNAME_IMAGE");
+            continue;
+        }
 
         DWORD streamId = 0;
         spStreamDescriptor->GetStreamIdentifier(&streamId);
@@ -60,21 +69,22 @@ HRESULT RenderMediaSource(IMFMediaSource* pMediaSource)
         RETURN_IF_FAILED(spStreamDescriptor->GetMediaTypeHandler(&spMediaTypeHandler));
         RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeCount(&mtCount));
 
-        LOG_COMMENT(L"Select media type: 0 - %d", mtCount);
+        LOG_COMMENT(L"Select media type: 1 - %d", mtCount);
         for (unsigned int i = 0; i < mtCount; i++)
         {
             wil::com_ptr_nothrow<IMFMediaType> spMediaType;
             RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeByIndex(i, &spMediaType));
-            MediaSourceUT_Common::LogMediaType(spMediaType.get());
+            LOG_COMMENT(L"[%d] %s", i+1, MediaSourceUT_Common::LogMediaType(spMediaType.get()).data());
         }
 
-        DWORD mtIdx = 0;
-        std::wcin >> mtIdx;
-        if (mtIdx >= mtCount)
+        selection = 0;
+        std::wcin >> selection;
+        if (selection <= 0 || selection > mtCount)
         {
             // invalid media type selection, exit selection
             break;
         }
+        DWORD mtIdx = selection - 1;
 
         wil::com_ptr_nothrow<IMFMediaType> spMediaType;
         RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeByIndex(mtIdx, &spMediaType));
@@ -293,45 +303,6 @@ HRESULT VCamApp()
     return S_OK;
 }
 
-HRESULT TestMode()
-{
-    while (true)
-    {
-        LOG_COMMENT(L"\n select opitions: \n 1 - HWMediaSourceUT  \n 2 - SimpleMediaSourceUT \n 3 - quit \n");
-        int select = 0;
-        std::wcin >> select;
-
-        switch (select)
-        {
-        case 1:  // Run unit test on HWMediaSource
-        {
-            auto devInfo = SelectPhysicalCamera();
-            if (devInfo)
-            {
-                HWMediaSourceUT test(devInfo.Id());
-                RETURN_IF_FAILED(test.TestMediaSource());
-                RETURN_IF_FAILED(test.TestMediaSourceStream());
-            }
-            break;
-        }
-
-        case 2: // Run unit test on SimpleMediaSource
-        {
-            SimpleMediaSourceUT test;
-            RETURN_IF_FAILED(test.TestMediaSource());
-            RETURN_IF_FAILED(test.TestMediaSourceStream());
-            RETURN_IF_FAILED(test.TestKsControl());
-            RETURN_IF_FAILED(test.TestVirtualCamera());
-            break;
-        }
-
-        default:
-            return S_OK;
-        }
-    }
-    return S_OK;
-}
-
 int wmain(int argc, wchar_t* argv[])
 {
     winrt::init_apartment();
@@ -343,12 +314,7 @@ int wmain(int argc, wchar_t* argv[])
 
     if (argc == 2)
     {
-        if (_wcsicmp(argv[1], L"/Test") == 0)
-        {
-            // MediaSource / VCam test mode
-            RETURN_IF_FAILED(TestMode());
-        }
-        else if (_wcsicmp(argv[1], L"/Uninstall") == 0)
+        if (_wcsicmp(argv[1], L"/Uninstall") == 0)
         {
             // MSI Uninstall mode
             VCamAppUnInstall();

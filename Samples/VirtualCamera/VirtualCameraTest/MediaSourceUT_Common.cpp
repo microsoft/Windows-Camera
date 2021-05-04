@@ -195,7 +195,7 @@ namespace VirtualCameraTest::impl
                 RETURN_IF_FAILED(spMediaTypeHandler->GetMediaTypeByIndex(mtIdx, &spMediaType));
 
                 LOG_COMMENT(L"Set mediatype on stream: %d / %d ", mtIdx, mediaTypeCount);
-                LogMediaType(spMediaType.get());
+                LOG_COMMENT(LogMediaType(spMediaType.get()).data());
 
                 RETURN_IF_FAILED(spSourceReader->SetCurrentMediaType(streamIdx, NULL, spMediaType.get()));
                 RETURN_IF_FAILED(ValidateStreaming(spSourceReader.get(), streamIdx, spMediaType.get()));
@@ -281,7 +281,12 @@ namespace VirtualCameraTest::impl
         bool invalidStream = false;
 
         wistd::unique_ptr<EVRHelper> spEVRHelper(new (std::nothrow)EVRHelper());
-        RETURN_IF_FAILED(spEVRHelper->Initialize(pMediaType));
+        if (FAILED(spEVRHelper->Initialize(pMediaType)))
+        {
+            // Unsupported rendering type without color conversion
+            // validate without visual rendering.
+            spEVRHelper = nullptr;
+        }
 
         LOG_COMMENT(L"Read 30 samples from stream index: %d ", streamIdx);
         for (uint32_t i = 0; i < 30; i++)
@@ -307,7 +312,10 @@ namespace VirtualCameraTest::impl
             else if (spSample.get() != nullptr)
             {
                 validSample++;
-                spEVRHelper->WriteSample(spSample.get());
+                if (spEVRHelper)
+                {
+                    spEVRHelper->WriteSample(spSample.get());
+                }
             }
             else
             {
@@ -327,7 +335,7 @@ namespace VirtualCameraTest::impl
         return S_OK;
     }
 
-    void MediaSourceUT_Common::LogMediaType(IMFMediaType* pMediaType)
+    winrt::hstring MediaSourceUT_Common::LogMediaType(IMFMediaType* pMediaType)
     {
         if (pMediaType)
         {
@@ -344,7 +352,7 @@ namespace VirtualCameraTest::impl
             UINT32 num, den;
             MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE, &num, &den);
 
-            LOG_COMMENT(L"majorType: %s, subType %s, framesize: %dx%d, framerate: %d:%d",
+            return winrt::StringFormat(L"majorType: %s, subType %s, framesize: %dx%d, framerate: %d:%d",
                 strMajorType.data(),
                 winrt::to_hstring(subtype).data(),
                 width, height,
@@ -352,7 +360,7 @@ namespace VirtualCameraTest::impl
         }
         else
         {
-            LOG_COMMENT(L"MediaType: nullptr");
+            return winrt::hstring(L"MediaType: nullptr");
         }
     }
 }

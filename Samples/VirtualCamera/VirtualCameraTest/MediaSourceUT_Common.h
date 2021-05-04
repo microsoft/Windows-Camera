@@ -12,7 +12,7 @@ namespace VirtualCameraTest::impl
     class MediaSourceUT_Common
     {
     public:
-        static void LogMediaType(IMFMediaType* pMediaType);
+        static winrt::hstring LogMediaType(IMFMediaType* pMediaType);
         static HRESULT ValidateStreaming(IMFSourceReader* pSourceReader, DWORD streamIdx, IMFMediaType* pMediaType);
 
     protected:

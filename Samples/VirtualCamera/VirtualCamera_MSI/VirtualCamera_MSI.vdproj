@@ -3,7 +3,7 @@
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
-"ProjectName" = "8:VirtualCamera_AppMSI"
+"ProjectName" = "8:VirtualCamera_MSI"
 "LanguageId" = "3:1033"
 "CodePage" = "3:1252"
 "UILanguageId" = "3:1033"
@@ -45,7 +45,7 @@
         "DisplayName" = "8:Debug"
         "IsDebugOnly" = "11:TRUE"
         "IsReleaseOnly" = "11:FALSE"
-        "OutputFilename" = "8:Debug\\VirtualCamera_AppMSI.msi"
+        "OutputFilename" = "8:VirtualCamera_MSI.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -68,26 +68,6 @@
                     {
                     "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm64"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM64)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm64"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x64"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x64)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x64"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x86"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x86)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x86"
                     }
                 }
             }
@@ -97,7 +77,7 @@
         "DisplayName" = "8:Release"
         "IsDebugOnly" = "11:FALSE"
         "IsReleaseOnly" = "11:TRUE"
-        "OutputFilename" = "8:Release\\VirtualCaemra_MSI.msi"
+        "OutputFilename" = "8:VirtualCamera_MSI.msi"
         "PackageFilesAs" = "3:2"
         "PackageFileSize" = "3:-2147483648"
         "CabType" = "3:1"
@@ -120,26 +100,6 @@
                     {
                     "Name" = "8:Microsoft .NET Framework 4.7.2 (x86 and x64)"
                     "ProductCode" = "8:.NETFramework,Version=v4.7.2"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.arm64"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (ARM64)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.arm64"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x64"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x64)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x64"
-                    }
-                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Visual.C++.14.0.x86"
-                    {
-                    "Name" = "8:Visual C++ \"14\" Runtime Libraries (x86)"
-                    "ProductCode" = "8:Microsoft.Visual.C++.14.0.x86"
                     }
                 }
             }
@@ -323,7 +283,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:VirtualCamera_MSI"
         "ProductCode" = "8:{D81F80EA-B35F-49DB-9398-91671C70BDA5}"
-        "PackageCode" = "8:{16CCA8D5-5248-47C0-BDA4-0419F0ABDF21}"
+        "PackageCode" = "8:{A451E302-69D2-4170-A8E1-11A2FFD3C2A8}"
         "UpgradeCode" = "8:{962DDC31-5A49-460C-9796-B4F8674A6211}"
         "AspNetVersion" = "8:"
         "RestartWWWService" = "11:FALSE"
@@ -424,6 +384,14 @@
                                                 }
                                                 "Values"
                                                 {
+                                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_FD650DF51A2E426C9F0F1FB6BC0AA38C"
+                                                    {
+                                                    "Name" = "8:"
+                                                    "Condition" = "8:"
+                                                    "Transitive" = "11:FALSE"
+                                                    "ValueTypes" = "3:1"
+                                                    "Value" = "8:VirtualCameraMediaSource"
+                                                    }
                                                 }
                                             }
                                         }

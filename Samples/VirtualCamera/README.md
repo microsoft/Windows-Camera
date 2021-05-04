@@ -1,6 +1,7 @@
 # Virtual Camera Sample #
 ### Requirement:
 &emsp;&emsp;Minimum OS version: --TBD-- (current: 10.0.21364.0)
+Windows SDK, WDK minimum version: -- TBD-- (current: 10.0.21364.0)
 
 This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
 1. VirtualCameraMediaSource <br>
@@ -129,7 +130,8 @@ see [How to debug issues with media source](#faq)
 * VirtualCameraHWMediaSourceTest
 * VirtualCameraCustommediaSource
 
-Similar to HWMediaSourceTest, VirtualCameraHWMediaSourceTest is required to run with physical camera presence on the system.  To configure the physical camera selection, modify the content VirtualCameraTestData.xml (TableId: VirtualCameraHWMediaSourceTest) per instruction above 
+Similar to HWMediaSourceTest, VirtualCameraHWMediaSourceTest is required to run with physical camera presence on the system.  To configure the physical camera selection, modify the content VirtualCameraTestData.xml (TableId: VirtualCameraHWMediaSourceTest) per instruction above  
+
 VirtualCameraCustommediaSource can be configure to run against your mediasource as virtual camera.  To run this against your media source dll, modify the content in VirutalCameraTestData.xml (TableId: VirtualCameraCustomMediaSourceTest) per instruction above.
 
 ### <b>How to run test </b>

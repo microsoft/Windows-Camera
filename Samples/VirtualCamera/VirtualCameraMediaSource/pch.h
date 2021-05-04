@@ -38,7 +38,7 @@
 #include "HWMediaSource.h"
 #include "HWMediaStream.h"
 #include "VirtualCameraMediaSource.h"
-#include "SimpleMediaSourceActivate.h"
+#include "VirtualCameraMediaSourceActivate.h"
 
 #include "winrt\Windows.ApplicationModel.h"
 

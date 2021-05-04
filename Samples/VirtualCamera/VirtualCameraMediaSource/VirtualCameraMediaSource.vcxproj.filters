@@ -43,7 +43,7 @@
     <ClCompile Include="SimpleMediaSource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimpleMediaSourceActivate.cpp">
+    <ClCompile Include="VirtualCameraMediaSourceActivate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimpleMediaStream.cpp">
@@ -72,7 +72,7 @@
     <ClInclude Include="SimpleMediaSource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimpleMediaSourceActivate.h">
+    <ClInclude Include="VirtualCameraMediaSourceActivate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SimpleMediaStream.h">
