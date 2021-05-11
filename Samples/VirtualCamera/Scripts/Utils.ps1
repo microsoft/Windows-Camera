@@ -8,7 +8,7 @@ function Write-Log (
     .DESCRIPTION 
 
     Write log lines into text file: $CameraUtils_LogPath\VirtualAssist_Camera.log
-    Each log line is append with function info base on the stack index.
+    Each log line is appended with function info based on the stack index.
 
     .INPUTS
     String. $message - text log
@@ -46,7 +46,7 @@ function Write-Log (
     }
     catch
     {
-        Write-Error "Caught Exception! $message"      
+        Write-Error "Caught Exception! $message"
         Write-Error "Error: $($_.Exception.Message)" 
         Write-Error "Stack: `n$($_.ScriptStackTrace)"
     }
@@ -79,7 +79,7 @@ function Debug-Service_Interal
         $defaultWindbg = get-command "windbg.exe" 2>$null
         if($defaultWindbg -eq $null)
         {
-            Write-Log "Cannot find windbg on the system please provides the installed path -windbg [installpath]\windbg.exe" -logStyle Error
+            Write-Log "Cannot find windbg on the system.  Please provide the installed path -windbg [installpath]\windbg.exe" -logStyle Error
             Write-Log "or you can download and install from https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/debugger-download-tools" -logStyle Error
             return
         }

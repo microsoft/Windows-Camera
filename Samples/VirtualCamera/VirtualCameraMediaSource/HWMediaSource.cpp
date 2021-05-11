@@ -269,7 +269,7 @@ namespace winrt::WindowsSample::implementation
             _In_opt_ IUnknown* pManager
         )
     {
-        // Return code is ignored by the frame work, this is a
+        // Return code is ignored by the framework, this is a
         // best effort attempt to inform the media source of the
         // DXGI manager to use if DX surface support is available.
         winrt::slim_lock_guard lock(m_Lock);
@@ -284,7 +284,6 @@ namespace winrt::WindowsSample::implementation
     }
 
     // IMFGetService methods
-    _Use_decl_annotations_
     IFACEMETHODIMP HWMediaSource::GetService(
             _In_ REFGUID guidService,
             _In_ REFIID riid,
@@ -308,7 +307,6 @@ namespace winrt::WindowsSample::implementation
     }
 
     // IKsControl methods
-    _Use_decl_annotations_
     IFACEMETHODIMP HWMediaSource::KsProperty(
             _In_reads_bytes_(ulPropertyLength) PKSPROPERTY pProperty,
             _In_ ULONG ulPropertyLength,
@@ -338,8 +336,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    _Use_decl_annotations_
-        IFACEMETHODIMP HWMediaSource::KsMethod(
+    IFACEMETHODIMP HWMediaSource::KsMethod(
             _In_reads_bytes_(ulMethodLength) PKSMETHOD pMethod,
             _In_ ULONG ulMethodLength,
             _Inout_updates_to_(ulDataLength, *pBytesReturned) LPVOID pMethodData,
@@ -363,8 +360,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    _Use_decl_annotations_
-        IFACEMETHODIMP HWMediaSource::KsEvent(
+    IFACEMETHODIMP HWMediaSource::KsEvent(
             _In_reads_bytes_opt_(ulEventLength) PKSEVENT pEvent,
             _In_ ULONG ulEventLength,
             _Inout_updates_to_(ulDataLength, *pBytesReturned) LPVOID pEventData,
@@ -606,8 +602,8 @@ namespace winrt::WindowsSample::implementation
             // MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute need store
             // Configuration UWP PFN (Package Family Name)
             // This example is a generic media source that be placed in any UWP app, 
-            // so PFN is query programmatically.
-            // If the MediaSource is associate with specific UWP only, you may hardcode
+            // so PFN is queried programmatically.
+            // If the MediaSource is associated with specific UWP only, you may hardcode
             // the PFN
             try
             {

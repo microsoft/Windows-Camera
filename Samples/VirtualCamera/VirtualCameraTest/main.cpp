@@ -139,6 +139,13 @@ public:
         {
             m_vcamFriendlyName = value->second;
         }
+
+        value = TestData().find(L"StreamCount");
+        if(TestData().end() != value)
+        {
+            m_streamCount = (uint32_t)(_wtoi((value->second).c_str()));
+        }
+
         return S_OK;
     }
 

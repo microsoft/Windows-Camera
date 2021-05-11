@@ -20,7 +20,7 @@ namespace VirtualCameraTest::impl
 
     HRESULT SimpleMediaSourceUT::TestMediaSourceStream()
     {
-        // SimpleMediaSource 1 stream, with 2 mediatype
+        // SimpleMediaSource 1 stream, with 2 mediatypes
         // This test validate we can 1. access the stream, 2. stream from each mediatype
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
         RETURN_IF_FAILED(CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, nullptr, &spMediaSource));
@@ -68,8 +68,8 @@ namespace VirtualCameraTest::impl
         
         // Validate Supported Control
         {
-            LOG_COMMENT(L"Validate KSProperty return data size ...")
-                KSPROPERTY ksProperty;
+            LOG_COMMENT(L"Validate KSProperty return data size ...");
+            KSPROPERTY ksProperty;
             ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
             ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
             ksProperty.Flags = KSPROPERTY_TYPE_GET;
@@ -90,12 +90,12 @@ namespace VirtualCameraTest::impl
                 }
                 else
                 {
-                    LOG_ERROR(L"Function returns incorrect byteReturn:%d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+                    LOG_ERROR_RETURN(E_TEST_FAILED, L"Function returns incorrect byteReturn:%d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
                 }
             }
             else
             {
-                LOG_COMMENT(L"Function returns unexpected hr: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Function returns unexpected hr: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
             }
 
             LOG_COMMENT(L"Validate KSProperty return error on invalid data size ...")
@@ -114,7 +114,6 @@ namespace VirtualCameraTest::impl
             {
                 LOG_ERROR_RETURN(E_TEST_FAILED, L"Function did not return failed hr on incorrect datalength, hr:0x%08x", hr);
             }
-
 
             // Validate Get Control
             ksProperty.Flags |= KSPROPERTY_TYPE_GET;

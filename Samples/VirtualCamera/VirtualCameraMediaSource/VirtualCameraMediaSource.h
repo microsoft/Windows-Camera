@@ -17,7 +17,7 @@ static LPCWSTR VIRTUALCAMERAMEDIASOURCE_FRIENDLYNAME = L"VirtualCameraMediaSourc
 
 // {3C31A5F8-2795-4FB9-A0A1-C733A65C0CE8}
 // VirtualCameraMediaSource activation attributes.
-// The value of this attribute is the physcial camera symboliclink name that the VirtualCameraMediaSource
+// The value of this attribute is the physical camera symboliclink name that the VirtualCameraMediaSource
 // will be using.
 DEFINE_GUID(VCAM_DEVICE_INFO,
     0x3c31a5f8, 0x2795, 0x4fb9, 0xa0, 0xa1, 0xc7, 0x33, 0xa6, 0x5c, 0xc, 0xe8);
@@ -31,7 +31,7 @@ static const GUID PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL =
 enum
 {
     KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE = 0,
-    KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END  // all ids must define before this.
+    KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END  // all ids must be defined before this.
 };
 
 #define KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_GRAYSCALE        0x00FFFFFFL

@@ -19,7 +19,7 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHODIMP ShutdownObject() override;
         IFACEMETHODIMP DetachObject() override;
 
-        // IMFAttributes (inherits by IMFActivate)
+        // IMFAttributes (inherited by IMFActivate)
         IFACEMETHODIMP GetItem(_In_ REFGUID guidKey, _Inout_opt_  PROPVARIANT* pValue) override;
         IFACEMETHODIMP GetItemType(_In_ REFGUID guidKey, _Out_ MF_ATTRIBUTE_TYPE* pType) override;
         IFACEMETHODIMP CompareItem(_In_ REFGUID guidKey, _In_ REFPROPVARIANT Value, _Out_ BOOL* pbResult) override;

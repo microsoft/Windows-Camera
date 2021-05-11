@@ -164,15 +164,13 @@ DeviceInformation SelectPhysicalCamera()
 
 HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
 {
-    while (true)
-    {
-        LOG_COMMENT(L"\n select opitions: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - quit \n");
-        uint32_t select = 0;
-        std::wcin >> select;
+    LOG_COMMENT(L"\n select opitions: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - quit \n");
+    uint32_t select = 0;
+    std::wcin >> select;
 
-        wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-        switch (select)
-        {
+    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+    switch (select)
+    {
         case 1:
         {
             SimpleMediaSourceUT test;
@@ -190,9 +188,8 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
 
         default:
             return E_FAIL;
-        }
-        break;
     }
+
     return S_OK;
 }
 
@@ -230,6 +227,7 @@ HRESULT VCamApp()
                 RETURN_IF_FAILED(spVirtualCamera->Shutdown());
                 break;
             }
+
             case 2: // Interactive uninstall of virtual camera
             {
                 HRESULT hr = SelectUnInstallVirtualCamera();
@@ -237,8 +235,9 @@ HRESULT VCamApp()
                 {
                     LOG_ERROR(L"UnInstall Virtual Camera failed: 0x%08x", hr);
                 }
+                break;
             }
-            break;
+            
 
             case 3: // Stream test of selected virtual camera
             {
@@ -293,10 +292,10 @@ HRESULT VCamApp()
                     }
                 }
                 break;
-
             }
+
             default:
-                return  S_OK;
+                return S_OK;
         }
     }
 

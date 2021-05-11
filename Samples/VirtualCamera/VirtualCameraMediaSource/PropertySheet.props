@@ -16,5 +16,10 @@
     <Link>
       <ModuleDefinitionFile>VirtualCameraMediaSource.def</ModuleDefinitionFile>
     </Link>
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <WarningLevel>Level3</WarningLevel>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
   </ItemDefinitionGroup>
 </Project>

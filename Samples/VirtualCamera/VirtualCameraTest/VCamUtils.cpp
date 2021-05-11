@@ -148,7 +148,7 @@ HRESULT VCamUtils::RegisterVirtualCamera(
             LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
         }
     }
-    catch (...) { LOG_WARNING(L"not running in app package"); }
+    catch (winrt::hresult_error) { LOG_WARNING(L"not running in app package"); }
 
 
     HRESULT hr = spVirtualCamera->AddProperty(

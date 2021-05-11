@@ -20,6 +20,7 @@
     -->
     <Row >
       <Parameter Name="clsid">{7B89B92E-FE71-42D0-8A41-E137D06EA184}</Parameter>
+      <Parameter Name="StreamCount">2</Parameter>"
     </Row>
   </Table>
 

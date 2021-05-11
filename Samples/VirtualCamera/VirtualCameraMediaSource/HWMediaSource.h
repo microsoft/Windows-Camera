@@ -26,13 +26,13 @@ namespace winrt::WindowsSample::implementation
         };
 
     public:
-        // IMFMediaEventGenerator (inherits by IMFMediaSource)
+        // IMFMediaEventGenerator (inherited by IMFMediaSource)
         IFACEMETHODIMP BeginGetEvent(_In_ IMFAsyncCallback* pCallback, _In_ IUnknown* punkState) override; 
         IFACEMETHODIMP EndGetEvent(_In_ IMFAsyncResult* pResult, _Out_ IMFMediaEvent** ppEvent) override;
         IFACEMETHODIMP GetEvent(DWORD dwFlags, _Out_ IMFMediaEvent** ppEvent) override;
         IFACEMETHODIMP QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, _In_ const PROPVARIANT* pvValue) override;
 
-        // IMFMediaSource (inherits by IMFMediaSourceEx)
+        // IMFMediaSource (inherited by IMFMediaSourceEx)
         IFACEMETHODIMP CreatePresentationDescriptor(_Out_ IMFPresentationDescriptor** ppPresentationDescriptor) override;
         IFACEMETHODIMP GetCharacteristics(_Out_ DWORD* pdwCharacteristics) override;
         IFACEMETHODIMP Pause() override;
@@ -101,7 +101,7 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
         DWORD m_dwSerialWorkQueueId;
 
-        wil::unique_cotaskmem_array_ptr<wil::com_ptr<HWMediaStream>> m_streamList;
+        wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<HWMediaStream>> m_streamList;
     };
 }
 

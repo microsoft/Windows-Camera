@@ -26,7 +26,7 @@ namespace VirtualCameraTest::impl
         winrt::hstring m_strClsid;
         GUID m_clsid = GUID_NULL;
         winrt::hstring m_vcamFriendlyName = L"CustomMediaSource_VCam";
-
+        uint32_t m_streamCount = 1;
     };
 }
 

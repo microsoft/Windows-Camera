@@ -368,7 +368,6 @@ namespace winrt::WindowsSample::implementation
     }
 
     // IMFGetService methods
-    _Use_decl_annotations_
     IFACEMETHODIMP SimpleMediaSource::GetService(
             _In_ REFGUID guidService,
             _In_ REFIID riid,
@@ -388,7 +387,6 @@ namespace winrt::WindowsSample::implementation
     }
 
     // IKsControl methods
-    _Use_decl_annotations_
     IFACEMETHODIMP SimpleMediaSource::KsProperty(
         _In_reads_bytes_(ulPropertyLength) PKSPROPERTY pProperty,
         _In_ ULONG ulPropertyLength,
@@ -482,7 +480,6 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    _Use_decl_annotations_
     IFACEMETHODIMP SimpleMediaSource::KsMethod(
         _In_reads_bytes_(ulMethodLength) PKSMETHOD pMethod,
         _In_ ULONG ulMethodLength,
@@ -494,7 +491,6 @@ namespace winrt::WindowsSample::implementation
         return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
     }
 
-    _Use_decl_annotations_
     IFACEMETHODIMP SimpleMediaSource::KsEvent(
         _In_reads_bytes_opt_(ulEventLength) PKSEVENT pEvent,
         _In_ ULONG ulEventLength,

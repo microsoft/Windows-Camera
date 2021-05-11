@@ -32,9 +32,9 @@ namespace VirtualCameraTest::impl
         DWORD streamCount = 0;
         RETURN_IF_FAILED(spMediaSource->CreatePresentationDescriptor(&spPD));
         RETURN_IF_FAILED(spPD->GetStreamDescriptorCount(&streamCount));
-        if (streamCount == 0)
+        if (streamCount == m_streamCount)
         {
-            LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: > 0) \n", streamCount);
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: %d) \n", streamCount, m_streamCount);
         }
 
         RETURN_IF_FAILED(MediaSourceUT_Common::TestMediaSourceStream(spMediaSource.get()));
