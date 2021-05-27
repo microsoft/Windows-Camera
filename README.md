@@ -83,4 +83,8 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
   <td><a href="Samples/NetworkMediaStreamer"> Win32 Desktop application and libraries demonstrating use of Windows APIs and Windows Media Foundation APIs for RTP/RTSP streaming from camera</a></td>
  </tr>
 </table>
-
+<table>
+ <tr>
+  <td><a href="Samples/VirtualCamera"> Sample of Virtual Camere mediasource and configuration app </a></td>
+ </tr>
+</table>
