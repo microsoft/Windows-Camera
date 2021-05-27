@@ -60,10 +60,10 @@ This should include the mediasource dll, the executable that is responsbile for 
 4. Add registry - register dll during installation
     1. Right-click on the Project, select "View" then "Registry"
     2. Add these keys and values  
-    HKLM\software\classes\CLSID\<CLSID_GUID>
-    HKLM\software\classes\CLSID\<CLSID_GUID>\InProcServer32
-    HKLM\software\classes\CLSID\<CLSID_GUID>\InProcServer32\Default    value:[TARGETDIR]<MediaSourceDll>
-    HKLM\software\classes\CLSID\<CLSID_GUID>\InProcServer32\Threading  value:"Both"
+    HKLM\software\classes\CLSID\\<CLSID_GUID>  
+    HKLM\software\classes\CLSID\\<CLSID_GUID>\InProcServer32  
+    HKLM\software\classes\CLSID\\<CLSID_GUID>\InProcServer32\Default, value:[TARGETDIR]<MediaSourceDll>  
+    HKLM\software\classes\CLSID\\<CLSID_GUID>\InProcServer32\Threading, value:"Both"
 
 5. Add UnInstall routine
     1. Right-click on the Project, select "View" then "Custom Actions"
