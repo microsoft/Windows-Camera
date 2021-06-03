@@ -17,8 +17,6 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="VirtualCameraProxy.cpp" />
     <ClCompile Include="VirtualCameraRegistrar.cpp" />
-    <ClCompile Include="BasicCustomPropertyPayload.cpp" />
-    <ClCompile Include="BasicExtendedPropertyPayload.cpp" />
     <ClCompile Include="CameraKsPropertyInquiry.cpp" />
   </ItemGroup>
   <ItemGroup>

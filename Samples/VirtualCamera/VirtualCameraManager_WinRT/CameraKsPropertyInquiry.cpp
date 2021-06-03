@@ -22,8 +22,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     {
         winrt::VirtualCameraManager_WinRT::IExtendedPropertyPayload resultPayload = nullptr;
 
-        uint32_t maxSize = 65536;
-
         UINT controlId = 0;
         switch (extendedControlKind)
         {
@@ -78,8 +76,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         winrt::Windows::Media::Devices::VideoDeviceController const& controller, uint64_t flags)
     {
         winrt::VirtualCameraManager_WinRT::IExtendedPropertyPayload resultPayload = nullptr;
-
-        uint32_t maxSize = 65536;
 
         UINT controlId = 0;
         switch (extendedControlKind)
@@ -195,7 +191,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             controlId = static_cast<int>(customControlKind);
 
             KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S value;
-            value.ColorMode = flags;
+            value.ColorMode = (ULONG)flags;
             pValue = reinterpret_cast<uint8_t*>(&value);
             serializedPropertyValue = array_view<uint8_t const>(pValue, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
 

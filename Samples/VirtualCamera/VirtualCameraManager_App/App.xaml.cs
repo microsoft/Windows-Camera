@@ -128,7 +128,7 @@ namespace VirtualCameraManager_App
             m_lock.Wait();
             try
             {
-                var item = await ApplicationData.Current.LocalFolder.TryGetItemAsync("config.txt");
+                var item = await ApplicationData.Current.LocalFolder.TryGetItemAsync(CONFIG_FILE_NAME);
                 if (item != null)
                 {
                     var configFile = item as StorageFile;

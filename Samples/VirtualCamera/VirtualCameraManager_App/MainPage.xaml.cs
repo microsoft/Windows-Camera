@@ -28,9 +28,9 @@ namespace VirtualCameraManager_App
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             // populate default UI values
-            UILifeTimeSelector.ItemsSource = Enum.GetNames(typeof(VirtualCameraLifetime));
+            UILifetimeSelector.ItemsSource = Enum.GetNames(typeof(VirtualCameraLifetime));
             UIAccessSelector.ItemsSource = Enum.GetNames(typeof(VirtualCameraAccess));
-            UILifeTimeSelector.SelectedIndex = 0;
+            UILifetimeSelector.SelectedIndex = 0;
             UIAccessSelector.SelectedIndex = 0;
             UIVirtualCameraList.ItemsSource = null;
 
@@ -54,7 +54,7 @@ namespace VirtualCameraManager_App
             var friendlyText = UIFriendlyName.Text;
             var isHookCameraChecked = UIHookCameraCheckBox.IsChecked == true;
             var selectedIndex = UICameraHookList.SelectedIndex;
-            VirtualCameraLifetime selectedLifetime = (VirtualCameraLifetime)(UILifeTimeSelector.SelectedIndex);
+            VirtualCameraLifetime selectedLifetime = (VirtualCameraLifetime)(UILifetimeSelector.SelectedIndex);
             VirtualCameraAccess selectedAccess = (VirtualCameraAccess)(UIAccessSelector.SelectedIndex);
             try
             {
@@ -63,7 +63,7 @@ namespace VirtualCameraManager_App
                     throw new Exception("A virtual camera with this name already exists");
                 }
 
-                // Important: We spark a task here so as to not block the UI thread if the app request permission to access the Camera
+                // Important: We start a task here so as to not block the UI thread if the app request permission to access the Camera
                 // (permission prompt runs on the UI thread)
                 var fireAndForgetBackgroundTask = Task.Run( () => // fire-and-forget
                 {
@@ -75,7 +75,7 @@ namespace VirtualCameraManager_App
                         {
                             var hookedCamera = m_cameraDeviceList[selectedIndex];
                             vcam = VirtualCameraRegistrar.RegisterNewVirtualCamera(
-                               VirtualCameraKind.HookingARealCamera,
+                               VirtualCameraKind.CameraHook,
                                selectedLifetime,
                                selectedAccess,
                                friendlyText,
@@ -142,56 +142,57 @@ namespace VirtualCameraManager_App
         {
             UIResultText.Text = ""; // clear error text
 
-            // Important: We spark a task here so as to not block the UI thread if the app request permission to access the Camera
+            // Important: We start a task here so as to not block the UI thread if the app request permission to access the Camera
             // (permission prompt runs on the UI thread)
             var fireAndForgetBackgroundTask = Task.Run(() =>
             {
-               // find existing virtual camera on the system
-               var vCameraInformationList = VirtualCameraRegistrar.GetExistingVirtualCameraDevices();
+                // find existing virtual camera on the system
+                var vCameraInformationList = VirtualCameraRegistrar.GetExistingVirtualCameraDevices();
 
-               var fireAndForgetUITask = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal,
-                   async () =>
-                   {
-                        // for each virtual camera found on the system.. 
-                        foreach (var vCamInfo in vCameraInformationList)
+                var fireAndForgetUITask = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
+                {
+                    // for each virtual camera found on the system.. 
+                    foreach (var vCamInfo in vCameraInformationList)
+                    {
+                        // if we have not already added this camera to the UI (i.e. when the app starts)..
+                        if (m_virtualCameraControls.Find(x => x.VirtualCameraProxyInst.SymbolicLink == vCamInfo.Id) == null)
                         {
-                            // if we have not already added this camera to the UI (i.e. when the app starts)..
-                            if (m_virtualCameraControls.Find(x => x.VirtualCameraProxyInst.SymbolicLink == vCamInfo.Id) == null)
+                            // Check if we have created this Virtual camera at some point in a past session with this app
+                            // and gain back control of it if so by registering it with the same parameters once again
+                            var relatedVCamInfo = App.m_virtualCameraInfoList.Find(x => x.SymLink == vCamInfo.Id);
+                            if (relatedVCamInfo != null)
                             {
-                                // Check if we have created this Virtual camera at some point in a past session with this app
-                                // and gain back control of it if so by registering it with the same parameters once again
-                                var relatedVCamInfo = App.m_virtualCameraInfoList.Find(x => x.SymLink == vCamInfo.Id);
-                               if (relatedVCamInfo != null)
-                               {
-                                   var virtualCamera = VirtualCameraRegistrar.RegisterNewVirtualCamera(
-                                       (VirtualCameraKind)relatedVCamInfo.VCamType,
-                                       VirtualCameraLifetime.System, // only possible option if retrieving from this app upon relaunch
-                                       VirtualCameraAccess.CurrentUser, // only possible option with a UWP app (non-admin)
-                                       relatedVCamInfo.FriendlyName,
-                                       relatedVCamInfo.HookedCameraSymLink);
+                                var virtualCamera = VirtualCameraRegistrar.RegisterNewVirtualCamera(
+                                  (VirtualCameraKind)relatedVCamInfo.VCamType,
+                                  VirtualCameraLifetime.System, // only possible option if retrieving from this app upon relaunch
+                                  VirtualCameraAccess.CurrentUser, // only possible option with a UWP app (non-admin)
+                                  relatedVCamInfo.FriendlyName,
+                                  relatedVCamInfo.HookedCameraSymLink);
 
-                                   var vCamControl = new VirtualCameraControl(virtualCamera);
-                                   vCamControl.VirtualCameraControlFailed += VirtualCameraControlFailed;
-                                   vCamControl.VirtualCameraControlRemoved += VirtualCameraControlRemoved;
-                                   m_virtualCameraControls.Add(vCamControl);
+                                virtualCamera.EnableVirtualCamera();
 
-                                   try
-                                   {
-                                       await vCamControl.InitializeAsync();
-                                       
-                                   }
-                                   catch (Exception ex)
-                                   {
-                                       UIResultText.Text = $"{ex.HResult} : {ex.Message}";
-                                   }
-                               }
+                                var vCamControl = new VirtualCameraControl(virtualCamera);
+                                vCamControl.VirtualCameraControlFailed += VirtualCameraControlFailed;
+                                vCamControl.VirtualCameraControlRemoved += VirtualCameraControlRemoved;
+                                m_virtualCameraControls.Add(vCamControl);
+
+                                try
+                                {
+                                    await vCamControl.InitializeAsync();
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    UIResultText.Text = $"{ex.HResult} : {ex.Message}";
+                                }
                             }
                         }
+                    }
 
-                       // refresh list view
-                       UIVirtualCameraList.ItemsSource = null;
-                       UIVirtualCameraList.ItemsSource = m_virtualCameraControls;
-                   });
+                    // refresh list view
+                    UIVirtualCameraList.ItemsSource = null;
+                    UIVirtualCameraList.ItemsSource = m_virtualCameraControls;
+                });
             });
         }
 

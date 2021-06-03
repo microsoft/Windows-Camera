@@ -25,18 +25,16 @@
                    Title="Add a new virtual camera" 
                    PrimaryButtonClick="UIAddNewVirtualCameraDialog_PrimaryButtonClick">
 
-            <StackPanel>
-                <StackPanel Orientation="Vertical">
-                    <TextBlock Text="Lifetime: " />
-                    <ComboBox Name="UILifeTimeSelector"/>
-                    <TextBlock Text="Access: " />
-                    <ComboBox Name="UIAccessSelector"/>
-                    <TextBlock Text="Friendly name: " />
-                    <TextBox Name="UIFriendlyName" Text="Simple Media Source"/>
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="Lifetime: " />
+                <ComboBox Name="UILifetimeSelector"/>
+                <TextBlock Text="Access: " />
+                <ComboBox Name="UIAccessSelector"/>
+                <TextBlock Text="Friendly name: " />
+                <TextBox Name="UIFriendlyName" Text="Simple Media Source"/>
 
-                    <CheckBox Name="UIHookCameraCheckBox"  Content="Hook an existing camera" Checked="UIHookCameraCheckBox_Checked" Unchecked="UIHookCameraCheckBox_Checked"/>
-                    <ComboBox x:Name="UICameraHookList" IsEnabled="false" Visibility="Collapsed"/>
-                </StackPanel>
+                <CheckBox Name="UIHookCameraCheckBox"  Content="Hook an existing camera" Checked="UIHookCameraCheckBox_Checked" Unchecked="UIHookCameraCheckBox_Checked"/>
+                <ComboBox x:Name="UICameraHookList" IsEnabled="false" Visibility="Collapsed"/>
             </StackPanel>
         </ContentDialog>
     </StackPanel>

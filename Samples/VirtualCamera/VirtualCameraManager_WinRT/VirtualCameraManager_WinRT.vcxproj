@@ -132,8 +132,6 @@
     <ClInclude Include="VirtualCameraRegistrar.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BasicCustomPropertyPayload.cpp" />
-    <ClCompile Include="BasicExtendedPropertyPayload.cpp" />
     <ClCompile Include="CameraKsPropertyInquiry.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

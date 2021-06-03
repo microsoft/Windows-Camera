@@ -6,7 +6,7 @@ namespace VirtualCameraManager_WinRT
     enum VirtualCameraKind
     {
         Synthetic = 0, // will generate frames on its own
-        HookingARealCamera = (Synthetic + 1) // will relay frames and properties from an existing camera
+        CameraHook = (Synthetic + 1) // will relay frames and properties from an existing camera
     };
 
     // projection of MFVirtualCameraLifetime
