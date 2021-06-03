@@ -12,7 +12,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
             winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime,
             winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access,
-            hstring const& hookedCameraSymbolicLink,
+            hstring const& wrappedCameraSymbolicLink,
             wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera);
 
         ~VirtualCameraProxy();
@@ -23,7 +23,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
         VirtualCameraAccess Access() { return m_access; }
         hstring FriendlyName() { return m_friendlyName; }
-        hstring HookedCameraSymbolicLink() { return m_hookedCameraSymbolicLink; }
+        hstring WrappedCameraSymbolicLink() { return m_wrappedCameraSymbolicLink; }
         bool IsKnownInstance() { return m_isKnownInstance; }
         VirtualCameraLifetime Lifetime() { return m_lifetime; }
         hstring SymbolicLink() { return m_symLink; }
@@ -36,7 +36,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         winrt::hstring m_symLink;
         bool m_isKnownInstance;
         wil::com_ptr_nothrow<IMFVirtualCamera> m_spVirtualCamera;
-        winrt::hstring m_hookedCameraSymbolicLink;
+        winrt::hstring m_wrappedCameraSymbolicLink;
         winrt::VirtualCameraManager_WinRT::VirtualCameraKind m_virtualCameraKind;
     };
 }

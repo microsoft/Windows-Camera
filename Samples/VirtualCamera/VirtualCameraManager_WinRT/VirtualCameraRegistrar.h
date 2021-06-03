@@ -14,7 +14,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime, 
             winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access, 
             hstring const& friendlyName,
-            hstring const& realCameraSymbolicLink);
+            hstring const& wrappedCameraSymbolicLink);
 
         static winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Devices::Enumeration::DeviceInformation> GetExistingVirtualCameraDevices();
     };

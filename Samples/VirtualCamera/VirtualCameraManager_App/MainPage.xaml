@@ -33,8 +33,8 @@
                 <TextBlock Text="Friendly name: " />
                 <TextBox Name="UIFriendlyName" Text="Simple Media Source"/>
 
-                <CheckBox Name="UIHookCameraCheckBox"  Content="Hook an existing camera" Checked="UIHookCameraCheckBox_Checked" Unchecked="UIHookCameraCheckBox_Checked"/>
-                <ComboBox x:Name="UICameraHookList" IsEnabled="false" Visibility="Collapsed"/>
+                <CheckBox Name="UICameraWrappingCheckBox"  Content="Wrap an existing camera" Checked="UICameraWrappingCheckBox_Checked" Unchecked="UICameraWrappingCheckBox_Checked"/>
+                <ComboBox x:Name="UICameraToWrapList" IsEnabled="false" Visibility="Collapsed"/>
             </StackPanel>
         </ContentDialog>
     </StackPanel>

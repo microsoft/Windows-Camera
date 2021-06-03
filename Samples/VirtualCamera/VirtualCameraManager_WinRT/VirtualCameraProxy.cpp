@@ -15,12 +15,12 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
         winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime,
         winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access,
-        hstring const& hookedCameraSymbolicLink,
+        hstring const& wrappedCameraSymbolicLink,
         wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera)
         : m_virtualCameraKind(virtualCameraKind),
           m_lifetime(lifetime),
           m_access(access),
-          m_hookedCameraSymbolicLink(hookedCameraSymbolicLink),
+          m_wrappedCameraSymbolicLink(wrappedCameraSymbolicLink),
           m_spVirtualCamera(spVirtualCamera),
           m_isKnownInstance(true)
     {
@@ -69,13 +69,13 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     void VirtualCameraProxy::RemoveVirtualCamera()
     {
         THROW_IF_NULL_ALLOC_MSG(m_spVirtualCamera.get(), 
-            "failed to remove virtual camera: nullptr");
+            "Failed to remove virtual camera: nullptr");
 
        // stop and remove camera
         DisableVirtualCamera();
         THROW_IF_FAILED_MSG(m_spVirtualCamera->Remove(),
-            "Failed remove stop camera");
+            "Failed to remove virtual camera");
         THROW_IF_FAILED_MSG(m_spVirtualCamera->Shutdown(),
-            "Failed to shutdown camera");
+            "Failed to shutdown virtual camera");
     }
 }

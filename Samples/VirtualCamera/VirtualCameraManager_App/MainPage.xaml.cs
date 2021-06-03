@@ -52,8 +52,8 @@ namespace VirtualCameraManager_App
         {
             UIResultText.Text = ""; // clear error text
             var friendlyText = UIFriendlyName.Text;
-            var isHookCameraChecked = UIHookCameraCheckBox.IsChecked == true;
-            var selectedIndex = UICameraHookList.SelectedIndex;
+            var isCameraWrappingChecked = UICameraWrappingCheckBox.IsChecked == true;
+            var selectedIndex = UICameraToWrapList.SelectedIndex;
             VirtualCameraLifetime selectedLifetime = (VirtualCameraLifetime)(UILifetimeSelector.SelectedIndex);
             VirtualCameraAccess selectedAccess = (VirtualCameraAccess)(UIAccessSelector.SelectedIndex);
             try
@@ -71,15 +71,15 @@ namespace VirtualCameraManager_App
                     {
                         VirtualCameraProxy vcam = null;
 
-                        if (isHookCameraChecked == true && selectedIndex >= 0)
+                        if (isCameraWrappingChecked == true && selectedIndex >= 0)
                         {
-                            var hookedCamera = m_cameraDeviceList[selectedIndex];
+                            var wrappedCamera = m_cameraDeviceList[selectedIndex];
                             vcam = VirtualCameraRegistrar.RegisterNewVirtualCamera(
-                               VirtualCameraKind.CameraHook,
+                               VirtualCameraKind.CameraWrapper,
                                selectedLifetime,
                                selectedAccess,
                                friendlyText,
-                               hookedCamera.Id);
+                               wrappedCamera.Id);
                         }
                         else
                         {
@@ -101,7 +101,7 @@ namespace VirtualCameraManager_App
                             m_virtualCameraControls.Add(vCamControl);
 
                             // force user to re-check that box triggering an update to available cameras
-                            UIHookCameraCheckBox.IsChecked = false;
+                            UICameraWrappingCheckBox.IsChecked = false;
 
                             try
                             {
@@ -167,7 +167,7 @@ namespace VirtualCameraManager_App
                                   VirtualCameraLifetime.System, // only possible option if retrieving from this app upon relaunch
                                   VirtualCameraAccess.CurrentUser, // only possible option with a UWP app (non-admin)
                                   relatedVCamInfo.FriendlyName,
-                                  relatedVCamInfo.HookedCameraSymLink);
+                                  relatedVCamInfo.WrappedCameraSymLink);
 
                                 virtualCamera.EnableVirtualCamera();
 
@@ -212,14 +212,14 @@ namespace VirtualCameraManager_App
             UIRefreshList_Click(null, null);
         }
 
-        private async void UIHookCameraCheckBox_Checked(object sender, RoutedEventArgs e)
+        private async void UICameraWrappingCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            // if the checkbox is checked, show a list of available camera devices to hook into
-            if (UIHookCameraCheckBox.IsChecked == true)
+            // if the checkbox is checked, show a list of available camera devices to wrap
+            if (UICameraWrappingCheckBox.IsChecked == true)
             {
-                UICameraHookList.ItemsSource = null;
-                UICameraHookList.IsEnabled = true;
-                UICameraHookList.Visibility = Visibility.Visible;
+                UICameraToWrapList.ItemsSource = null;
+                UICameraToWrapList.IsEnabled = true;
+                UICameraToWrapList.Visibility = Visibility.Visible;
 
                 var cameraDeviceList = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector());
 
@@ -229,18 +229,18 @@ namespace VirtualCameraManager_App
                     var vCameraInformationList = VirtualCameraRegistrar.GetExistingVirtualCameraDevices().ToList();
                     var fireAndForgetUITask = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
-                        // expose a list of available cameras that excludes any known virtual cameras or cameras currently hooked by a virtual camera
+                        // expose a list of available cameras that excludes any known virtual cameras or cameras currently wrapped by a virtual camera
                         m_cameraDeviceList = cameraDeviceList.Where(x => vCameraInformationList.Find(info => info.Id == x.Id) == null)
-                                                                   .Where(x => m_virtualCameraControls.Find(vcam => vcam.VirtualCameraProxyInst.HookedCameraSymbolicLink == x.Id) == null).ToList();
+                                                                   .Where(x => m_virtualCameraControls.Find(vcam => vcam.VirtualCameraProxyInst.WrappedCameraSymbolicLink == x.Id) == null).ToList();
                                                                    
-                        UICameraHookList.ItemsSource = m_cameraDeviceList.Select(x => x.Name);
+                        UICameraToWrapList.ItemsSource = m_cameraDeviceList.Select(x => x.Name);
                     });
                 });
             }
             else
             {
-                UICameraHookList.IsEnabled = false;
-                UICameraHookList.Visibility = Visibility.Collapsed;
+                UICameraToWrapList.IsEnabled = false;
+                UICameraToWrapList.Visibility = Visibility.Collapsed;
             }
         }
     }

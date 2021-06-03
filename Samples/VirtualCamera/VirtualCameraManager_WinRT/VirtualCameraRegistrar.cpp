@@ -21,14 +21,14 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     /// <param name="lifetime"></param>
     /// <param name="access"></param>
     /// <param name="friendlyName"></param>
-    /// <param name="strHookedCameraSymbolicLink"></param>
+    /// <param name="strWrappedCameraSymbolicLink"></param>
     /// <param name="spVirtualCamera"></param>
     void CreateVirtualCamera(
         _In_ winrt::hstring const& strMediaSourceGuid,
         _In_ MFVirtualCameraLifetime lifetime,
-        _In_  MFVirtualCameraAccess access,
+        _In_ MFVirtualCameraAccess access,
         _In_ winrt::hstring const& friendlyName,
-        _In_ winrt::hstring const& strHookedCameraSymbolicLink,
+        _In_ winrt::hstring const& strWrappedCameraSymbolicLink,
         _Inout_ wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera)
     {
         if (spVirtualCamera.get() != nullptr)
@@ -38,24 +38,24 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // create the virtual camera
         THROW_IF_FAILED_MSG(MFCreateVirtualCamera(
             MFVirtualCameraType_SoftwareCameraSource,
-            lifetime, // FSMVirtualCameraLifetime_*
-            access, // FSMVirtualCameraAccess_* , note that if running from UWP app, system will throw an access_denied upon enabling the virtual camera
+            lifetime, // MFVirtualCameraLifetime_*
+            access, // MFVirtualCameraAccess_* , note that if running from UWP app, system will throw an access_denied upon enabling the virtual camera
             friendlyName.data(),
             strMediaSourceGuid.data(),
-            nullptr, /*Catetgorylist*/
-            0,       /*CatetgoryCount*/
+            nullptr, /*Categories*/
+            0,       /*CategoryCount*/
             &spVirtualCamera),
             "Failed to create virtual camera");
 
-        // if hooking into an existing camera, specify its symbolic link explicitly to the virtual camera 
+        // if wrapping an existing camera, specify its symbolic link explicitly to the virtual camera 
         // and also store it into an IMFAttribute on the virtual camera
-        if (!strHookedCameraSymbolicLink.empty())
+        if (!strWrappedCameraSymbolicLink.empty())
         {
-            THROW_IF_FAILED_MSG(spVirtualCamera->AddDeviceSourceInfo(strHookedCameraSymbolicLink.data()),
+            THROW_IF_FAILED_MSG(spVirtualCamera->AddDeviceSourceInfo(strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info of existing camera to virtual camera");
 
             // Create custom attribute, to be use by mediasource on activation
-            THROW_IF_FAILED_MSG(spVirtualCamera->SetString(VCAM_DEVICE_INFO, strHookedCameraSymbolicLink.data()),
+            THROW_IF_FAILED_MSG(spVirtualCamera->SetString(VCAM_DEVICE_INFO, strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info attribute onto the virtual camera");
         }
     }
@@ -66,7 +66,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime, 
             winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access, 
             hstring const& friendlyName,
-            hstring const& hookedCameraSymbolicLink)
+            hstring const& wrappedCameraSymbolicLink)
     {
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
         
@@ -75,14 +75,14 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             (MFVirtualCameraLifetime)lifetime,
             (MFVirtualCameraAccess)access,
             friendlyName,
-            hookedCameraSymbolicLink,
+            wrappedCameraSymbolicLink,
             spVirtualCamera);
 
         auto result = make<implementation::VirtualCameraProxy>(
             virtualCameraKind,
             lifetime,
             access,
-            hookedCameraSymbolicLink,
+            wrappedCameraSymbolicLink,
             spVirtualCamera);
 
         return result;

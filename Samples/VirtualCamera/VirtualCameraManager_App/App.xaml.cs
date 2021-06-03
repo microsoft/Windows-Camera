@@ -28,7 +28,7 @@ namespace VirtualCameraManager_App
             public string FriendlyName;
             public int VCamType;
             public string SymLink;
-            public string HookedCameraSymLink;
+            public string WrappedCameraSymLink;
         }
 
         // members to handle known virtual cameras
@@ -143,7 +143,7 @@ namespace VirtualCameraManager_App
                                 FriendlyName = configItems[0],
                                 VCamType = Int32.Parse(configItems[1]),
                                 SymLink = configItems[2],
-                                HookedCameraSymLink = configItems[3]
+                                WrappedCameraSymLink = configItems[3]
                             });
                         }
                     }
@@ -185,7 +185,7 @@ namespace VirtualCameraManager_App
                         vCamInfoToWrite.Add(vcam.VirtualCameraProxyInst.FriendlyName
                             + "|" + (int)vcam.VirtualCameraProxyInst.VirtualCameraKind
                             + "|" + vcam.VirtualCameraProxyInst.SymbolicLink
-                            + "|" + vcam.VirtualCameraProxyInst.HookedCameraSymbolicLink);
+                            + "|" + vcam.VirtualCameraProxyInst.WrappedCameraSymbolicLink);
                     }
                 }
 
