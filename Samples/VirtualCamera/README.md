@@ -192,7 +192,7 @@ In the case where  the virtualCamera is used by application or after VirtualCame
 * Attach debugger to the process
 * Alternative: use the powershell script provided: scripts\Debug-FrameServer.ps1
 
-<b> 3. Can I create a virtual camera that hooks into another existing virtual camera with this sample </b><br/>no, virtual camera inception is not currently supported.
+<b> 3. Can I create a virtual camera that hooks into another existing virtual camera with this sample </b><br/>yes, but in this sample virtual camera inception is not currently supported.
 
 <b> 4. In a UWP app, if I create a virtual camera on the UI thread without having been prompted for camera access first, the camera access prompt is unresponsive, what is going on? </b><br/>
 If you are calling ```MFCreateVirtualCamera()``` (indirectly i.e. using the ```VirtualCameraRegistrar.RegisterNewVirtualCamera()``` method) on a UI thread, it will block it until camera access consent is given. However since that consent prompt is also running on the UI thread, it will actively block interaction and appear to freeze the app. A smart thing to do may be to either trigger consent upon launch of the app by another mean (i.e. calling ```MediaCapture.InitializeAsync()```) or by calling the API in a background thread (which the UWP VirtualCameraManager_App does).
