@@ -197,5 +197,8 @@ In the case where  the virtualCamera is used by application or after VirtualCame
 <b> 4. In a UWP app, if I create a virtual camera on the UI thread without having been prompted for camera access first, the camera access prompt is unresponsive, what is going on? </b><br/>
 If you are calling ```MFCreateVirtualCamera()``` (indirectly i.e. using the ```VirtualCameraRegistrar.RegisterNewVirtualCamera()``` method) on a UI thread, it will block it until camera access consent is given. However since that consent prompt is also running on the UI thread, it will actively block interaction and appear to freeze the app. A smart thing to do may be to either trigger consent upon launch of the app by another mean (i.e. calling ```MediaCapture.InitializeAsync()```) or by calling the API in a background thread (which the UWP VirtualCameraManager_App does).
 
+<b> 5. Can 2 virtual cameras concurrently wrap the same existing camera on the system? </b><br/>
+no, only 1 virtual camera at a time can wrap an existing camera. You cannot open an existing camera in shariung mode from within your virtual camera.
+
 
 
