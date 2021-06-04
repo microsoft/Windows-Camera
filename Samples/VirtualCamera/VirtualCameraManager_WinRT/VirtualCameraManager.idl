@@ -1,0 +1,66 @@
+// Copyright (C) Microsoft Corporation. All rights reserved.
+
+namespace VirtualCameraManager_WinRT
+{
+    // types of virtual camera exposed by the VirtualCameraMediaSource
+    enum VirtualCameraKind
+    {
+        Synthetic = 0, // will generate frames on its own
+        CameraWrapper = (Synthetic + 1) // will relay frames and properties from an existing camera
+    };
+
+    // projection of MFVirtualCameraLifetime
+    enum VirtualCameraLifetime
+    {
+        Session = 0,
+        System = (Session + 1)
+    };
+
+    // projection of MFVirtualCameraAccess
+    enum VirtualCameraAccess
+    {
+        CurrentUser = 0,
+        /* 
+        We hide the 'AllUsers' access value since UWP apps cannot register virtual cameras for all users on a machine:
+        AllUsers = (CurrentUser + 1)
+        */
+    };
+
+    //
+    // runtime class that encapsulates and projects to WinRT an IMFVirtualCamera
+    //
+    [default_interface]
+    unsealed runtimeclass VirtualCameraProxy
+    {
+        void EnableVirtualCamera();
+
+        void DisableVirtualCamera();
+
+        void RemoveVirtualCamera();
+
+        VirtualCameraAccess Access{ get; };
+        String FriendlyName{ get; };
+        String WrappedCameraSymbolicLink{ get; };
+        Boolean IsKnownInstance{ get; };
+        VirtualCameraLifetime Lifetime{ get; };
+        String SymbolicLink{ get; };
+        VirtualCameraKind VirtualCameraKind{ get; };
+    }
+
+    //
+    // runtime class with static helper methods to generate VirtualCameraProxy and query available virtual camera on the system
+    //
+    [default_interface]
+    runtimeclass VirtualCameraRegistrar
+    {
+        static VirtualCameraProxy RegisterNewVirtualCamera(
+            VirtualCameraKind virtualCameraKind,
+            VirtualCameraLifetime lifetime,
+            VirtualCameraAccess access,
+            String friendlyName,
+            String wrappedCameraSymbolicLink);
+
+        static Windows.Foundation.Collections.IVector<Windows.Devices.Enumeration.DeviceInformation>
+            GetExistingVirtualCameraDevices();
+    }
+}

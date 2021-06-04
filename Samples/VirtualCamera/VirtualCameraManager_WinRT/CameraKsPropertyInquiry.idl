@@ -1,0 +1,78 @@
+// Copyright (C) Microsoft Corporation. All rights reserved.
+
+namespace VirtualCameraManager_WinRT
+{
+    // projection of KSPROPERTY_CAMERACONTROL_EXTENDED_* supported in this sample
+    enum ExtendedControlKind
+    {
+        EyeGazeCorrection = 40, // KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
+    };
+
+    // projection of KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION flag values
+    enum EyeGazeCorrectionCapabilityKind
+    {
+        Off = 0x0000000000000000, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
+        On = 0x0000000000000001, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+    };
+
+    // projection of the custom control value defined in the virtual camera media source
+    // refer to VirtualCameraMediaSource.h
+    enum CustomControlKind
+    {
+        ColorMode = 0, // KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE
+    };   
+
+    // projection of the custom control flags defined in the virtual camera media source
+    // refer to VirtualCameraMediaSource.h
+    enum ColorModeKind
+    {
+        Grayscale = 0x00FFFFFFL,
+        Red = 0x00FF0000L,
+        Green = 0x0000FF00L,
+        Blue = 0x000000FFL
+    };
+
+    // projection of KSProperty
+    interface IPropertyPayload
+    {
+        UInt64 Capability{ get; };
+        UInt64 Flags{ get; };
+        UInt32 Size{ get; };
+    }
+
+    //
+    // interface and runtime class that encapsulates a KSProperty payload for an extended control supported in this sample
+    //
+    interface IExtendedPropertyPayload requires IPropertyPayload
+    {
+        ExtendedControlKind ExtendedControlKind { get; };
+    }
+    runtimeclass BasicExtendedPropertyPayload : [default] IExtendedPropertyPayload
+    {
+    }
+
+    //
+    // interface and runtime class that encapsulates a KSProperty payload for a custom control supported in this sample
+    //
+    interface ICustomPropertyPayload requires IPropertyPayload
+    {
+        CustomControlKind CustomControlKind{ get; };
+    }
+    runtimeclass BasicCustomPropertyPayload : [default] ICustomPropertyPayload
+    {
+    }
+
+    //
+    // runtime class with static helper methods to set and get custom and extended controls on a camera
+    //
+    [default_interface]
+    runtimeclass CameraKsPropertyInquiry
+    {
+        static IExtendedPropertyPayload GetExtendedControl(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetExtendedControlFlags(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
+
+        static ICustomPropertyPayload GetCustomControl(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetCustomControlFlags(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
+    }
+}
+
