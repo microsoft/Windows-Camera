@@ -52,7 +52,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // if getting the control fails, throw
         if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
         {
-            throw hresult_invalid_argument(L"Could not retrieve extended device control " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)getResult.Status()));
+            throw hresult_invalid_argument(L"Could not retrieve extended device control " + winrt::to_hstring(controlId) + L" with VideoDeviceControllerGetDevicePropertyStatus: " + winrt::to_hstring((int)getResult.Status()));
         }
 
         // if we succeed in retrieving the specified control, encapsulate the property payload and return it
@@ -113,7 +113,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // if setting the control fails, throw
         if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
         {
-            throw hresult_invalid_argument(L"Could not set extended device property flags " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)setResult));
+            throw hresult_invalid_argument(L"Could not set extended device property flags " + winrt::to_hstring(controlId) + L" with VideoDeviceControllerSetDevicePropertyStatus: " + winrt::to_hstring((int)setResult));
         }
     }
 
@@ -140,7 +140,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
                 controlId = static_cast<int>(customControlKind);
                 break;
             default:
-                throw winrt::hresult_invalid_argument(L"Attempting to get a custom control unhandled in this sample");
+                throw winrt::hresult_invalid_argument(L"Attempting to get a custom control unsupported in this sample");
         }
 
         // get the control payload

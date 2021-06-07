@@ -1,7 +1,9 @@
 # Virtual Camera Sample #
 ### Requirement:
-&emsp;&emsp;Minimum OS version: --TBD-- (current: 10.0.21364.0)
-Windows SDK, WDK minimum version: -- TBD-- (current: 10.0.21364.0)
+- Minimum OS version: --TBD-- (current: 10.0.21364.0)
+- Windows SDK minimum version: -- TBD-- (current: 10.0.21364.0)
+- Windows WDK minimum version: -- TBD-- (current: 10.0.21364.0)
+- Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
 
 This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
 1. **VirtualCameraMediaSource** <br>
@@ -72,6 +74,7 @@ This should include the mediasource dll, the executable that is responsbile for 
 ## VirtualCameraManager_App
 ----
 ### To build:
+> Make sure you have already installed the *VirtualCameraMediaSource* by generating the previous MSI and installing it on the target system.
 1. Build the *VirtualCameraManager_WinRT* project
 2. Build the *VirtualCameraManager_App*
 3. Either launch the app right away (right click on the *VirtualCameraManager_App* project and select *deploy*) or create an app package you can share around and sideload (right click on the *VirtualCameraManager_App* project and select *publish*)
