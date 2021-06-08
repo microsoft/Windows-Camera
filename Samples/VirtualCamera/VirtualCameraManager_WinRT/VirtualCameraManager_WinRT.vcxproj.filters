@@ -21,7 +21,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Constants.h" />
     <ClInclude Include="VirtualCameraProxy.h" />
     <ClInclude Include="VirtualCameraRegistrar.h" />
     <ClInclude Include="BasicCustomPropertyPayload.h" />

@@ -126,7 +126,6 @@
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
     <ClInclude Include="CameraKsPropertyInquiry.h" />
     <ClInclude Include="Common.h" />
-    <ClInclude Include="Constants.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="VirtualCameraProxy.h" />
     <ClInclude Include="VirtualCameraRegistrar.h" />

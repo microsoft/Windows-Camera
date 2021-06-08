@@ -4,7 +4,6 @@
 #include "VirtualCameraRegistrar.h"
 #include "VirtualCameraRegistrar.g.cpp"
 #include "VirtualCameraProxy.h"
-#include "Constants.h"
 #include "Common.h"
 #include "mfidl.h"
 
@@ -71,7 +70,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
         
         CreateVirtualCamera(
-            SIMPLEMEDIASOURCE_WIN32,
+            VIRTUALCAMERAMEDIASOURCE_CLSID,
             (MFVirtualCameraLifetime)lifetime,
             (MFVirtualCameraAccess)access,
             friendlyName,
@@ -124,13 +123,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
                 winrt::Windows::Devices::Enumeration::DeviceInformationKind::DeviceInterface
             ).get();
 
-            bool isVirtual = false;
             if (deviceInterface.Properties().HasKey(_DEVPKEY_DeviceInterface_IsVirtualCamera))
-            {
-                isVirtual = true;
-            }
-            // hacky workaround if the vcam dev prop key is not present (assess the presence of "VCAM" in the sym link)
-            if (isVirtual || device.Id().operator std::wstring_view().find(L"VCAM") != std::wstring::basic_string::npos)
             {
                 auto props = device.Properties();
                 returnList.Append(device);
