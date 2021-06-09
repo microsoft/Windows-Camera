@@ -1,6 +1,8 @@
 # WinRT sample applications for using the [Windows Media Capture APIs](https://docs.microsoft.com/en-us/uwp/api/Windows.Media.Capture.MediaCapture)
 
-	This folder contains a sample application that demonstrates the Windows Media Capture API GetDeviceProperty/SetDeviceProperty with KSPROPERTYSETID_ExtendedCameraControl in Windows 10. 
+	This folder contains a sample application that demonstrates the Windows Media Capture API GetDeviceProperty/SetDeviceProperty with KSPROPERTYSETID_ExtendedCameraControl in Windows 10.
+	While most camera controls are wrapped in their own APIs and accessed using the [VideoDeviceController](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller?view=winrt-20348), you can also send and receive payloads directly to and from the driver. These raw buffers can then be serialized or deserialized according to a known format. This can be useful for example if a driver exposes a custom control that requires a payload format known to the application or if an existing KSProperty does not have its own wrapper API in WinRT.
+
 ## About the sample
 	The sample demonstrates the following:
 		1. Class definition for correctly accessing/storing a KS Property Structure in WinRT
@@ -10,7 +12,7 @@
 
 ## Requirements
 	
-	This sample is built using Visual Studio 2017 and Windows SDK version 19551
+	This sample is built using Visual Studio 2019 and [Windows SDK version 20348](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk/#serverdev) 
 
 ## Using the samples
 

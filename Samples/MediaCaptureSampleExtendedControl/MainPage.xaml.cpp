@@ -42,6 +42,9 @@ using namespace Windows::Storage::Streams;
 using namespace concurrency;
 using namespace CustomExtendedProperties;
 
+Platform::String^ ExposureControlID = L"{1CB79112-C0D2-4213-9CA6-CD4FDB927972} 12"; //KSCameraExtendedControlPropSet and ExposurePropSetID (see KSPROPERTY_CAMERACONTROL_EXTENDED_EXPOSUREMODE in ksmedia.h)
+Platform::String^ OISControlID = "{1CB79112-C0D2-4213-9CA6-CD4FDB927972} 32"; //KSCameraExtendedControlPropSet and OISPropSetID (see KSPROPERTY_CAMERACONTROL_EXTENDED_OIS in ksmedia.h)
+
 MainPage::MainPage()
 {
 	InitializeComponent();
@@ -98,16 +101,15 @@ void MainPage::sldExposure_ValueChanged(Platform::Object^ sender, Windows::UI::X
 {
 	try
 	{
-		Platform::String^ stringID = L"{1CB79112-C0D2-4213-9CA6-CD4FDB927972},12"; //KSCameraExtendedControlPropSet and ExposurePropSetID
 		CustomExtendedProperty<KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING>* pControl = nullptr;
-		HRESULT hr = ExtendedPropertyVideoProcSettingHelper::GetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, stringID, &pControl);
+		HRESULT hr = ExtendedPropertyVideoProcSettingHelper::GetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, ExposureControlID, &pControl);
 		if (hr == S_OK)
 		{
 			
 			pControl->Header->Flags = KSCAMERA_EXTENDEDPROP_VIDEOPROCFLAG_MANUAL;
 			pControl->Value->VideoProc.Value.ull = (ULONGLONG)sldExposure->Value;
 
-			hr = ExtendedPropertyVideoProcSettingHelper::SetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, stringID, pControl);
+			hr = ExtendedPropertyVideoProcSettingHelper::SetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, ExposureControlID, pControl);
 		}
 
 		if (hr != S_OK)
@@ -132,6 +134,7 @@ void MainPage::btnStartDevice_Click(Platform::Object^ sender, Windows::UI::Xaml:
 		m_mediaCaptureMgr = mediaCapture;
 
 		auto settings = ref new Capture::MediaCaptureInitializationSettings();
+		settings->StreamingCaptureMode = StreamingCaptureMode::Video;
 		m_settings = settings;
 
 		FindIRCameraDeviceSensorGroup();
@@ -143,8 +146,8 @@ void MainPage::btnStartDevice_Click(Platform::Object^ sender, Windows::UI::Xaml:
 				initTask.get();
 
 				auto mediaCapture = m_mediaCaptureMgr.Get();
-
-				if (mediaCapture->MediaCaptureSettings->VideoDeviceId != nullptr && mediaCapture->MediaCaptureSettings->AudioDeviceId != nullptr)
+				auto videoDeviceId = mediaCapture->MediaCaptureSettings->VideoDeviceId;
+				if (videoDeviceId != nullptr)
 				{
 					btnStartPreview1->IsEnabled = true;
 					btnStartStopRecord1->IsEnabled = true;
@@ -159,7 +162,7 @@ void MainPage::btnStartDevice_Click(Platform::Object^ sender, Windows::UI::Xaml:
 				else
 				{
 					btnStartDevice1->IsEnabled = true;
-					ShowStatusMessage("No VideoDevice/AudioDevice Found");
+					ShowStatusMessage("No VideoDevice Found");
 				}
 
 			}
@@ -203,10 +206,9 @@ void MainPage::btnStartPreview_Click(Platform::Object^ sender, Windows::UI::Xaml
 					SetupVideoDeviceControl(mediaCapture->VideoDeviceController->Contrast, sldContrast);
 				}
 
-				Platform::String^ stringExposureID = L"{1CB79112-C0D2-4213-9CA6-CD4FDB927972},12"; //KSCameraExtendedControlPropSet and ExposurePropSetID
-				Platform::String^ stringOISID = "{1CB79112-C0D2-4213-9CA6-CD4FDB927972},29"; //KSCameraExtendedControlPropSet and OISPropSetID
-				SetupExtendedCustomControl(mediaCapture->VideoDeviceController, stringExposureID, sldExposure);
-				SetupExtendedCustomControl(mediaCapture->VideoDeviceController, stringOISID, btnEnableOIS);
+				
+				SetupExtendedCustomControl(mediaCapture->VideoDeviceController, ExposureControlID, sldExposure);
+				SetupExtendedCustomControl(mediaCapture->VideoDeviceController, OISControlID, btnEnableOIS);
 
 			}
 			catch (Exception ^e)
@@ -376,9 +378,8 @@ void MainPage::btnToggleOIS(Platform::Object^ sender, Windows::UI::Xaml::RoutedE
 	{
 		btnEnableOIS->IsEnabled = false;
 
-		Platform::String^ stringID = "{1CB79112-C0D2-4213-9CA6-CD4FDB927972},29"; //KSCameraExtendedControlPropSet and OISSetID
 		CustomExtendedProperty<KSCAMERA_EXTENDEDPROP_VALUE>* pControl = nullptr;
-		HRESULT hr = ExtendedPropertyValueHelper::GetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, stringID, &pControl);
+		HRESULT hr = ExtendedPropertyValueHelper::GetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, OISControlID, &pControl);
 
 		if (pControl->Header->Flags == KSCAMERA_EXTENDEDPROP_OIS_OFF)
 		{
@@ -392,7 +393,7 @@ void MainPage::btnToggleOIS(Platform::Object^ sender, Windows::UI::Xaml::RoutedE
 		}
 		if (hr == S_OK)
 		{
-			hr = ExtendedPropertyValueHelper::SetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, stringID, pControl);
+			hr = ExtendedPropertyValueHelper::SetDeviceProperty(m_mediaCaptureMgr->VideoDeviceController, OISControlID, pControl);
 		}
 		if (hr != S_OK)
 		{
