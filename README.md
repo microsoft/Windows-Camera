@@ -14,7 +14,7 @@ These code samples were created with the project templates available in Visual S
 
 ## Universal Windows Platform (UWP) samples/tools
 
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 16299 for Windows 10.
+These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 16299 for Windows 10 or higher on a per-sample basis.
 
    [Get a free copy of Visual Studio 2017 Community Edition with support for building Universal Windows Platform apps](http://go.microsoft.com/fwlink/p/?LinkID=280676)
 
@@ -75,7 +75,7 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 </table>
 <table>
  <tr>
-  <td><a href="Samples/MediaCaptureSampleExtendedControl">WinRT application demonstrating use of custom KS Camera Extended Properties</a></td>
+  <td><a href="Samples/ExtendedControlAndMetadata">WinRT applications demonstrating use of custom KS Camera Extended Properties and extraction of frame metadata</a></td>
  </tr>
 </table>
 <table>
