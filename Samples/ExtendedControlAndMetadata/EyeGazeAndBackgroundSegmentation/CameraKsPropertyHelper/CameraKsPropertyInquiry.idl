@@ -1,0 +1,98 @@
+namespace CameraKsPropertyHelper
+{
+    //
+    // Projection to WinRT of parts of ksmedia.h
+    // 
+    
+    // refer to KSPROPERTY_CAMERACONTROL_EXTENDED_PROPERTY
+    enum ExtendedControlKind
+    {
+        KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION = 40,
+        KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION = 41,
+    };
+
+    // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
+    enum EyeGazeCorrectionCapabilityKind
+    {
+        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000,
+        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001,
+    };
+
+    // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
+    enum BackgroundSegmentationCapabilityKind
+    {
+        KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000,
+        KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR = 0x0000000000000001,
+        KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002
+    };
+
+    // Accessors to parts of KSCAMERA_EXTENDEDPROP_HEADER
+    interface IExtendedPropertyPayload
+    {
+        ExtendedControlKind ExtendedControlKind{ get; };
+        UInt64 Capability{ get; };
+        UInt64 Flags{ get; };
+        UInt32 Size{ get; };
+    }
+
+    // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and a KSCAMERA_EXTENDEDPROP_VALUE
+    runtimeclass BasicExtendedPropertyPayload : [default] IExtendedPropertyPayload
+    {
+    }
+
+    // class to encapsulate and access a KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
+    runtimeclass BackgroundSegmentationConfigCaps
+    {
+        // Output width and height in pixels
+        Windows.Foundation.Size Resolution {get; };
+
+        // The maximum frame rate the driver can accommodate  for achieving 
+        // background segmentation for each frame corresponding to Resolution
+        Int32 MaxFrameRateNumerator{ get; };
+        Int32 MaxFrameRateDenominator{ get; };
+
+        // The width and height of the mask produced when streaming
+        // with a MediaType corresponding to Resolution and MaxFrameRate
+        Windows.Foundation.Size MaskResolution { get; };
+
+        // Optional subtype for which this configuration capability applies. If left 
+        // to zero, all streams conforming the Resolution and MaxFrameRate will support 
+        // background segmentation with the specified MaskResolution.
+        Guid SubType{ get; };
+    }
+
+    // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and one or more KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
+    runtimeclass BackgroundSegmentationPropertyPayload : [default] IExtendedPropertyPayload
+    {
+        Windows.Foundation.Collections.IVectorView<BackgroundSegmentationConfigCaps> ConfigCaps {get; };
+    }
+
+
+    // refer to KSCAMERA_MetadataId
+    enum FrameMetadataKind
+    {
+        MetadataId_BackgroundSegmentationMask = 9
+    };
+
+    interface IMetadataPayload
+    {
+        FrameMetadataKind FrameMetadataKind{ get; };
+    }
+
+    // class to encapsulate and access a KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
+    runtimeclass BackgroundSegmentationMaskMetadata : [default] IMetadataPayload
+    {
+        Windows.Graphics.Imaging.BitmapBounds MaskCoverageBoundingBox {get; };
+        Windows.Foundation.Size MaskResolution{ get; };
+        Windows.Graphics.Imaging.BitmapBounds ForegroundBoundingBox{ get; };
+        Windows.Graphics.Imaging.SoftwareBitmap MaskData { get; };
+    }
+
+    // Helper methods to set/get extended properties and extract frame metadata
+    runtimeclass PropertyInquiry
+    {
+        static IExtendedPropertyPayload GetExtendedControl(Windows.Media.Devices.VideoDeviceController controller, ExtendedControlKind extendedControlKind);
+        static void SetExtendedControlFlags(Windows.Media.Devices.VideoDeviceController controller, ExtendedControlKind extendedControlKind, UInt64 flags);
+        static IMetadataPayload ExtractFrameMetadata(Windows.Media.Capture.Frames.MediaFrameReference frame, FrameMetadataKind metadataKind);
+    }
+}
