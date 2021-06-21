@@ -27,33 +27,33 @@ DEFINE_GUIDSTRUCT("1CB79112-C0D2-4213-9CA6-CD4FDB927972", KSPROPERTYSETID_Extend
 #define KSPROPERTYSETID_ExtendedCameraControl DEFINE_GUIDNAMED(KSPROPERTYSETID_ExtendedCameraControl)
 
 typedef struct tagKSCAMERA_EXTENDEDPROP_HEADER {
-	ULONG               Version;
-	ULONG               PinId;
-	ULONG               Size;
-	ULONG               Result;
-	ULONGLONG           Flags;
-	ULONGLONG           Capability;
+    ULONG               Version;
+    ULONG               PinId;
+    ULONG               Size;
+    ULONG               Result;
+    ULONGLONG           Flags;
+    ULONGLONG           Capability;
 } KSCAMERA_EXTENDEDPROP_HEADER, *PKSCAMERA_EXTENDEDPROP_HEADER;
 
 typedef struct tagKSCAMERA_EXTENDEDPROP_VALUE {
-	union
-	{
-		double          dbl;
-		ULONGLONG       ull;
-		ULONG           ul;
-		ULARGE_INTEGER  ratio;
-		LONG            l;
-		LONGLONG        ll;
-	} Value;
+    union
+    {
+        double          dbl;
+        ULONGLONG       ull;
+        ULONG           ul;
+        ULARGE_INTEGER  ratio;
+        LONG            l;
+        LONGLONG        ll;
+    } Value;
 } KSCAMERA_EXTENDEDPROP_VALUE, *PKSCAMERA_EXTENDEDPROP_VALUE;
 
 typedef struct tagKSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING {
-	ULONG                               Mode;
-	LONG                                Min;
-	LONG                                Max;
-	LONG                                Step;
-	KSCAMERA_EXTENDEDPROP_VALUE         VideoProc;
-	ULONGLONG                           Reserved;
+    ULONG                               Mode;
+    LONG                                Min;
+    LONG                                Max;
+    LONG                                Step;
+    KSCAMERA_EXTENDEDPROP_VALUE         VideoProc;
+    ULONGLONG                           Reserved;
 } KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING, *PKSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING;
 
 #define KSCAMERA_EXTENDEDPROP_OIS_OFF                                       0x0000000000000000

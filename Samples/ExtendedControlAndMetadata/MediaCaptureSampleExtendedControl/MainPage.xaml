@@ -50,19 +50,19 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="2">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'	Text='Preview' />
+                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'    Text='Preview' />
                     <Canvas x:Name="previewCanvas1" Width="320"  Height="240" Background="Gray">
                         <CaptureElement x:Name="previewElement1" Width="320" Height="240" />
                     </Canvas>
                 </StackPanel>
                 <StackPanel Margin="10,0,0,0">
-                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'	Text='Captured Video' />
+                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'    Text='Captured Video' />
                     <Canvas x:Name='playbackCanvas1' Width='320' Height ='240' Background="Gray">
-                        <MediaElement  x:Name='playbackElement1'	  Width="320"  Height="240" />
+                        <MediaElement  x:Name='playbackElement1'      Width="320"  Height="240" />
                     </Canvas>
                 </StackPanel>
                 <StackPanel Margin="10,0,0,0">
-                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'	Text='Captured Images' />
+                    <TextBlock Style="{StaticResource BasicTextStyle}"  HorizontalAlignment='Center'  VerticalAlignment='Center'  TextAlignment='Center'    Text='Captured Images' />
                     <Canvas x:Name="imageCanvas1" Width='320' Height ='240' Background="Gray">
                         <Image x:Name="imageElement1"  Width="320"   Height="240"/>
                     </Canvas>
