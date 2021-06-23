@@ -20,7 +20,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
     /// <returns></returns>
     Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Media::Devices::VideoDeviceController const& controller, int controlId)
     {
-        Windows::Foundation::IPropertyValue property = nullptr;
+        Windows::Foundation::IPropertyValue propertyValueResult = nullptr;
 
         KSPROPERTY prop(
             { 0x1CB79112, 0xC0D2, 0x4213, {0x9C, 0xA6, 0xCD, 0x4F, 0xDB, 0x92, 0x79, 0x72} } /* KSPROPERTYSETID_ExtendedCameraControl */,
@@ -32,16 +32,16 @@ namespace winrt::CameraKsPropertyHelper::implementation
         auto getResult = controller.GetDevicePropertyByExtendedId(serializedProp, nullptr);
         if (getResult.Status() == Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::NotSupported)
         {
-            return property;
+            return propertyValueResult;
         }
         if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
         {
             throw hresult_invalid_argument(L"Could not retrieve device property " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)getResult.Status()));
         }
-        auto result = getResult.Value();
-        property = result.as<Windows::Foundation::IPropertyValue>();
+        auto getResultValue = getResult.Value();
+        propertyValueResult = getResultValue.as<Windows::Foundation::IPropertyValue>();
 
-        return property;
+        return propertyValueResult;
     }
 
     /// <summary>
@@ -73,17 +73,18 @@ namespace winrt::CameraKsPropertyHelper::implementation
                     payload = make<BackgroundSegmentationPropertyPayload>(property);
                     break;
                 }
-                // else  fallthrough, BackgroundSegmentation control not implementing mask metadata may return a basic property payload per first draft of the DDI spec
+                // else fallthrough, BackgroundSegmentation control not implementing mask metadata may return a basic property payload per first draft of the DDI spec
             }  
 
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION:
             {
                 payload = make<BasicExtendedPropertyPayload>(property, extendedControlKind);
+                break;
             }
-            break;
-        
+            
+
             default:
-                throw hresult_invalid_argument(L"unexpected extendedControlKind passed");
+                throw hresult_invalid_argument(L"unexpected extendedControlKind passed: " + to_hstring((int32_t)extendedControlKind));
         }
 
         return payload;

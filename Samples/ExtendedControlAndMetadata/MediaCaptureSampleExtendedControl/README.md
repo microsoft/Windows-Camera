@@ -12,7 +12,7 @@
 
 ## Requirements
 	
-	This sample is built using Visual Studio 2019 and [Windows SDK version 20348](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk/#serverdev) 
+	This sample is built using Visual Studio 2019 and requires [Windows SDK version 19041](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk).
 
 ## Using the samples
 

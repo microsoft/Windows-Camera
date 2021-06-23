@@ -1,24 +1,24 @@
-# WinRT sample application getting and setting extended camera controls as well as extract frame metadata
+# WinRT sample application getting and setting extended camera controls as well as extracting frame metadata
 
 This folder contains sample projects for
 - **EyeGazeAndBackgroundSegmentation**: a C# UWP application to preview camera and to interact with its extended controls
 - **CameraKsPropertyHelper**: a C++/Winrt runtime component to interact with a [VideoDeviceController](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller?view=winrt-20348) to get and set extended camera controls via serialized/deserialized byte buffers. While this sample covers EyeGazeCorrection and BackgroundSegmentation, it can be extended to cover other controls using the same methodology. 
-This project also contains a helper method to extract and deserialize frame metata from a byte buffer. Similarly while it covers how to extract *```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK```* metadata, it can be extended to cover other type of metadata using the same methodology.  
+This project also contains a helper method to extract and deserialize frame metadata from a byte buffer. Similarly while it covers how to extract *```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK```* metadata, it can be extended to cover other type of metadata using the same methodology.  
 
 ## Requirements
 	
-	This sample is built using Visual Studio 2019 and [Windows SDK version 20348](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk/#serverdev) at minimum and requires [Windows SDK version 21364](TBD) to interact with the *KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK* metadata and the KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK capability for the KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION control.
+	This sample is built using Visual Studio 2019 and [Windows SDK version 19041](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk) at minimum and requires [Windows SDK version 21364](TBD) to interact with the *KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK* metadata and the KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK capability for the KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION control.
 
 ## Getting and setting extended camera controls
-In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserilized byte buffers.
+In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
 
 ### GetDevicePropertyByExtendedId
-We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_GetDevicePropertyByExtendedId_System_Byte___Windows_Foundation_IReference_System_UInt32__) to send a GET command of an extended control to a camera device. This is used to verify if the control is supported as well as query the capabilities of the device regarding this control. 
-1) we first create GET command we will send in the proper format..
-2) then serialize it to a byte buffer..
-3) then call the aforementioned method..
-4) and retrieve the result for which the status indicates success of failure..
-5) then finally deserialize the result value into a format we can parse
+We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_GetDevicePropertyByExtendedId_System_Byte___Windows_Foundation_IReference_System_UInt32__) to send a GET command of an extended control to a camera device. This is used to verify if the control is supported as well as to query the capabilities of the device regarding this control. 
+1) We first create GET command we will send in the proper format,
+2) then serialize it to a byte buffer,
+3) then call the aforementioned method
+4) and retrieve the result for which the status indicates success of failure,
+5) then finally deserialize the result value into a format we can parse.
 
 
 ```cpp
@@ -39,7 +39,7 @@ Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Med
 
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
 
-        // 3. Send the GET command
+        // 3. send the GET command
         auto getResult = controller.GetDevicePropertyByExtendedId(serializedProp, nullptr);
 
         // 4. check status
@@ -52,7 +52,7 @@ Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Med
             throw hresult_invalid_argument(L"Could not retrieve device property " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)getResult.Status()));
         }
         
-        // 5. deserialize the result into a format we can understant 
+        // 5. deserialize the result into a format we can understand 
 		// see the PropertyValuePayloadHolder class in kshelper.h that takes the IPropertyValue
 		// as constructor argument
         auto result = getResult.Value();
@@ -106,7 +106,7 @@ void PropertyInquiry::SetExtendedControlFlags(
         uint8_t* pValue = reinterpret_cast<uint8_t*>(&value);
         array_view<uint8_t const> serializedValue = array_view<uint8_t const>(pValue, value.Size);
 
-        // 5. Send the GET command
+        // 5. send the GET command
         auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedValue);
 
         // 6. check status
@@ -177,41 +177,42 @@ winrt::CameraKsPropertyHelper::IMetadataPayload PropertyInquiry::ExtractFrameMet
 ```
 
 ## Eye Gaze Correction
-the eye gaze correction DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION```*) has been introduced in Windows strating with build 20348. If supported by the driver, it allows to slighly change the predominant face's eye position so that the main subject appears as if looking directly into the camera.
-Programmatically it acts simply as a ON/OFF toggle by setting these flag values accordingly:
+the eye gaze correction DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION```*) has been introduced in Windows starting with build 20348. If supported by the driver, it slightly changes the predominant face's eye position so that the main subject appears as if looking directly into the camera.
+Programmatically it acts simply as a ON/OFF toggle by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001
 ```
 
 ## Background Segmentation control
-the Background segmentation DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```*) has been introduced in Windows strating with build 20348. In this initial release, if supported by the driver, it allows to blur the background of a scene and preserve only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
-Programmatically it acts simply as a ON/OFF toggle for background blur by setting these flag values accordingly:
+the Background segmentation DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```*) has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it allows to blur the background of a scene and preserve only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
+Programmatically it acts simply as a ON/OFF toggle for background blur by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR = 0x0000000000000001
 ```
 
-Additionaly in Windows build above 21364, a new mode has been added that request the driver to attach the segmentation mask as metadata to each frame streamed out. This mode is signaled using this flag value:
+Additionaly in Windows build above 21364, a new mode has been added that requests the driver to attach the segmentation mask as metadata to each frame streamed out. This mode is signaled using this flag value:
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002
 ```
-When a GET command is sent for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```, only whenever the camera device supports the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` mode, it will advise with which stream configurations it supports the generation of the mask metadata. This is usefull for an application wanting to understand if there are any limitations before attempting to rely on a mask to operate scenarios such as alpha blending of the background portion of an image. A camera device that supports this control may not always do so accross all its stream configurations. For example, a camera could be able to segment background at 30fps on a 1080p stream, but not at 60fps eventhough it may be able to stream at such resolution and framerate combination. The structure returned to advise which stream configuration support the generation of the mask frame metadata is a set of ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS```. The app can then correlate the available stream configurations of a camera with this set to understand what to expect if it sets this control with the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` flag.
+When a GET command is sent for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```, **and only** whenever the camera device supports the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` mode, it will advise with which stream configurations it supports the generation of the mask metadata. This is  for an application wanting to understand if there are any limitations before attempting to rely on a mask to operate scenarios such as alpha blending of the background portion of an image. A camera device that supports this control may not always do so across all its stream configurations. For example, a camera could be able to segment background at 30fps on a 1080p stream, but not at 60fps even though it may be able to stream at such resolution and framerate combination. The structure returned to advise which stream configuration support the generation of the mask frame metadata is a set of ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS```. The app can then correlate the available stream configurations of a camera with this set to understand what to expect if it sets this control with the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` flag.
 
 ## Background Segmentation mask metadata
-The background segmentation mask contains the mask metadata frame as a contiguous buffer,
-but also some relevant information about how the mask relates to the frame it correlates with.
+The background segmentation mask contains the mask metadata frame as a contiguous buffer, but also some relevant information about how the mask relates to the frame it correlates with.
 ```cpp
 struct KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
     {
         KSCAMERA_METADATA_ITEMHEADER Header;
         RECT MaskCoverageBoundingBox; // rectangle in absolute coordinates of the frame defining which part of the field of view is covered by the mask
-        SIZE MaskResolution; // the resolution of the mask frame attached below in MaskData (i.e. a contiguous bufer of MaskResolution.cx * MaskResolution.cy)
-        RECT ForegroundBoundingBox; // rectangle in absolute coordinates of the mask that specifies which portion cotains only foreground pixels. Implemented may chose to simply return coordinates for the whole mask and let the consumer parse the whole mask.
+        SIZE MaskResolution; // the resolution of the mask frame attached below in MaskData (i.e. a contiguous buffer of MaskResolution.cx * MaskResolution.cy)
+        RECT ForegroundBoundingBox; // rectangle in absolute coordinates of the mask that specifies which portion contains only foreground pixels. Implementation may chose to simply return coordinates for the whole mask and let the consumer parse the whole mask.
         BYTE MaskData[1]; // Array of mask data of dimension MaskResolution.cx * MaskResolution.cy
     };
 ```
-See example depiction of a background segmentation mask in regard to the ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` metadata structure: ![example](example_BACKGROUNDSEGMENTATIONMASK.jpg)
+See example depiction of a background segmentation mask in regard to the ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` metadata structure:
+
+![example](example_BACKGROUNDSEGMENTATIONMASK.jpg)
 
 ## Using the samples
 
@@ -242,4 +243,3 @@ provided by the bot. You will only need to do this once across all repos using o
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
 For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-

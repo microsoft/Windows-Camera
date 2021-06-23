@@ -23,7 +23,7 @@ namespace CameraKsPropertyHelper
     {
         KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000,
         KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR = 0x0000000000000001,
-        KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002
+        KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002,
     };
 
     // Accessors to parts of KSCAMERA_EXTENDEDPROP_HEADER
@@ -44,7 +44,7 @@ namespace CameraKsPropertyHelper
     runtimeclass BackgroundSegmentationConfigCaps
     {
         // Output width and height in pixels
-        Windows.Foundation.Size Resolution {get; };
+        Windows.Foundation.Size Resolution { get; };
 
         // The maximum frame rate the driver can accommodate  for achieving 
         // background segmentation for each frame corresponding to Resolution
@@ -64,7 +64,7 @@ namespace CameraKsPropertyHelper
     // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and one or more KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
     runtimeclass BackgroundSegmentationPropertyPayload : [default] IExtendedPropertyPayload
     {
-        Windows.Foundation.Collections.IVectorView<BackgroundSegmentationConfigCaps> ConfigCaps {get; };
+        Windows.Foundation.Collections.IVectorView<BackgroundSegmentationConfigCaps> ConfigCaps { get; };
     }
 
 
@@ -82,7 +82,7 @@ namespace CameraKsPropertyHelper
     // class to encapsulate and access a KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
     runtimeclass BackgroundSegmentationMaskMetadata : [default] IMetadataPayload
     {
-        Windows.Graphics.Imaging.BitmapBounds MaskCoverageBoundingBox {get; };
+        Windows.Graphics.Imaging.BitmapBounds MaskCoverageBoundingBox { get; };
         Windows.Foundation.Size MaskResolution{ get; };
         Windows.Graphics.Imaging.BitmapBounds ForegroundBoundingBox{ get; };
         Windows.Graphics.Imaging.SoftwareBitmap MaskData { get; };

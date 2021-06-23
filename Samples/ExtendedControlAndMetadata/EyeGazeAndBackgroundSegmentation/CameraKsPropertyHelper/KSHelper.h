@@ -51,6 +51,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
     };
 
     // BackgroundSegmentation-related
+    //
 #pragma region BackgroundSegmentation
 
     struct KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
@@ -86,11 +87,12 @@ namespace winrt::CameraKsPropertyHelper::implementation
         BYTE MaskData[1]; // Array of mask data of dimension MaskResolution.cx * MaskResolution.cy
     };
 
+    //
+    // end of BackgroundSegmentation-related
 #pragma endregion BackgroundSegmentation
+
     //
     // end of ksmedia.h redefinitions
-    
-
 #pragma endregion KsMediaRedefinition
 
 
