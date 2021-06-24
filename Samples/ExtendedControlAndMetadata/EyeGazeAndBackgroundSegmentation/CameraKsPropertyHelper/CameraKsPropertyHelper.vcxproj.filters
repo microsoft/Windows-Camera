@@ -24,7 +24,6 @@
     <ClInclude Include="BackgroundSegmentationPropertyPayload.h" />
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
     <ClInclude Include="KSHelper.h" />
-    <ClInclude Include="ResourceLock.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="CameraKsPropertyInquiry.idl" />

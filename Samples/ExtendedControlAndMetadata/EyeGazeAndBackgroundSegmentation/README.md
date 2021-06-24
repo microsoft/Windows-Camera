@@ -3,7 +3,7 @@
 This folder contains sample projects for
 - **EyeGazeAndBackgroundSegmentation**: a C# UWP application to preview camera and to interact with its extended controls
 - **CameraKsPropertyHelper**: a C++/Winrt runtime component to interact with a [VideoDeviceController](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller?view=winrt-20348) to get and set extended camera controls via serialized/deserialized byte buffers. While this sample covers EyeGazeCorrection and BackgroundSegmentation, it can be extended to cover other controls using the same methodology. 
-This project also contains a helper method to extract and deserialize frame metadata from a byte buffer. Similarly while it covers how to extract *```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK```* metadata, it can be extended to cover other type of metadata using the same methodology.  
+This project also contains a helper method to extract and deserialize frame metadata from a byte buffer. Similarly to how it demonstrates how to extract ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` capture metadata, it can be extended to extract other types of metadata using the same methodology.  
 
 ## Requirements
 	
@@ -12,9 +12,9 @@ This sample is built using Visual Studio 2019 and [Windows SDK version 19041](ht
 ## Getting and setting extended camera controls
 In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
 
-### GetDevicePropertyByExtendedId
+### GetDevicePropertyByExtendedId()
 We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_GetDevicePropertyByExtendedId_System_Byte___Windows_Foundation_IReference_System_UInt32__) to send a GET command of an extended control to a camera device. This is used to verify if the control is supported as well as to query the capabilities of the device regarding this control. 
-1) We first create GET command we will send in the proper format,
+1) We first create a GET command we will send in the proper format,
 2) then serialize it to a byte buffer,
 3) then call the aforementioned method
 4) and retrieve the result for which the status indicates success of failure,
@@ -62,7 +62,7 @@ Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Med
     }
 ```
 
-### SetDevicePropertyByExtendedId
+### SetDevicePropertyByExtendedId()
 Similarly to a GET command, we use the method [```SetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.setdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_SetDevicePropertyByExtendedId_System_Byte___System_Byte___) to send a SET command of an extended control to a camera device. This is used to modify the state of a device control if it is supported.
 1) we first create SET command we will send in the proper format..
 2) then serialize it to a byte buffer..
@@ -176,7 +176,7 @@ winrt::CameraKsPropertyHelper::IMetadataPayload PropertyInquiry::ExtractFrameMet
     }
 ```
 
-## Eye Gaze Correction
+## Eye Gaze Correction extended control
 the eye gaze correction DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION```*) has been introduced in Windows starting with build 20348. If supported by the driver, it slightly changes the predominant face's eye position so that the main subject appears as if looking directly into the camera.
 Programmatically it acts simply as a ON/OFF toggle by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
@@ -184,8 +184,8 @@ KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001
 ```
 
-## Background Segmentation control
-the Background segmentation DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```*) has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it allows to blur the background of a scene and preserve only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
+## Background Segmentation extended control
+the Background segmentation DDI named ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION``` has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it allows to blur the background of a scene and preserve only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
 Programmatically it acts simply as a ON/OFF toggle for background blur by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000

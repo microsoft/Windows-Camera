@@ -121,7 +121,6 @@
     <ClInclude Include="KSHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PropertyInquiry.h" />
-    <ClInclude Include="ResourceLock.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackgroundSegmentationConfigCaps.cpp" />
