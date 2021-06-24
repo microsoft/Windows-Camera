@@ -52,8 +52,8 @@ namespace winrt::CameraKsPropertyHelper::implementation
     /// <returns></returns>
     winrt::CameraKsPropertyHelper::IExtendedPropertyPayload PropertyInquiry::GetExtendedControl(winrt::Windows::Media::Devices::VideoDeviceController const& controller, winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind)
     {
-        auto property = GetExtendedCameraControlPayload(controller, static_cast<int>(extendedControlKind));
-        if (property == nullptr)
+        auto propertyValueResult = GetExtendedCameraControlPayload(controller, static_cast<int>(extendedControlKind));
+        if (propertyValueResult == nullptr)
         {
             return nullptr;
         }
@@ -66,11 +66,11 @@ namespace winrt::CameraKsPropertyHelper::implementation
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION:
             {
                 auto container = winrt::com_array<uint8_t>(sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
-                property.GetUInt8Array(container);
+                propertyValueResult.GetUInt8Array(container);
                 KSCAMERA_EXTENDEDPROP_HEADER* payloadHeader = reinterpret_cast<KSCAMERA_EXTENDEDPROP_HEADER*>(&container[0]);
                 if ((payloadHeader->Capability & (ULONGLONG)BackgroundSegmentationCapabilityKind::KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
                 {
-                    payload = make<BackgroundSegmentationPropertyPayload>(property);
+                    payload = make<BackgroundSegmentationPropertyPayload>(propertyValueResult);
                     break;
                 }
                 // else fallthrough, BackgroundSegmentation control not implementing mask metadata may return a basic property payload per first draft of the DDI spec
@@ -78,7 +78,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
 
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION:
             {
-                payload = make<BasicExtendedPropertyPayload>(property, extendedControlKind);
+                payload = make<BasicExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
                 break;
             }
             
@@ -110,7 +110,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
         uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
 
-        KSCAMERA_EXTENDEDPROP_HEADER value =
+        KSCAMERA_EXTENDEDPROP_HEADER header =
         {
             1, // Version
             1, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
@@ -119,10 +119,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
             flags, // Flags
             0 // Capability                
         };
-        uint8_t* pValue = reinterpret_cast<uint8_t*>(&value);
-        array_view<uint8_t const> serializedValue = array_view<uint8_t const>(pValue, value.Size);
+        uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
+        array_view<uint8_t const> serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
 
-        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedValue);
+        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
 
         if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
         {
@@ -138,9 +138,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
     /// <returns></returns>
     winrt::CameraKsPropertyHelper::IMetadataPayload PropertyInquiry::ExtractFrameMetadata(winrt::Windows::Media::Capture::Frames::MediaFrameReference const& frame, winrt::CameraKsPropertyHelper::FrameMetadataKind const& metadataKind)
     {
+        // redefine here GUIDs present in mfapi.h in case they are not defined in the SDK of the minimum Windows target this project is built against
         static guid captureMetadataGuid = guid(0x2EBE23A8, 0xFAF5, 0x444A, { 0xA6, 0xA2, 0xEB, 0x81, 0x08, 0x80, 0xAB, 0x5D }); // MFSampleExtension_CaptureMetadata
         static guid backgroundSegmentationMaskGuid = guid(0x3f14dd3, 0x75dd, 0x433a, { 0xa8, 0xe2, 0x1e, 0x3f, 0x5f, 0x2a, 0x50, 0xa0 }); // MF_CAPTURE_METADATA_FRAME_BACKGROUND_MASK
-        static guid dwKey = guid(0x276f72a2, 0x59c8, 0x4f69, { 0x97, 0xb4, 0x6, 0x8b, 0x8c, 0xe, 0xc0, 0x44 });
+        
         CameraKsPropertyHelper::IMetadataPayload result = nullptr;
 
         if (frame == nullptr)

@@ -7,7 +7,7 @@ This project also contains a helper method to extract and deserialize frame meta
 
 ## Requirements
 	
-	This sample is built using Visual Studio 2019 and [Windows SDK version 19041](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk) at minimum and requires [Windows SDK version 21364](TBD) to interact with the *KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK* metadata and the KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK capability for the KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION control.
+This sample is built using Visual Studio 2019 and [Windows SDK version 19041](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk) at minimum and requires [Windows SDK version 21364](TBD) to interact with the ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` metadata and the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` capability for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION``` control.
 
 ## Getting and setting extended camera controls
 In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
@@ -26,7 +26,7 @@ We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft
 
 Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Media::Devices::VideoDeviceController const& controller, int controlId)
     {
-        Windows::Foundation::IPropertyValue property = nullptr;
+        Windows::Foundation::IPropertyValue propertyValueResult = nullptr;
 
         // 1. create the GET command
         KSPROPERTY prop(
@@ -45,7 +45,7 @@ Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Med
         // 4. check status
         if (getResult.Status() == Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::NotSupported)
         {
-            return property;
+            return propertyValueResult;
         }
         if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
         {
@@ -55,10 +55,10 @@ Windows::Foundation::IPropertyValue GetExtendedCameraControlPayload(Windows::Med
         // 5. deserialize the result into a format we can understand 
 		// see the PropertyValuePayloadHolder class in kshelper.h that takes the IPropertyValue
 		// as constructor argument
-        auto result = getResult.Value();
-        property = result.as<Windows::Foundation::IPropertyValue>();
+        auto getResultValue = getResult.Value();
+        propertyValueResult = getResultValue.as<Windows::Foundation::IPropertyValue>();
 
-        return property;
+        return propertyValueResult;
     }
 ```
 
@@ -92,7 +92,7 @@ void PropertyInquiry::SetExtendedControlFlags(
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
 
         // 3. create the setting payload
-        KSCAMERA_EXTENDEDPROP_HEADER value =
+        KSCAMERA_EXTENDEDPROP_HEADER header =
         {
             1, // Version
             1, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
@@ -103,11 +103,11 @@ void PropertyInquiry::SetExtendedControlFlags(
         };
 
         // 4. serialize to byte buffer
-        uint8_t* pValue = reinterpret_cast<uint8_t*>(&value);
-        array_view<uint8_t const> serializedValue = array_view<uint8_t const>(pValue, value.Size);
+        uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
+        array_view<uint8_t const> serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
 
         // 5. send the GET command
-        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedValue);
+        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
 
         // 6. check status
         if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
