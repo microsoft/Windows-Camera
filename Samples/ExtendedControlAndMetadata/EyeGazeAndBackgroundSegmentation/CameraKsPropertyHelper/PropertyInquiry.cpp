@@ -58,7 +58,6 @@ namespace winrt::CameraKsPropertyHelper::implementation
             return nullptr;
         }
 
-        winrt::com_array<uint8_t> container;
         IExtendedPropertyPayload payload = nullptr;
 
         switch (extendedControlKind)
