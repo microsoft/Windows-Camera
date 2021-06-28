@@ -388,37 +388,45 @@ namespace EyeGazeAndBackgroundSegmentation
 
                     await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        // display debug output
-                        UIControlCapabilityText.Text = statusText;
-                        
-                        // populate and re-enable parts of the UI
-                        UIPreviewElement_SizeChanged(null, null);
-                        UICmbCamera.IsEnabled = true;
-
-                        // if background segmentation is supported, enable its toggle
-                        UIBackgroundSegmentationPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null;
-                        if (UIBackgroundSegmentationPanel.IsEnabled)
+                        try
                         {
-                            var possibleFlags = Enum.GetValues(typeof(BackgroundSegmentationCapabilityKind));
-                            var capabilities = new List<BackgroundSegmentationCapabilityKind>();
-                            foreach(BackgroundSegmentationCapabilityKind capability in possibleFlags)
+                            // display debug output
+                            UIControlCapabilityText.Text = statusText;
+
+                            // populate and re-enable parts of the UI
+                            UIPreviewElement_SizeChanged(null, null);
+                            UICmbCamera.IsEnabled = true;
+
+                            // if background segmentation is supported, enable its toggle
+                            UIBackgroundSegmentationPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null;
+                            if (UIBackgroundSegmentationPanel.IsEnabled)
                             {
-                                if(capability == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF ||
-                                ((int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability & (int)capability) != 0)
+                                var possibleFlags = Enum.GetValues(typeof(BackgroundSegmentationCapabilityKind));
+                                var capabilities = new List<BackgroundSegmentationCapabilityKind>();
+                                foreach (BackgroundSegmentationCapabilityKind capability in possibleFlags)
                                 {
-                                    capabilities.Add(capability);
+                                    if (capability == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF ||
+                                    ((int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability & (int)capability) != 0)
+                                    {
+                                        capabilities.Add(capability);
+                                    }
                                 }
+                                UIBackgroundSegmentationModes.ItemsSource = capabilities;
+                                UIBackgroundSegmentationModes.SelectedIndex = capabilities.IndexOf((BackgroundSegmentationCapabilityKind)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags);
                             }
-                            UIBackgroundSegmentationModes.ItemsSource = capabilities;
-                            UIBackgroundSegmentationModes.SelectedIndex = capabilities.IndexOf((BackgroundSegmentationCapabilityKind)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags);
-                        }
 
-                        // if eye gaze correction is supported, enable its toggle
-                        UIEyeGazeCorrectionPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
-                        if (UIEyeGazeCorrectionPanel.IsEnabled)
+                            // if eye gaze correction is supported, enable its toggle
+                            UIEyeGazeCorrectionPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
+                            if (UIEyeGazeCorrectionPanel.IsEnabled)
+                            {
+                                UIEyeGazeCorrectionModes.ItemsSource = Enum.GetValues(typeof(EyeGazeCorrectionCapabilityKind));
+                                UIEyeGazeCorrectionModes.SelectedIndex = (int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags;
+                            }
+                        }
+                        catch(Exception ex)
                         {
-                            UIEyeGazeCorrectionModes.ItemsSource = Enum.GetValues(typeof(EyeGazeCorrectionCapabilityKind));
-                            UIEyeGazeCorrectionModes.SelectedIndex = (int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags;
+                            NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                            Debug.WriteLine(ex.ToString());
                         }
                     });
                 }
@@ -475,8 +483,11 @@ namespace EyeGazeAndBackgroundSegmentation
             if (UIBackgroundSegmentationModes.SelectedIndex >= 0)
             {
                 PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, (ulong)UIBackgroundSegmentationModes.SelectedIndex);
+                
+                // cache whether or not we are asking for background mask metadata to be produced
                 m_isBackgroundSegmentationMaskModeOn = (BackgroundSegmentationCapabilityKind)UIBackgroundSegmentationModes.SelectedItem == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK;
                 UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
+                UIBackgroundSegmentationMaskImage.Visibility = m_isBackgroundSegmentationMaskModeOn ? Visibility.Visible : Visibility.Collapsed;
 
                 if (m_isBackgroundSegmentationMaskModeOn)
                 {

@@ -24,12 +24,15 @@
                 <TextBlock Name="UIStatusBlock"
                         FontWeight="Bold"
                         TextWrapping="Wrap"
-                        Text="nothing to report"
-                        FontFamily="Segoe UI"/>
+                        Text="nothing to report"/>
             </Border>
-            <ComboBox Name="UICmbCamera" IsEnabled="false" SelectionChanged="UICmbCamera_SelectionChanged" Background ="{StaticResource TranslucentBlackBrush}" Foreground="White" />
-            <TextBlock Name="UITxtBlockPreviewProperties" Text="0x0" FontFamily="Segoe UI"/>
-            <TextBlock x:Name="UIControlCapabilityText" />
+            <ComboBox Name="UICmbCamera" IsEnabled="false" SelectionChanged="UICmbCamera_SelectionChanged" />
+            <Border Background ="{StaticResource TranslucentBlackBrush}">
+                <TextBlock Name="UITxtBlockPreviewProperties" Text="0x0"/>
+            </Border>
+            <Border Background ="{StaticResource TranslucentBlackBrush}">
+                <TextBlock x:Name="UIControlCapabilityText" Text="Capabilities"  Foreground="White"/>
+            </Border>
 
             <ContentControl x:Name="UIBackgroundSegmentationPanel">
                 <StackPanel>
