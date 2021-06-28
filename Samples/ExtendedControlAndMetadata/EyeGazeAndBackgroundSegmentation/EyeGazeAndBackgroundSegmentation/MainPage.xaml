@@ -1,0 +1,66 @@
+﻿<Page
+    x:Class="EyeGazeAndBackgroundSegmentation.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:EyeGazeAndBackgroundSegmentation"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    Loaded="Page_Loaded">
+
+    <Page.Resources>
+        <SolidColorBrush x:Key="TranslucentBlackBrush" Color="Black" Opacity="0.3"/>
+        <Style x:Key="TextBlockStyling" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="Black"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+
+        <StackPanel Orientation="vertical" Background="White" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <Border Name="UIStatusBorder">
+
+                <TextBlock Name="UIStatusBlock"
+                        FontWeight="Bold"
+                        TextWrapping="Wrap"
+                        Text="nothing to report"/>
+            </Border>
+            <ComboBox Name="UICmbCamera" IsEnabled="false" SelectionChanged="UICmbCamera_SelectionChanged" />
+            <Border Background ="{StaticResource TranslucentBlackBrush}">
+                <TextBlock Name="UITxtBlockPreviewProperties" Text="0x0"/>
+            </Border>
+            <Border Background ="{StaticResource TranslucentBlackBrush}">
+                <TextBlock x:Name="UIControlCapabilityText" Text="Capabilities"  Foreground="White"/>
+            </Border>
+
+            <ContentControl x:Name="UIBackgroundSegmentationPanel">
+                <StackPanel>
+                    <TextBlock Text="BackgroundSegmentation" />
+                    <ComboBox Name="UIBackgroundSegmentationModes" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
+                    <ToggleButton Content="Show mask" x:Name="UIShowBackgroundImage" Checked="UIShowBackgroundImage_Checked" Unchecked="UIShowBackgroundImage_Checked"/>
+                </StackPanel>
+            </ContentControl>
+            <ContentControl x:Name="UIEyeGazeCorrectionPanel">
+                <StackPanel>
+                    <TextBlock Text="EyeGazeCorrection" />
+                    <ComboBox Name="UIEyeGazeCorrectionModes" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
+                </StackPanel>
+            </ContentControl>
+
+            <Grid>
+            <!--Camera preview-->
+                <MediaPlayerElement Name="UIPreviewElement"
+                                Stretch="Uniform"
+                                AreTransportControlsEnabled="False"
+                                Canvas.ZIndex="-1"
+                                Grid.Row="1" 
+                                SizeChanged="UIPreviewElement_SizeChanged"/>
+
+                <Canvas Name="UICanvasOverlay" HorizontalAlignment="Left" VerticalAlignment="Center" Canvas.ZIndex="0"/>
+            </Grid>
+
+            <Image x:Name="UIBackgroundSegmentationMaskImage" MaxHeight="400" MaxWidth="400"/>
+        </StackPanel>
+    </Grid>
+</Page>
