@@ -456,12 +456,14 @@ namespace EyeGazeAndBackgroundSegmentation
                 {
                     m_isShowingBackgroundMask = true;
                     UIBackgroundSegmentationMaskImage.Visibility = Visibility.Visible;
+                    UICanvasOverlay.Visibility = Visibility.Visible;
                 }
                 else
                 {
                     UIBackgroundSegmentationMaskImage.Visibility = Visibility.Collapsed;
                     m_isShowingBackgroundMask = false;
                     m_bboxRenderer.Reset();
+                    UICanvasOverlay.Visibility = Visibility.Collapsed;
                 }
             }
             finally
@@ -487,7 +489,6 @@ namespace EyeGazeAndBackgroundSegmentation
                 // cache whether or not we are asking for background mask metadata to be produced
                 m_isBackgroundSegmentationMaskModeOn = (BackgroundSegmentationCapabilityKind)UIBackgroundSegmentationModes.SelectedItem == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK;
                 UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
-                UIBackgroundSegmentationMaskImage.Visibility = m_isBackgroundSegmentationMaskModeOn ? Visibility.Visible : Visibility.Collapsed;
 
                 if (m_isBackgroundSegmentationMaskModeOn)
                 {
@@ -503,7 +504,7 @@ namespace EyeGazeAndBackgroundSegmentation
                 }
                 else
                 {
-                    m_bboxRenderer.Reset();
+                    UIShowBackgroundImage.IsChecked = false;
                 }
             }
         }
