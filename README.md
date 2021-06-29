@@ -85,6 +85,6 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 </table>
 <table>
  <tr>
-  <td><a href="Samples/VirtualCamera"> Sample of Virtual Camere mediasource and configuration app </a></td>
+  <td><a href="Samples/VirtualCamera"> Sample of Virtual Camera mediasource and configuration app </a></td>
  </tr>
 </table>
