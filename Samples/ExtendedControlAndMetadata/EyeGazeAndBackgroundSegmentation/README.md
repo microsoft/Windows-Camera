@@ -7,7 +7,7 @@ This project also contains a helper method to extract and deserialize frame meta
 
 ## Requirements
 	
-This sample is built using Visual Studio 2019 and [Windows SDK version 19041](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk) at minimum and requires [Windows SDK version 21364](TBD) to interact with the ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` metadata and the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` capability for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION``` control.
+This sample is built using Visual Studio 2019 and requires [Windows SDK version 22000](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK).
 
 ## Getting and setting extended camera controls
 In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
@@ -177,7 +177,7 @@ winrt::CameraKsPropertyHelper::IMetadataPayload PropertyInquiry::ExtractFrameMet
 ```
 
 ## Eye Gaze Correction extended control
-the eye gaze correction DDI (*```KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION```*) has been introduced in Windows starting with build 20348. If supported by the driver, it slightly changes the predominant face's eye position so that the main subject appears as if looking directly into the camera.
+The eye gaze correction DDI [```KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION```](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection) has been introduced in Windows starting with build 20348. If supported by the driver, it slightly changes the predominant face's eye position so that the main subject appears as if looking directly into the camera.
 Programmatically it acts simply as a ON/OFF toggle by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000
@@ -185,7 +185,7 @@ KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001
 ```
 
 ## Background Segmentation extended control
-the Background segmentation DDI named ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION``` has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it allows to blur the background of a scene and preserve only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
+The background segmentation DDI named [```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation) has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it blurs the background of a scene and preserves only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
 Programmatically it acts simply as a ON/OFF toggle for background blur by setting these flag values accordingly in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000
@@ -196,10 +196,10 @@ Additionaly in Windows build above 21364, a new mode has been added that request
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002
 ```
-When a GET command is sent for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```, **and only** whenever the camera device supports the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` mode, it will advise with which stream configurations it supports the generation of the mask metadata. This is  for an application wanting to understand if there are any limitations before attempting to rely on a mask to operate scenarios such as alpha blending of the background portion of an image. A camera device that supports this control may not always do so across all its stream configurations. For example, a camera could be able to segment background at 30fps on a 1080p stream, but not at 60fps even though it may be able to stream at such resolution and framerate combination. The structure returned to advise which stream configuration support the generation of the mask frame metadata is a set of ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS```. The app can then correlate the available stream configurations of a camera with this set to understand what to expect if it sets this control with the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` flag.
+When a GET command is sent for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```, **and only** whenever the camera device supports the [```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK```](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation#usage-summary-table) mode, it will advise with which stream configurations it supports the generation of the mask metadata. This is for an application wanting to understand if there are any limitations before attempting to rely on a mask to operate scenarios such as alpha blending of the background portion of an image. A camera device that supports this control may not always do so across all its stream configurations. For example, a camera could be able to segment background at 30fps on a 1080p stream, but not at 60fps even though it may be able to stream at such resolution and framerate combination. The structure returned to advise which stream configuration support the generation of the mask frame metadata is a set of [```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS```](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ns-ksmedia-kscamera_extendedprop_backgroundsegmentation_configcaps). The app can then correlate the available stream configurations of a camera with this set to understand what to expect if it sets this control with the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` flag.
 
 ## Background Segmentation mask metadata
-The background segmentation mask contains the mask metadata frame as a contiguous buffer, but also some relevant information about how the mask relates to the frame it correlates with.
+The background segmentation mask metadata named [```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK```](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ns-ksmedia-kscamera_metadata_backgroundsegmentationmask) contains the mask data as a contiguous buffer, but also some relevant information about how the mask relates to the frame it correlates with.
 ```cpp
 struct KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
     {

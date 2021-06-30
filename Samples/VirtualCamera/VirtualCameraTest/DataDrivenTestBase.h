@@ -47,9 +47,9 @@ struct ci_compare
 {
     struct nocase_compare
     {
-        bool operator() (const unsigned char& c1, const unsigned char& c2) const
+        bool operator() (const wchar_t& c1, const wchar_t& c2) const
         {
-            return tolower(c1) < tolower(c2);
+            return towlower(c1) < towlower(c2);
         }
     };
 
