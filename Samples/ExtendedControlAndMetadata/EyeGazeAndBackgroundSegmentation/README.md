@@ -13,7 +13,7 @@ This sample is built using Visual Studio 2019 and requires [Windows SDK version 
 In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
 
 ### GetDevicePropertyByExtendedId()
-We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_GetDevicePropertyByExtendedId_System_Byte___Windows_Foundation_IReference_System_UInt32__) to send a GET command of an extended control to a camera device. This is used to verify if the control is supported as well as to query the capabilities of the device regarding this control. 
+We use the method [```GetDevicePropertyByExtendedId()```](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid?view=winrt-20348#Windows_Media_Devices_VideoDeviceController_GetDevicePropertyByExtendedId_System_Byte___Windows_Foundation_IReference_System_UInt32__) to send a GET command of an extended control to a camera device. This is used to verify if the control is supported as well as to query the capabilities of the device regarding this control and its currently set state.
 1) We first create a GET command we will send in the proper format,
 2) then serialize it to a byte buffer,
 3) then call the aforementioned method
@@ -106,7 +106,7 @@ void PropertyInquiry::SetExtendedControlFlags(
         uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
         array_view<uint8_t const> serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
 
-        // 5. send the GET command
+        // 5. send the SET command
         auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
 
         // 6. check status
