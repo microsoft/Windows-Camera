@@ -4,31 +4,31 @@
 - Windows SDK minimum version: [10.0.22000.0](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
 - Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
 
-This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
+This is a sample on how to create a virtual camera on Windows ([see API documentation](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/)). This project consists of 5 parts:
 1. **VirtualCameraMediaSource** <br>
 MediaSource for the virtual camera. 
 
 2. **VirtualCamera_Installer** <br>
-Application use by VirtualCameraMSI to handle removal of all virtual cameras create with the media source.
+A packaged Win32 application installed with *VirtualCameraMSI* to handle removal of all virtual cameras created with the media source.
 
 3. **VirtualCamera_MSI** <br>
-This project package binaries from VirtualCamera_Installer and VirtualCameraMediaSource into msi for deployment.
+This project package binaries from *VirtualCamera_Installer* and *VirtualCameraMediaSource* into msi for deployment.
 The MSI is reponsible for deploying binaries, register media source dll, and removal of the media source and the associate virtual camera.
 
 4. **VirtualCameraManager_WinRT and VirtualCameraManager_App**  <br>
-WinRT component that projects lower level APIs for virtual camera and a UWP application with a GUI to create / remove / configure and interact with virtual cameras.
+WinRT component that projects [lower level APIs for virtual camera](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/) and a UWP application with a GUI to create / remove / configure and interact with virtual cameras.
 
 5. **VirtualCameraTest** <br>
-Set of unit tests to validate virtual camera.
+Set of unit tests to validate a virtual camera.
 
 ## Getting started
 Download the project 
-1. Build VirtualCamera_Installer 
-2. Build VirtualCamera_MSI
-3. Build VirtualCameraManager_WinRT and VirtualCameraManager_App 
+1. Build *VirtualCamera_Installer* 
+2. Build *VirtualCamera_MSI*
+3. Build *VirtualCameraManager_WinRT* and *VirtualCameraManager_App* 
 
-4. Install VirtualCamera_MSI
-5. Install VirtualCameraManager_App
+4. Install *VirtualCamera_MSI*
+5. Install *VirtualCameraManager_App*
 
 ## VirtualCameraMediaSource 
 ----
