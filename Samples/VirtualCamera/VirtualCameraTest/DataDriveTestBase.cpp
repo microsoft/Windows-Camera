@@ -11,14 +11,12 @@ LPCWSTR TAG_PARAMETER = L"Parameter";
 HRESULT DataDrivenTestBase::LoadDataFromXml(LPCWSTR pwszXmlFile, LPCWSTR pwszTable, std::map<std::wstring, testrowData_t>& data)
 {
     std::wstring strCurrDir = GetModuleDirectory();
-    WCHAR wszXmlPath[MAX_PATH] = { 0 };
-    wcscpy(wszXmlPath, strCurrDir.c_str());
-    wcscat(wszXmlPath, L"\\");
-    wcscat(wszXmlPath, pwszXmlFile);
+    strCurrDir += L"\\";
+    strCurrDir += pwszXmlFile;
 
     wil::com_ptr_nothrow<IXmlReader> spXmlReader;
 
-    RETURN_IF_FAILED(LoadXml(wszXmlPath, &spXmlReader));
+    RETURN_IF_FAILED(LoadXml(strCurrDir.c_str(), &spXmlReader));
 
     bool bTablefound = false;
     RETURN_IF_FAILED(FindTable(pwszTable, spXmlReader.get(), bTablefound));

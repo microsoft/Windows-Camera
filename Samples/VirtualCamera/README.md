@@ -1,8 +1,7 @@
 # Virtual Camera Sample #
 ### Requirement:
-- Minimum OS version: --TBD-- (current: 10.0.21364.0)
-- Windows SDK minimum version: -- TBD-- (current: 10.0.21364.0)
-- Windows WDK minimum version: -- TBD-- (current: 10.0.21364.0)
+- Minimum OS version: Windows 11 preview ([10.0.22000.0](https://blogs.windows.com/windows-insider/2021/06/28/announcing-the-first-insider-preview-for-windows-11/))
+- Windows SDK minimum version: [10.0.22000.0](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
 - Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
 
 This is a sample on how to create a virtual camera on Windows. This project consists of 5 parts
