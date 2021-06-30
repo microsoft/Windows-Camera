@@ -9,10 +9,10 @@ This is a sample on how to create a virtual camera on Windows ([see API document
 MediaSource for the virtual camera. 
 
 2. **VirtualCamera_Installer** <br>
-A packaged Win32 application installed with *VirtualCameraMSI* to handle removal of all virtual cameras created with the media source.
+A packaged Win32 application installed with *VirtualCameraMSI* that handles adding and removing virtual camera instances that are based on the *VirtualCameraMediaSource*.
 
 3. **VirtualCamera_MSI** <br>
-This project package binaries from *VirtualCamera_Installer* and *VirtualCameraMediaSource* into msi for deployment.
+This project packages binaries from *VirtualCamera_Installer* and *VirtualCameraMediaSource* into MSI for deployment.
 The MSI is reponsible for deploying binaries, register media source dll, and removal of the media source and the associate virtual camera.
 
 4. **VirtualCameraManager_WinRT and VirtualCameraManager_App**  <br>
