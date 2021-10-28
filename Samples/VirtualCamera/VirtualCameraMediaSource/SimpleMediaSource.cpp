@@ -423,7 +423,7 @@ namespace winrt::WindowsSample::implementation
 
             switch (pProperty->Id)
             {
-            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE:
+            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING:
                 *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
                 break;
 
@@ -442,7 +442,7 @@ namespace winrt::WindowsSample::implementation
             // validate properyData length
             switch (pProperty->Id)
             {
-            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE:
+            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING:
                 if (ulDataLength < sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
                 {
                     return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);

@@ -32,21 +32,42 @@ namespace VirtualCameraManager_App.controls
         /// </summary>
         public void Initialize()
         {
+            UIPanelRows.Children.Clear();
+
             var effect = new EffectToggle();
             var controlPayload = CameraKsPropertyInquiry.GetExtendedControl(ExtendedControlKind.EyeGazeCorrection, m_controller);
-            effect.Initialize("Gaze Correction", Symbol.View, new List<string>() { "Off", "On" }, controlPayload == null ? 0 : (int)controlPayload.Flags, EyeGazeCorrectionHandler);
+            effect.Initialize(
+                "Gaze Correction", 
+                Symbol.View, 
+                new List<string>() { "Off", "On" }, 
+                controlPayload == null ? 0 : (int)controlPayload.Flags,
+                0,
+                EyeGazeCorrectionHandler);
             effect.IsEnabled = (null != controlPayload);
             UIPanelRows.Children.Add(effect);
 
             var effect2 = new EffectToggle();
             var customControlPayload = CameraKsPropertyInquiry.GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller);
-            effect2.Initialize("Custom FX", Symbol.Emoji, new List<string>() { "Off", "Auto" }, customControlPayload == null ? 0 : (int)customControlPayload.Flags, CustomFXHandler);
+            effect2.Initialize(
+                "Custom FX", 
+                Symbol.Emoji, 
+                new List<string>() { "Off", "Auto" }, 
+                customControlPayload == null ? 0 : (int)customControlPayload.Flags,
+                0,
+                CustomFXHandler);
             effect2.IsEnabled = (null != customControlPayload);
             UIPanelRows.Children.Add(effect2);
 
             var effect3 = new EffectToggle();
-            var customControlPayload2 = CameraKsPropertyInquiry.GetCustomControl(CustomControlKind.ColorMode, m_controller);
-            effect3.Initialize("Coloring", Symbol.Highlight, Enum.GetNames(typeof(ColorModeKind)).ToList(), customControlPayload2 == null ? 0 : (int)customControlPayload2.Flags, ColoringControlHandler);
+            var customControlPayload2 = CameraKsPropertyInquiry.GetSimpleCustomControl(SimpleCustomControlKind.Coloring, m_controller);
+            var colorModes= Enum.GetValues(typeof(ColorModeKind)).Cast<ColorModeKind>().ToList();
+            effect3.Initialize(
+                "Coloring",
+                Symbol.Highlight,
+                Enum.GetNames(typeof(ColorModeKind)).ToList(),
+                customControlPayload2 == null ? 0 : colorModes.IndexOf((ColorModeKind)customControlPayload2.ColorMode),
+                colorModes.IndexOf(ColorModeKind.Grayscale),
+                ColoringControlHandler);
             effect3.IsEnabled = (null != customControlPayload2);
             UIPanelRows.Children.Add(effect3);
         }
@@ -68,7 +89,7 @@ namespace VirtualCameraManager_App.controls
             Debug.WriteLine("ColoringControlHandler");
             List<ColorModeKind> colorModeKinds = Enum.GetValues(typeof(ColorModeKind)).Cast<ColorModeKind>().ToList();
             ColorModeKind selection = colorModeKinds[(int)e.AddedItems[0]];
-            CameraKsPropertyInquiry.SetCustomControlFlags(CustomControlKind.ColorMode, m_controller, (ulong)selection);
+            CameraKsPropertyInquiry.SetSimpleCustomControlFlags(SimpleCustomControlKind.Coloring, m_controller, (ulong)selection);
         }
     }
 }

@@ -29,6 +29,9 @@ namespace VirtualCameraManager_App
         public VirtualCameraProxy VirtualCameraProxyInst { get; private set; }
         private MediaCapture m_mediaCapture = null;
         private MediaPlayer m_mediaPlayer = null;
+        private MediaFrameSource m_frameSource = null;
+        private VideoDeviceControls m_videoDeviceControlsUI = null;
+        private MediaSource m_mediaSource = null;
 
         /// <summary>
         /// Constructor for VirtualCameraControl
@@ -64,7 +67,6 @@ namespace VirtualCameraManager_App
         public async Task InitializeAsync()
         {
             m_mediaCapture = new MediaCapture();
-            m_mediaPlayer = new MediaPlayer();
 
             // We initialize the MediaCapture instance with the virtual camera in sharing mode
             // to preview its stream without blocking other app from using it
@@ -79,31 +81,33 @@ namespace VirtualCameraManager_App
 
             // Retrieve the source associated with the video preview stream.
             // On 1-pin camera, this may be the VideoRecord MediaStreamType as opposed to VideoPreview on multi-pin camera
-            var frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoPreview
+            m_frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoPreview
                                                                               && source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
-            if (frameSource == null)
+            if (m_frameSource == null)
             {
-                frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord
+                m_frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoRecord
                                                                                   && source.Value.Info.SourceKind == MediaFrameSourceKind.Color).Value;
             }
 
             // if no preview stream is available, bail
-            if (frameSource == null)
+            if (m_frameSource == null)
             {
+                UIPreviewToggle.IsEnabled = false;
                 return;
             }
 
             // Setup MediaPlayer with the preview source
+            m_mediaPlayer = new MediaPlayer();
             m_mediaPlayer.RealTimePlayback = true;
             m_mediaPlayer.AutoPlay = true;
-            m_mediaPlayer.Source = MediaSource.CreateFromMediaFrameSource(frameSource);
-
             UIMediaPlayerElement.SetMediaPlayer(m_mediaPlayer);
 
             // Query support of custom and standard KSProperty and update UI toggle buttons accordingly
-            VideoDeviceControls videoDeviceControlsUI = new VideoDeviceControls(m_mediaCapture.VideoDeviceController);
-            UIMainPanel.Children.Add(videoDeviceControlsUI);
-            videoDeviceControlsUI.Initialize();
+            m_videoDeviceControlsUI = new VideoDeviceControls(m_mediaCapture.VideoDeviceController);
+            UIMainPanel.Children.Add(m_videoDeviceControlsUI);
+            m_videoDeviceControlsUI.Initialize();
+
+            UIPreviewToggle.IsEnabled = true;
         }
 
         /// <summary>
@@ -111,16 +115,16 @@ namespace VirtualCameraManager_App
         /// </summary>
         private void DisposeOfUIPreview()
         {
+            if (m_mediaPlayer != null)
+            {
+                m_mediaPlayer.Dispose();
+                m_mediaPlayer = null;
+            }
+
             if (m_mediaCapture != null)
             {
                 m_mediaCapture.Dispose();
                 m_mediaCapture = null;
-            }
-
-            if (m_mediaPlayer != null)
-            {
-                m_mediaPlayer.Source = null;
-                m_mediaPlayer = null;
             }
         }
 
@@ -145,9 +149,8 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                DisposeOfUIPreview();
-
                 VirtualCameraProxyInst.DisableVirtualCamera();
+                DisposeOfUIPreview();
             }
             catch (Exception ex)
             {
@@ -159,11 +162,9 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                DisposeOfUIPreview();
-
                 VirtualCameraProxyInst.RemoveVirtualCamera();
-
                 VirtualCameraControlRemoved?.Invoke(VirtualCameraProxyInst.SymbolicLink);
+                DisposeOfUIPreview();
             }
             catch (Exception ex)
             {
@@ -175,9 +176,8 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                DisposeOfUIPreview();
-
                 VirtualCameraProxyInst.RemoveVirtualCamera();
+                DisposeOfUIPreview();
 
                 VirtualCameraControlRemoved?.Invoke(VirtualCameraProxyInst.SymbolicLink);
             }
@@ -188,5 +188,28 @@ namespace VirtualCameraManager_App
         }
 
         #endregion UI interactions
+
+        private void UIPreviewToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if(UIPreviewToggle.IsOn)
+            {
+                m_mediaSource = MediaSource.CreateFromMediaFrameSource(m_frameSource);
+                m_mediaPlayer.Source = m_mediaSource;
+
+                // Query support of custom and standard KSProperty and update UI toggle buttons accordingly
+                m_videoDeviceControlsUI.Initialize();
+            }
+            else
+            {
+                if(m_mediaSource != null)
+                {
+                    m_mediaSource.Dispose();
+                }
+                if (m_mediaPlayer != null)
+                {
+                    m_mediaPlayer.Source = null;
+                }
+            }
+        }
     }
 }

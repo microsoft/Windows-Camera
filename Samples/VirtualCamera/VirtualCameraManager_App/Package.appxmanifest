@@ -36,7 +36,7 @@
       EntryPoint="VirtualCameraManager_App.App">
       <Extensions>
         <uap:Extension Category="windows.protocol">
-          <uap:Protocol Name="ContosoVirtualCamera">
+          <uap:Protocol Name="contoso-vcam">
             <uap:DisplayName>Contoso Virtual Camera Sample URI Scheme</uap:DisplayName>
           </uap:Protocol>
         </uap:Extension>

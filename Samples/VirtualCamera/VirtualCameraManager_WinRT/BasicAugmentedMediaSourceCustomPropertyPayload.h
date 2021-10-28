@@ -7,7 +7,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 {
     struct BasicAugmentedMediaSourceCustomPropertyPayload
         : BasicAugmentedMediaSourceCustomPropertyPayloadT<BasicAugmentedMediaSourceCustomPropertyPayload>,
-          PropertyValuePayloadHolder<KsBasicCameraExtendedPropPayload>
+          PropertyValuePayloadHolder<KsAugmentedCustomControlPropValue>
     {
         BasicAugmentedMediaSourceCustomPropertyPayload(Windows::Foundation::IPropertyValue property,
             winrt::VirtualCameraManager_WinRT::AugmentedMediaSourceCustomControlKind controlKind)
@@ -15,6 +15,9 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             m_controlKind(controlKind)
         {}
 
+        uint64_t Capability() { return m_payload->header.Capability; }
+        uint64_t Flags() { return m_payload->header.Flags; };
+        uint32_t Size() { return m_payload->header.Size; };
         winrt::VirtualCameraManager_WinRT::AugmentedMediaSourceCustomControlKind ControlKind() { return m_controlKind; }
 
     private:

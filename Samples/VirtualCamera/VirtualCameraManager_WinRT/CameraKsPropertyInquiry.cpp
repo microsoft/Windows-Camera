@@ -5,7 +5,7 @@
 #include "CameraKsPropertyInquiry.h"
 #include "CameraKsPropertyInquiry.g.cpp"
 #include "BasicExtendedPropertyPayload.h"
-#include "BasicCustomPropertyPayload.h"
+#include "SimpleCustomPropertyPayload.h"
 #include "BasicAugmentedMediaSourceCustomPropertyPayload.h"
 
 
@@ -127,11 +127,11 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     /// <param name="customControlKind"></param>
     /// <param name="controller"></param>
     /// <returns></returns>
-    winrt::VirtualCameraManager_WinRT::ICustomPropertyPayload CameraKsPropertyInquiry::GetCustomControl(
-        winrt::VirtualCameraManager_WinRT::CustomControlKind const& customControlKind, 
+    winrt::VirtualCameraManager_WinRT::ISimpleCustomPropertyPayload CameraKsPropertyInquiry::GetSimpleCustomControl(
+        winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller)
     {
-        winrt::VirtualCameraManager_WinRT::ICustomPropertyPayload resultPayload = nullptr;
+        winrt::VirtualCameraManager_WinRT::ISimpleCustomPropertyPayload resultPayload = nullptr;
 
         uint32_t maxSize = 65536;
 
@@ -139,7 +139,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         UINT controlId = 0;
         switch (customControlKind)
         {
-            case winrt::VirtualCameraManager_WinRT::CustomControlKind::ColorMode:
+            case winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind::Coloring:
                 propertyId = winrt::to_hstring(PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL);
                 controlId = static_cast<int>(customControlKind);
                 break;
@@ -168,7 +168,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         Windows::Foundation::IPropertyValue property = nullptr;
         property = result.as<Windows::Foundation::IPropertyValue>();
 
-        resultPayload = make<BasicCustomPropertyPayload>(property, customControlKind);
+        resultPayload = make<SimpleCustomPropertyPayload>(property, customControlKind);
 
         return resultPayload;
     }
@@ -179,8 +179,8 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     /// <param name="customControlKind"></param>
     /// <param name="controller"></param>
     /// <param name="flags"></param>
-    void CameraKsPropertyInquiry::SetCustomControlFlags(
-        winrt::VirtualCameraManager_WinRT::CustomControlKind const& customControlKind, 
+    void CameraKsPropertyInquiry::SetSimpleCustomControlFlags(
+        winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller, 
         uint64_t flags)
     {
@@ -191,7 +191,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
         switch (customControlKind)
         {
-        case winrt::VirtualCameraManager_WinRT::CustomControlKind::ColorMode:
+        case winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind::Coloring:
             propertyId = winrt::to_hstring(PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL);
             controlId = static_cast<int>(customControlKind);
 
@@ -284,11 +284,10 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
                 propertyId = winrt::to_hstring(PROPSETID_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL);
                 controlId = static_cast<int>(customControlKind);
 
-                KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S value;
-                value.ControlId = (ULONG)customControlKind;
-                value.ControlFlag = (ULONG)flags;
+                KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX value;
+                value.Flags = (ULONG)flags;
                 pValue = reinterpret_cast<uint8_t*>(&value);
-                serializedPropertyValue = array_view<uint8_t const>(pValue, sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S));
+                serializedPropertyValue = array_view<uint8_t const>(pValue, sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX));
 
                 break;
             }

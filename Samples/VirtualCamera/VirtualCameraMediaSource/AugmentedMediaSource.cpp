@@ -600,78 +600,77 @@ namespace winrt::WindowsSample::implementation
         // if (IsEqualCLSID(pProperty->Set, KSPROPERTYSETID_ExtendedCameraControl)) { switch (pProperty->Id) ... }
 
         // check if this is our custom control
-        if (IsEqualCLSID(pProperty->Set, PROPSETID_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL))
+        if (!IsEqualCLSID(pProperty->Set, PROPSETID_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL) || (pProperty->Id >= KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_END))
         {
-            isHandled = true;
-            if (pProperty->Id >= KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_END)
+            return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
+        }
+        
+        isHandled = true;
+        if (pPropertyData == NULL && ulDataLength == 0)
+        {
+            RETURN_HR_IF_NULL(E_POINTER, pBytesReturned);
+
+            switch (pProperty->Id)
             {
+            case KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX:
+                *pBytesReturned = sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX);
+                break;
+
+            default:
                 return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
+                break;
             }
-            if (pPropertyData == NULL && ulDataLength == 0)
+            return HRESULT_FROM_WIN32(ERROR_MORE_DATA);
+        }
+        else
+        {
+            RETURN_HR_IF_NULL(E_POINTER, pPropertyData);
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), ulDataLength == 0);
+            RETURN_HR_IF_NULL(E_POINTER, pBytesReturned);
+
+            // validate properyData length
+            switch (pProperty->Id)
             {
-                RETURN_HR_IF_NULL(E_POINTER, pBytesReturned);
-
-                switch (pProperty->Id)
+            case KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX:
+            {
+                if (ulDataLength < sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX))
                 {
-                    case KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX:
-                        *pBytesReturned = sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S);
-                        break;
-
-                    default:
-                        return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
-                        break;
+                    return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
                 }
-                return HRESULT_FROM_WIN32(ERROR_MORE_DATA);
-            }
-            else
-            {
-                RETURN_HR_IF_NULL(E_POINTER, pPropertyData);
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), ulDataLength == 0);
-                RETURN_HR_IF_NULL(E_POINTER, pBytesReturned);
 
-                // validate properyData length
-                switch (pProperty->Id)
+                // Set operation 
+                if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_SET)))
                 {
-                    case KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX:
+                    DEBUG_MSG(L"Set filter level KSProperty");
+                    *pBytesReturned = 0;
+                    PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX controlPayload = ((PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX)pPropertyData);
+
+                    m_isCustomFXEnabled = controlPayload->Flags & KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_AUTO;
+                    if (m_streamList.get() != nullptr && !m_streamList.empty() && m_streamList[0] != nullptr)
                     {
-                        if (ulDataLength < sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S))
-                        {
-                            return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
-                        }
-
-                        // Set operation 
-                        if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_SET)))
-                        {
-                            DEBUG_MSG(L"Set filter level KSProperty");
-                            *pBytesReturned = 0;
-                            PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S controlPayload = ((PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S)pPropertyData);
-
-                            m_isCustomFXEnabled = controlPayload->ControlFlag & KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_AUTO;
-                            if (m_streamList.get() != nullptr && !m_streamList.empty() && m_streamList[0] != nullptr)
-                            {
-
-                                m_streamList[0]->m_isCustomFXEnabled = m_isCustomFXEnabled;
-                            }
-                        }
-                        // Get operation
-                        else if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_GET)))
-                        {
-                            DEBUG_MSG(L"Get filter level KSProperty");
-                            PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S controlPayload = ((PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S)pPropertyData);
-                            controlPayload->ControlFlag = m_isCustomFXEnabled ?
-                                KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_AUTO : KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_OFF;
-                            *pBytesReturned = sizeof(PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_S);
-                        }
-                        else
-                        {
-                            return E_INVALIDARG;
-                        }
-                        break;
+                        m_streamList[0]->m_isCustomFXEnabled = m_isCustomFXEnabled;
                     }
-
-                    default:
-                        break;
                 }
+                // Get operation
+                else if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_GET)))
+                {
+                    DEBUG_MSG(L"Get filter level KSProperty");
+                    PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX controlPayload = ((PKSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX)pPropertyData);
+                    controlPayload->Flags = m_isCustomFXEnabled ?
+                        KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_AUTO : KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_OFF;
+                    controlPayload->Capability = KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX_AUTO;
+                    controlPayload->Size = sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX);
+                    *pBytesReturned = sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX);
+                }
+                else
+                {
+                    return E_INVALIDARG;
+                }
+                break;
+            }
+
+            default:
+                break;
             }
         }
 

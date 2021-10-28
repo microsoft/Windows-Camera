@@ -48,6 +48,27 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         KsCameraExtendedPropHeader header;
         KsCameraExtendedPropValue value;
     };
+
+    struct KsSimpleCustomControlPropHeader
+    {
+        ULONG      StreamId;
+        ULONG      ColorMode;
+    };
+    struct KsSimpleCustomControlPropValue
+    {
+        KsSimpleCustomControlPropHeader header;
+    };
+
+    struct KsAugmentedCustomControlPropHeader
+    {
+        ULONGLONG           Capability;
+        ULONGLONG           Flags;
+        ULONG               Size;
+    };
+    struct KsAugmentedCustomControlPropValue
+    {
+        KsAugmentedCustomControlPropHeader header;
+    };
 #pragma endregion KsMediaRedefinition
 
     /// <summary>
@@ -66,10 +87,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             InternalPayloadType* payload = reinterpret_cast<InternalPayloadType*>(&m_propContainer[0]);
             m_payload = payload;
         }
-
-        uint64_t Capability() { return m_payload->header.Capability; }
-        uint64_t Flags() { return m_payload->header.Flags; };
-        uint32_t Size() { return m_payload->header.Size; };
 
     protected:
         InternalPayloadType* m_payload;

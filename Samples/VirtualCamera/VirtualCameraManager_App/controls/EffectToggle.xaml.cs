@@ -18,6 +18,7 @@ namespace VirtualCameraManager_App
         public event SelectionChangedEventHandler SelectionChanged;
         private SelectionChangedEventHandler m_handler;
         private List<string> m_possibleValues;
+        private int m_offValueIndex = 0;
         private SemaphoreSlim m_lock = new SemaphoreSlim(1);
         
         // methods
@@ -32,9 +33,10 @@ namespace VirtualCameraManager_App
         /// <param name="title"></param>
         /// <param name="symbol"></param>
         /// <param name="possibleValues"></param>
-        /// <param name="initialValue"></param>
+        /// <param name="currentValueIndex"></param>
+        /// <param name="offValueIndex"></param>
         /// <param name="handler"></param>
-        public void Initialize(string title, Symbol symbol,  List<string> possibleValues, int initialValue, SelectionChangedEventHandler handler)
+        public void Initialize(string title, Symbol symbol,  List<string> possibleValues, int currentValueIndex, int offValueIndex, SelectionChangedEventHandler handler)
         {
             m_lock.Wait();
             try
@@ -45,9 +47,10 @@ namespace VirtualCameraManager_App
                 UISymbolIcon.Symbol = symbol;
 
                 m_possibleValues = possibleValues;
-                UIValueSelected.Text = m_possibleValues[initialValue];
+                m_offValueIndex = offValueIndex;
+                UIValueSelected.Text = m_possibleValues[currentValueIndex];
 
-                SetActive(UIValueSelected.Text != "Off");
+                SetActive(UIValueSelected.Text != m_possibleValues[m_offValueIndex]);
 
                 var items = (UIButton.Flyout as MenuFlyout).Items;
 
@@ -103,9 +106,9 @@ namespace VirtualCameraManager_App
         {
             var index = m_possibleValues.FindIndex(x => x == (sender as MenuFlyoutItem).Text);
             UIValueSelected.Text = m_possibleValues[index];
-            
-            SetActive(UIValueSelected.Text != "Off");
-            
+
+            SetActive(UIValueSelected.Text != m_possibleValues[m_offValueIndex]);
+
             if (SelectionChanged != null)
             {
                 SelectionChanged.Invoke(this, new SelectionChangedEventArgs(new List<object>(), new List<object>() { index }));

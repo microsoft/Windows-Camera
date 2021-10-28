@@ -76,7 +76,7 @@ namespace VirtualCameraTest::impl
             LOG_COMMENT(L"Validate KSProperty return data size ...");
             KSPROPERTY ksProperty;
             ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
-            ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
+            ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING;
             ksProperty.Flags = KSPROPERTY_TYPE_GET;
 
             ULONG byteReturns = 0;
@@ -205,7 +205,7 @@ namespace VirtualCameraTest::impl
         KSPROPERTY ksProperty;
         ksProperty.Flags |= KSPROPERTY_TYPE_GET;
         ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
-        ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
+        ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING;
 
         wil::unique_cotaskmem_ptr<BYTE[]> arr = wil::make_unique_cotaskmem_nothrow<BYTE[]>(sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
         RETURN_IF_NULL_ALLOC(arr.get());
@@ -235,7 +235,7 @@ namespace VirtualCameraTest::impl
         KSPROPERTY ksProperty;
         ksProperty.Flags |= KSPROPERTY_TYPE_SET;
         ksProperty.Set = PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL;
-        ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE;
+        ksProperty.Id = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING;
 
         KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S data;
         data.ColorMode = colorMode;

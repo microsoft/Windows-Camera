@@ -123,7 +123,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="BasicAugmentedMediaSourceCustomPropertyPayload.h" />
-    <ClInclude Include="BasicCustomPropertyPayload.h" />
+    <ClInclude Include="SimpleCustomPropertyPayload.h" />
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
     <ClInclude Include="CameraKsPropertyInquiry.h" />
     <ClInclude Include="Common.h" />

@@ -12,6 +12,7 @@
     BorderBrush="Black">
 
     <StackPanel Name="UIMainPanel" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ToggleSwitch Name="UIPreviewToggle" OnContent="Preview ON" OffContent="Preview OFF" Toggled="UIPreviewToggle_Toggled" />
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
             <MediaPlayerElement x:Name="UIMediaPlayerElement" MaxHeight="200" MaxWidth="200" AreTransportControlsEnabled="False"/>
             <StackPanel Orientation="Vertical" MaxWidth="200" HorizontalAlignment="Left" >

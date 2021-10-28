@@ -17,9 +17,9 @@ namespace VirtualCameraManager_WinRT
 
     // projection of the custom control value defined in the virtual camera media source
     // refer to VirtualCameraMediaSource.h
-    enum CustomControlKind
+    enum SimpleCustomControlKind
     {
-        ColorMode = 0, // KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE
+        Coloring = 0, // KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING
     };   
 
     // projection of the custom control flags defined in the virtual camera media source
@@ -65,11 +65,13 @@ namespace VirtualCameraManager_WinRT
     //
     // interface and runtime class that encapsulates a KSProperty payload for a custom control supported in this sample
     //
-    interface ICustomPropertyPayload requires IPropertyPayload
+    interface ISimpleCustomPropertyPayload
     {
-        CustomControlKind CustomControlKind{ get; };
+        SimpleCustomControlKind ControlKind{ get; };
+        UInt32 StreamId{ get; };
+        UInt32 ColorMode{ get; };
     }
-    runtimeclass BasicCustomPropertyPayload : [default] ICustomPropertyPayload
+    runtimeclass SimpleCustomPropertyPayload : [default] ISimpleCustomPropertyPayload
     {
     }
 
@@ -91,8 +93,8 @@ namespace VirtualCameraManager_WinRT
         static IExtendedPropertyPayload GetExtendedControl(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller);
         static void SetExtendedControlFlags(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
 
-        static ICustomPropertyPayload GetCustomControl(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
-        static void SetCustomControlFlags(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
+        static ISimpleCustomPropertyPayload GetSimpleCustomControl(SimpleCustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetSimpleCustomControlFlags(SimpleCustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
         static IAugmentedMediaSourceCustomPropertyPayload GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller);
         static void SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
     }
