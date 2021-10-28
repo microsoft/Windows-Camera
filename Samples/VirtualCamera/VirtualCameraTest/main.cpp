@@ -6,6 +6,7 @@
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
 #include "CustomMediaSourceUT.h"
+#include "AugmentedMediaSourceUT.h"
 #include "VCamUtils.h"
 
 using namespace winrt;
@@ -190,6 +191,77 @@ void __stdcall WilFailureLog(_In_ const wil::FailureInfo& failure) WI_NOEXCEPT
         failure.pszFile, failure.uLineNumber, failure.pszFunction,
         failure.hr, (failure.pszMessage) ? failure.pszMessage : L"");
 }
+
+//
+// Define AugmentedMediaSource test case
+//
+class AugmentedMediaSourceTest :
+    public DataDrivenTestBase,
+    public VirtualCameraTest::impl::AugmentedMediaSourceUT
+{
+public:
+    HRESULT TestSetup()
+    {
+        auto value = TestData().find(L"VidDeviceSymLink");
+        if (TestData().end() != value)
+        {
+            m_devSymlink = value->second;
+        }
+        else if (TestData().end() != (value = TestData().find(L"VidDeviceIndex")))
+        {
+            int index = _wtoi((value->second).c_str());
+            std::vector< DeviceInformation> cameralist;
+            RETURN_IF_FAILED(VCamUtils::GetPhysicalCameras(cameralist));
+            if (index >= 0 && index < cameralist.size())
+            {
+                m_devSymlink = cameralist[index].Id();
+            }
+            else
+            {
+                LOG_ERROR_RETURN(E_TEST_FAILED, L"Test setup failed, invalid device index: %d", index);
+            }
+        }
+        else
+        {
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Test setup failed, missing data");
+        }
+        LOG_COMMENT(L"Using physical camera: %s", m_devSymlink.data());
+        return S_OK;
+    }
+
+    virtual void SetUp()
+    {
+        ASSERT_TRUE(SUCCEEDED(TestSetup()));
+    };
+};
+
+TEST_P(AugmentedMediaSourceTest, TestMediaSource)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestMediaSource());
+};
+
+TEST_P(AugmentedMediaSourceTest, TestMediaSourceStream)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestMediaSourceStream());
+};
+
+TEST_P(AugmentedMediaSourceTest, TestKsControl)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestKsControl());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(AugmentedMediaSourceTest, L"VirtualCameraTestData.xml", L"AugmentedMediaSourceTest");
+
+//
+// Define VirtualCameraAugmentedMediaSource test case
+//
+using VirtualCameraAugmentedMediaSourceTest = AugmentedMediaSourceTest;
+TEST_P(VirtualCameraAugmentedMediaSourceTest, TestCreateVirtualCamera)
+{
+    EXPECT_HRESULT_SUCCEEDED(TestCreateVirtualCamera());
+};
+
+INSTANTIATE_DATADRIVENTEST_CASE_P(VirtualCameraAugmentedMediaSourceTest, L"VirtualCameraTestData.xml", L"VirtualCameraAugmentedMediaSourceTest");
 
 int wmain(int argc, wchar_t* argv[])
 {

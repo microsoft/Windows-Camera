@@ -25,6 +25,9 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\VirtualCameraTest\AugmentedMediaSourceUT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -53,6 +56,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\VirtualCameraTest\VCamUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\VirtualCameraTest\AugmentedMediaSourceUT.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

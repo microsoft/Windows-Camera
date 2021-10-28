@@ -4,6 +4,9 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" 
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap mp">
 
   <Identity
@@ -31,6 +34,21 @@
     <Application Id="App"
       Executable="$targetnametoken$.exe"
       EntryPoint="VirtualCameraManager_App.App">
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="ContosoVirtualCamera">
+            <uap:DisplayName>Contoso Virtual Camera Sample URI Scheme</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
+        <uap5:Extension Category="windows.startupTask">
+          <uap5:StartupTask TaskId="ContosoVCamStartupTaskId" 
+                            Enabled="false" 
+                            DisplayName="Contoso Virtual Camera" />
+        </uap5:Extension>
+        <desktop:Extension Category="windows.fullTrustProcess"
+                           Executable="win32\VirtualCameraSystray.exe">
+        </desktop:Extension>
+      </Extensions>
       <uap:VisualElements
         DisplayName="VirtualCameraManager_App"
         Square150x150Logo="Assets\Square150x150Logo.png"
@@ -44,7 +62,8 @@
   </Applications>
 
   <Capabilities>
-    <Capability Name="internetClient" />
+    <rescap:Capability Name="runFullTrust"/>
+    <rescap:Capability Name="confirmAppClose"/>
     <DeviceCapability Name="webcam"/>
   </Capabilities>
 </Package>

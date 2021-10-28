@@ -11,34 +11,57 @@ namespace winrt::WindowsSample::implementation
         RETURN_HR_IF_NULL(E_POINTER, ppv);
         *ppv = nullptr;
 
-        bool bHWMediaSource = false;
+        bool bIsWrappingCamera = false;
         wil::unique_cotaskmem_string spwszPhysicalSymLink;
+        UINT32 vCamKind = 0;
         UINT32 cch = 0;
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
         RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
 
         if (m_spActivateAttributes)
         {
+            if (SUCCEEDED(m_spActivateAttributes->GetUINT32(VCAM_KIND, &vCamKind)))
+            {
+                DEBUG_MSG(L"Set VirtualCameraKind: %i", vCamKind);
+            }
             if (SUCCEEDED(m_spActivateAttributes->GetAllocatedString(VCAM_DEVICE_INFO, &spwszPhysicalSymLink, &cch)))
             {
                 DEBUG_MSG(L"Set DeviceSymLink: %s", spwszPhysicalSymLink.get());
-                bHWMediaSource = true;
+                bIsWrappingCamera = true;
             }
         }
 
-        if (bHWMediaSource)
+        if (bIsWrappingCamera)
         {
-            DEBUG_MSG(L"Activate HWMediaSource");
-            m_spHWMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::HWMediaSource>();
-            RETURN_IF_FAILED(m_spHWMediaSrc->Initialize(spwszPhysicalSymLink.get()));
-            RETURN_IF_FAILED(m_spHWMediaSrc->QueryInterface(riid, ppv));
+            if (vCamKind == (UINT32)VirtualCameraKind::BasicCameraWrapper)
+            {
+                DEBUG_MSG(L"Activate HWMediaSource");
+                m_spHWMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::HWMediaSource>();
+                RETURN_IF_FAILED(m_spHWMediaSrc->Initialize(spwszPhysicalSymLink.get()));
+                RETURN_IF_FAILED(m_spHWMediaSrc->QueryInterface(riid, ppv));
+            }
+            else if (vCamKind == (UINT32)VirtualCameraKind::AugmentedCameraWrapper)
+            {
+                DEBUG_MSG(L"Activate AugmentedMediaSource");
+                m_spAugmentedMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::AugmentedMediaSource>();
+                RETURN_IF_FAILED(m_spAugmentedMediaSrc->Initialize(spwszPhysicalSymLink.get()));
+                RETURN_IF_FAILED(m_spAugmentedMediaSrc->QueryInterface(riid, ppv));
+            }
+            else
+            {
+                return ERROR_BAD_CONFIGURATION;
+            }
         }
-        else
+        else if (vCamKind == (UINT32)VirtualCameraKind::Synthetic)
         {
             DEBUG_MSG(L"Activate SimpleMediaSource");
             m_spSimpleMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::SimpleMediaSource>();
             RETURN_IF_FAILED(m_spSimpleMediaSrc->Initialize());
             RETURN_IF_FAILED(m_spSimpleMediaSrc->QueryInterface(riid, ppv));
+        }
+        else
+        {
+            return ERROR_BAD_CONFIGURATION;
         }
         return S_OK;
     }
@@ -52,6 +75,7 @@ namespace winrt::WindowsSample::implementation
     {
         m_spSimpleMediaSrc = nullptr;
         m_spHWMediaSrc = nullptr;
+        m_spAugmentedMediaSrc = nullptr;
 
         return S_OK;
     }

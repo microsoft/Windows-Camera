@@ -32,6 +32,17 @@ namespace VirtualCameraManager_WinRT
         Blue = 0x000000FFL
     };
 
+    enum AugmentedMediaSourceCustomControlKind
+    {
+        KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX = 0
+    };
+
+    enum AugmentedMediaSourceCustomFxFlagKind
+    {
+        Off = 0x000000000,
+        Auto = 0x000000001
+    };
+
     // projection of KSProperty
     interface IPropertyPayload
     {
@@ -63,6 +74,15 @@ namespace VirtualCameraManager_WinRT
     }
 
     //
+    // interface and runtime class that encapsulates a KSProperty payload for an augmented media source custom control supported in this sample
+    //
+    interface IAugmentedMediaSourceCustomPropertyPayload requires IPropertyPayload
+    {
+        AugmentedMediaSourceCustomControlKind ControlKind{ get; };
+    }
+    runtimeclass BasicAugmentedMediaSourceCustomPropertyPayload : [default] IAugmentedMediaSourceCustomPropertyPayload
+    {
+    }
     // runtime class with static helper methods to set and get custom and extended controls on a camera
     //
     [default_interface]
@@ -73,6 +93,8 @@ namespace VirtualCameraManager_WinRT
 
         static ICustomPropertyPayload GetCustomControl(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
         static void SetCustomControlFlags(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
+        static IAugmentedMediaSourceCustomPropertyPayload GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
     }
 }
 

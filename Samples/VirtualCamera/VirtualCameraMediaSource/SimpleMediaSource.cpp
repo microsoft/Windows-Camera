@@ -405,7 +405,7 @@ namespace winrt::WindowsSample::implementation
         // driver does not register a handler for a KS operation.
         // We want to mimic the driver behavior here if we don't
         // support controls.
-        if ((pProperty->Set != PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL) || (pProperty->Id >= KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END))
+        if (!IsEqualCLSID(pProperty->Set, PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL) || (pProperty->Id >= KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END))
         {
             return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
         }

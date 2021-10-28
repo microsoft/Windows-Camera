@@ -7,13 +7,23 @@
 #include "VCamUtils.h"
 #include "MediaCaptureutils.h"
 #include "EVRHelper.h"
+#include "VirtualCameraMediaSource.h"
 
 namespace VirtualCameraTest::impl
 {
+    HRESULT MediaSourceUT_Common::TestMediaSource()
+    {
+        wil::com_ptr_nothrow<IMFAttributes> spAttributes;
+        RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
+        RETURN_IF_FAILED(TestMediaSourceRegistration(m_clsid, spAttributes.get()));
+
+        return S_OK;
+    }
+
     /// <summary>
     /// 1. Test Validate MediaSource dll is register correctly, by running CoCreateInstance to create
     /// the media source.
-    /// 2. Valdiate the MediaSource can be activate
+    /// 2. Validate the MediaSource can be activate
     /// 3. Validate the MediaSource implements all required interface
     /// 4. Validate media source frame are produce using sourcereader.
     /// </summary>

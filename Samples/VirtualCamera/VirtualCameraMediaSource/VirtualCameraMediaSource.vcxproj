@@ -41,6 +41,8 @@
     <None Include="VirtualCameraMediaSource.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AugmentedMediaSource.cpp" />
+    <ClCompile Include="AugmentedMediaStream.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="EventHandler.cpp" />
     <ClCompile Include="HWMediaSource.cpp" />
@@ -53,6 +55,8 @@
     <ClCompile Include="winrtCommon.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AugmentedMediaSource.h" />
+    <ClInclude Include="AugmentedMediaStream.h" />
     <ClInclude Include="EventHandler.h" />
     <ClInclude Include="HWMediaSource.h" />
     <ClInclude Include="HWMediaStream.h" />

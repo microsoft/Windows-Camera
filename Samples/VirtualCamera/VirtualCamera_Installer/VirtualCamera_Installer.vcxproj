@@ -127,6 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\VirtualCameraTest\AugmentedMediaSourceUT.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="..\VirtualCameraTest\HWMediaSourceUT.h" />
     <ClInclude Include="..\VirtualCameraTest\Logger.h" />
@@ -137,6 +138,7 @@
     <ClInclude Include="..\VirtualCameraTest\VCamUtils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\VirtualCameraTest\AugmentedMediaSourceUT.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="..\VirtualCameraTest\HWMediaSourceUT.cpp" />

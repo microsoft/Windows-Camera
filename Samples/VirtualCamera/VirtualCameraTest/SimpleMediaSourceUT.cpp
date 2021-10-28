@@ -11,9 +11,14 @@ namespace VirtualCameraTest::impl
 {
     static const winrt::hstring strCustomControl(L" {0CE2EF73-4800-4F53-9B8E-8C06790FC0C7},0");
 
-    HRESULT SimpleMediaSourceUT::TestMediaSource()
+    HRESULT SimpleMediaSourceUT::CreateSourceAttributes(_Outptr_ IMFAttributes** ppAttributes)
     {
-        RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, nullptr));
+        RETURN_HR_IF_NULL(E_POINTER, ppAttributes);
+        wil::com_ptr_nothrow<IMFAttributes> spAttributes;
+        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
+        RETURN_IF_FAILED(spAttributes->SetUINT32(VCAM_KIND, (UINT32)VirtualCameraKind::Synthetic));
+
+        *ppAttributes = spAttributes.detach();
 
         return S_OK;
     }

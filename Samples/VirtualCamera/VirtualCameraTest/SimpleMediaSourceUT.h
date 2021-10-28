@@ -8,13 +8,18 @@
 #define SIMPLEMEDIASOURCEUT_H
 
 #include "MediaSourceUT_Common.h"
+#include "VirtualCameraMediaSource.h"
 namespace VirtualCameraTest::impl
 {
-    class SimpleMediaSourceUT : MediaSourceUT_Common
+    class SimpleMediaSourceUT : public MediaSourceUT_Common
     {
     public:
+        SimpleMediaSourceUT()
+        {
+            m_clsid = CLSID_VirtualCameraMediaSource;
+        };
+
         // General simplemediasource test
-        HRESULT TestMediaSource();
         HRESULT TestMediaSourceStream();
         HRESULT TestKsControl();
 
@@ -25,6 +30,9 @@ namespace VirtualCameraTest::impl
         HRESULT CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera);
         static HRESULT GetColorMode(IMFMediaSource* pMediaSource, uint32_t* pColorMode);
         static HRESULT SetColorMode(IMFMediaSource* pMediaSource, uint32_t colorMode);
+
+    protected:
+        virtual HRESULT CreateSourceAttributes(_Outptr_ IMFAttributes** ppAttributes);
     };
 }
 

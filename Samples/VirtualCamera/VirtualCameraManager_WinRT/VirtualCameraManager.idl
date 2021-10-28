@@ -6,7 +6,8 @@ namespace VirtualCameraManager_WinRT
     enum VirtualCameraKind
     {
         Synthetic = 0, // will generate frames on its own
-        CameraWrapper = (Synthetic + 1) // will relay frames and properties from an existing camera
+        CameraWrapper = (Synthetic + 1), // will wrap an existing camera and relay frames and properties as-is
+        AugmentedCameraWrapper = (CameraWrapper + 1) // will wrap an existing camera but filter streams and MediaTypes as well as supplement DDI support
     };
 
     // projection of MFVirtualCameraLifetime
@@ -59,6 +60,14 @@ namespace VirtualCameraManager_WinRT
             VirtualCameraAccess access,
             String friendlyName,
             String wrappedCameraSymbolicLink);
+
+    static VirtualCameraProxy RetakeExistingVirtualCamera(
+        VirtualCameraKind virtualCameraKind,
+        VirtualCameraLifetime lifetime,
+        VirtualCameraAccess access,
+        String friendlyName,
+        String symbolicLink,
+        String wrappedCameraSymbolicLink);
 
         static Windows.Foundation.Collections.IVector<Windows.Devices.Enumeration.DeviceInformation>
             GetExistingVirtualCameraDevices();

@@ -27,6 +27,7 @@
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
     <ClInclude Include="CameraKsPropertyInquiry.h" />
     <ClInclude Include="Common.h" />
+    <ClInclude Include="BasicAugmentedMediaSourceCustomPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="CameraKsPropertyInquiry.idl">
