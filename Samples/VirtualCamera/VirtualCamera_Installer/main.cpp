@@ -165,7 +165,7 @@ DeviceInformation SelectPhysicalCamera()
 
 HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
 {
-    LOG_COMMENT(L"\n select opitions: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - VCam-AugmentedMediaSource \n 4 - quit \n");
+    LOG_COMMENT(L"\n select option: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - VCam-AugmentedMediaSource \n 4 - quit \n");
     uint32_t select = 0;
     std::wcin >> select;
 
@@ -223,7 +223,7 @@ HRESULT VCamApp()
 {
     while (true)
     {
-        LOG_COMMENT(L"\n select opitions: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - quit \n");
+        LOG_COMMENT(L"\n select option: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - quit \n");
         int select = 0;
         std::wcin >> select;
 

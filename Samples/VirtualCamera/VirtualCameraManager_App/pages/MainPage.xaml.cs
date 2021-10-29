@@ -50,8 +50,8 @@ namespace VirtualCameraManager_App
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-			
-			// look if we are able to leverage our startup task to exit the app by deffering down to the system tray process instead of completely closing
+
+            // look if we are able to leverage our startup task to exit the app by deffering down to the system tray process instead of completely closing
             var startup = await StartupTask.GetAsync("ContosoVCamStartupTaskId");
             switch (startup.State)
             {
@@ -85,8 +85,8 @@ namespace VirtualCameraManager_App
             }
             m_virtualCameraControls = new List<VirtualCameraControl>();
         }
-		
-		private void UICreateVirtualCamera_Click(object sender, RoutedEventArgs e)
+
+        private void UICreateVirtualCamera_Click(object sender, RoutedEventArgs e)
         {
             UICameraWrappingCheckBox.IsChecked = false;
             UIFriendlyName.Text = "Contoso Virtual Camera";
@@ -428,8 +428,8 @@ namespace VirtualCameraManager_App
                 UICameraWrappingCheckBox_Checked(null, null);
             }            
         }
-		
-		private void UICameraToWrapList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+
+        private void UICameraToWrapList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (UICameraToWrapList.SelectedItem != null)
             {

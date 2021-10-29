@@ -137,18 +137,6 @@ namespace EyeGazeAndBackgroundSegmentation
                 return;
             }
 
-            //m_mediaFrameSourceGroupList = allGroups.Where(group => group.SourceInfos.Any(sourceInfo => sourceInfo.SourceKind == MediaFrameSourceKind.Color
-            //                                                                                           && (sourceInfo.MediaStreamType == MediaStreamType.VideoPreview
-            //                                                                                               || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord))
-            //                                                       && group.SourceInfos.All(sourceInfo => deviceInfoCollection.Any((deviceInfo) => deviceInfo.Id == sourceInfo.DeviceInformation.Id))).ToList();
-
-            //if (m_mediaFrameSourceGroupList.Count == 0)
-            //{
-            //    // No camera sources found
-            //    NotifyUser("No suitable camera found", NotifyType.ErrorMessage);
-            //    return;
-            //}
-
             var cameraNamesList = m_mediaFrameSourceGroupList.Select(group => group.DisplayName);
 
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
