@@ -263,10 +263,18 @@ namespace VirtualCameraManager_App
 
         private void VirtualCameraControlRemoved(string symLink)
         {
-            m_virtualCameraControls.RemoveAll(x => x.VirtualCameraProxyInst.SymbolicLink == symLink);
-
             // refresh list view
+
+            var controlToRemove = m_virtualCameraControls.Find(x => x.VirtualCameraProxyInst.SymbolicLink == symLink);
+            if (controlToRemove != null)
+            {
+                m_virtualCameraControls.RemoveAll(x => x.VirtualCameraProxyInst.SymbolicLink == symLink);
+            }
+
             UIVirtualCameraList.ItemsSource = null;
+            UIMainPanel.Children.Remove(UIVirtualCameraList);
+            UIVirtualCameraList = new ListBox();
+            UIMainPanel.Children.Add(UIVirtualCameraList);
             UIVirtualCameraList.ItemsSource = m_virtualCameraControls;
         }
 

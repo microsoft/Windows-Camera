@@ -103,6 +103,11 @@ namespace VirtualCameraManager_App
             UIMediaPlayerElement.SetMediaPlayer(m_mediaPlayer);
 
             // Query support of custom and standard KSProperty and update UI toggle buttons accordingly
+            if(m_videoDeviceControlsUI != null)
+            {
+                UIMainPanel.Children.Remove(m_videoDeviceControlsUI);
+                m_videoDeviceControlsUI = null;
+            }
             m_videoDeviceControlsUI = new VideoDeviceControls(m_mediaCapture.VideoDeviceController);
             UIMainPanel.Children.Add(m_videoDeviceControlsUI);
             m_videoDeviceControlsUI.Initialize();
@@ -137,6 +142,8 @@ namespace VirtualCameraManager_App
                 VirtualCameraProxyInst.EnableVirtualCamera();
 
                 await InitializeAsync();
+
+                UIPreviewToggle.IsOn = true;
             }
             catch (Exception ex)
             {
@@ -148,8 +155,10 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                DisposeOfUIPreview();
                 VirtualCameraProxyInst.DisableVirtualCamera();
+                DisposeOfUIPreview();
+                UIPreviewToggle.IsEnabled = false;
+                UIPreviewToggle.IsOn = false;
             }
             catch (Exception ex)
             {
@@ -176,8 +185,9 @@ namespace VirtualCameraManager_App
             try
             {
                 VirtualCameraControlRemoved?.Invoke(VirtualCameraProxyInst.SymbolicLink);
-                DisposeOfUIPreview();
                 VirtualCameraProxyInst.RemoveVirtualCamera();
+                DisposeOfUIPreview();
+                
             }
             catch (Exception ex)
             {

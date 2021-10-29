@@ -8,14 +8,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <StackPanel Background="{ThemeResource SystemControlAcrylicWindowBrush}">
+    <StackPanel x:Name="UIMainPanel">
         <StackPanel Orientation="Horizontal">
             <Button Name="UICreateVirtualCamera" Content="➕" ToolTipService.ToolTip="Add a new virtual camera" Click="UICreateVirtualCamera_Click"/>
             <Button Name="UIRefreshList" Content="🔃" ToolTipService.ToolTip="Manual refresh of the list of virtual cameras" Click="UIRefreshList_Click"/>
         </StackPanel>
-        <ListBox Name="UIVirtualCameraList" />
 
         <TextBox x:Name="UIResultText"/>
+
+        <ListBox Name="UIVirtualCameraList" />
 
         <ContentDialog x:Name="UIAddNewVirtualCameraDialog"
                    PrimaryButtonText="Add"
