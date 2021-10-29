@@ -60,13 +60,15 @@ namespace VirtualCameraManager_App.controls
 
             var effect3 = new EffectToggle();
             var customControlPayload2 = CameraKsPropertyInquiry.GetSimpleCustomControl(SimpleCustomControlKind.Coloring, m_controller);
-            var colorModes= Enum.GetValues(typeof(ColorModeKind)).Cast<ColorModeKind>().ToList();
+            var colorModes = (ColorModeKind[])Enum.GetValues(typeof(ColorModeKind));
+            var currentValueIndex = customControlPayload2 == null ? 0 : Array.FindIndex(colorModes, (color) => (UInt32)color == customControlPayload2.ColorMode);
+            var defaultValueIndex = customControlPayload2 == null ? 0 : Array.FindIndex(colorModes, (color) => color == ColorModeKind.Grayscale);
             effect3.Initialize(
                 "Coloring",
                 Symbol.Highlight,
                 Enum.GetNames(typeof(ColorModeKind)).ToList(),
-                customControlPayload2 == null ? 0 : colorModes.IndexOf((ColorModeKind)customControlPayload2.ColorMode),
-                colorModes.IndexOf(ColorModeKind.Grayscale),
+                customControlPayload2 == null ? 0 : currentValueIndex,
+                defaultValueIndex,
                 ColoringControlHandler);
             effect3.IsEnabled = (null != customControlPayload2);
             UIPanelRows.Children.Add(effect3);
@@ -81,15 +83,15 @@ namespace VirtualCameraManager_App.controls
         private void CustomFXHandler(object sender, SelectionChangedEventArgs e)
         {
             Debug.WriteLine("CustomFXHandler");
-            CameraKsPropertyInquiry.SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller, (ulong)((int)e.AddedItems[0]));
+            CameraKsPropertyInquiry.SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller, (UInt64)((int)e.AddedItems[0]));
         }
 
         private void ColoringControlHandler(object sender, SelectionChangedEventArgs e)
         {
             Debug.WriteLine("ColoringControlHandler");
-            List<ColorModeKind> colorModeKinds = Enum.GetValues(typeof(ColorModeKind)).Cast<ColorModeKind>().ToList();
-            ColorModeKind selection = colorModeKinds[(int)e.AddedItems[0]];
-            CameraKsPropertyInquiry.SetSimpleCustomControlFlags(SimpleCustomControlKind.Coloring, m_controller, (ulong)selection);
+            var colorModeKinds = Enum.GetValues(typeof(ColorModeKind));
+            ColorModeKind selection = (ColorModeKind)colorModeKinds.GetValue((int)e.AddedItems[0]);
+            CameraKsPropertyInquiry.SetSimpleCustomControlFlags(SimpleCustomControlKind.Coloring, m_controller, (UInt32)selection);
         }
     }
 }

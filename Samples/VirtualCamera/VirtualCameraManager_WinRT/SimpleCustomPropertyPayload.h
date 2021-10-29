@@ -16,7 +16,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         {}
 
         uint32_t ColorMode() { return m_payload->header.ColorMode; };
-        uint32_t StreamId() { return m_payload->header.StreamId; };
         winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind ControlKind() { return m_customControlKind; }
 
     private:

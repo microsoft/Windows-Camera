@@ -597,14 +597,13 @@ namespace winrt::WindowsSample::implementation
             RETURN_IF_FAILED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spMediaSourceEx)));
             RETURN_IF_FAILED(spMediaSourceEx->GetSourceAttributes(&m_spAttributes));
 
-            //
-            // Virtual camera
-            // MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute need store
-            // Configuration UWP PFN (Package Family Name)
-            // This example is a generic media source that be placed in any UWP app, 
-            // so PFN is queried programmatically.
-            // If the MediaSource is associated with specific UWP only, you may hardcode
-            // the PFN
+            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+            // virtual camera configuration app's PFN (Package Family Name).
+            // Below we query programmatically the current application info (knowing that the app 
+            // that activates the virtual camera registers it on the system and also acts as its 
+            // configuration app).
+            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+            // a particular PFN.
             try
             {
                 winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();

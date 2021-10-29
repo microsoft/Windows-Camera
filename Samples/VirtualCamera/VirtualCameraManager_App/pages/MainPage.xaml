@@ -13,9 +13,7 @@
             <Button Name="UICreateVirtualCamera" Content="➕" ToolTipService.ToolTip="Add a new virtual camera" Click="UICreateVirtualCamera_Click"/>
             <Button Name="UIRefreshList" Content="🔃" ToolTipService.ToolTip="Manual refresh of the list of virtual cameras" Click="UIRefreshList_Click"/>
         </StackPanel>
-        <ScrollViewer>
-            <ListBox Name="UIVirtualCameraList" />
-        </ScrollViewer>
+        <ListBox Name="UIVirtualCameraList" />
 
         <TextBox x:Name="UIResultText"/>
 

@@ -210,7 +210,7 @@ public:
         else if (TestData().end() != (value = TestData().find(L"VidDeviceIndex")))
         {
             int index = _wtoi((value->second).c_str());
-            std::vector< DeviceInformation> cameralist;
+            std::vector<DeviceInformation> cameralist;
             RETURN_IF_FAILED(VCamUtils::GetPhysicalCameras(cameralist));
             if (index >= 0 && index < cameralist.size())
             {

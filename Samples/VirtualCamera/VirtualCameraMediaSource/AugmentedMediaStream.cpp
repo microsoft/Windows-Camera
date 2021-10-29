@@ -72,10 +72,10 @@ namespace winrt::WindowsSample::implementation
             MFGetAttributeRatio(spMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
             int framerate = (int)((float)numerator / denominator + 0.5f); //fps
 
-            // Check if this MediaType conforms to our heuristic we decided fo filter with:
+            // Check if this MediaType conforms to our heuristic we decided to filter with:
             // 1- is it a Video MediaType
             // 2- is it a NV12 subtype
-            // 3- is its width between [0, 1920] and its height between [0, 1080]
+            // 3- is its width between [1, 1920] and its height between [1, 1080]
             // 4- is its framerate less than or equal to 30 fps and above or equal to 15fps
             if (IsEqualGUID(majorType, MFMediaType_Video)
                 && IsEqualGUID(subtype, MFVideoFormat_NV12)

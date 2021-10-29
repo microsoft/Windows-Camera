@@ -51,10 +51,10 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorCount(&dwStreamCount));
 
         // walk through each stream to find the preview stream we want to wrap and filter out the rest of the streams
-        ULONG ulVideoRecordStreamId = 0;
+        ULONG ulVideoPreviewStreamId = 0;
         BOOL hasPreviewPin = false;
         BOOL hasVideoStreamPin = false;
-        for (DWORD i = 0; i < dwStreamCount || !hasPreviewPin; i++)
+        for (DWORD i = 0; i < dwStreamCount || !hasVideoStreamPin; i++)
         {
             DEBUG_MSG(L"Looking into stream number %u to see if it is a preview stream", i);
             wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDesc;
@@ -77,26 +77,26 @@ namespace winrt::WindowsSample::implementation
             if (ulFrameSourceType == MFFrameSourceTypes::MFFrameSourceTypes_Color)
             {
                 DEBUG_MSG(L"stream number %u is of color type", i);
-                if (IsEqualGUID(streamCategory, PINNAME_VIDEO_PREVIEW))
+                if (IsEqualGUID(streamCategory, PINNAME_VIDEO_CAPTURE))
                 {
+                    hasVideoStreamPin = true;
+                    m_desiredStreamIdx = i;
+                    break;
+                }
+                else if (IsEqualGUID(streamCategory, PINNAME_VIDEO_PREVIEW))
+                {
+                    ulVideoPreviewStreamId = i;
                     hasPreviewPin = true;
-                    hasVideoStreamPin = true;
-                    m_previewStreamIdx = i;
                 }
-                else if (IsEqualGUID(streamCategory, PINNAME_VIDEO_CAPTURE))
-                {
-                    ulVideoRecordStreamId = i;
-                    hasVideoStreamPin = true;
-                }
-            }
-            if (hasVideoStreamPin && !hasPreviewPin)
-            {
-                m_previewStreamIdx = ulVideoRecordStreamId;
-                hasPreviewPin = true;
             }
         }
+        if (!hasVideoStreamPin && hasPreviewPin)
+        {
+            m_desiredStreamIdx = ulVideoPreviewStreamId;
+            hasVideoStreamPin = true;
+        }
         // if we have not found a preview stream, bail!
-        if (!hasPreviewPin)
+        if (!hasVideoStreamPin)
         {
             return MF_E_CAPTURE_SOURCE_NO_VIDEO_STREAM_PRESENT;
         }
@@ -114,7 +114,7 @@ namespace winrt::WindowsSample::implementation
         DEBUG_MSG(L"Initialize preview stream");
         wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDesc;
         BOOL selected = FALSE;
-        RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_previewStreamIdx, &selected, &spStreamDesc));
+        RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_desiredStreamIdx, &selected, &spStreamDesc));
         auto ptr2 = winrt::make_self<AugmentedMediaStream>();
         m_streamList[0] = ptr2.detach();
         RETURN_IF_FAILED(m_streamList[0]->Initialize(this, 0, spStreamDesc.get(), m_dwSerialWorkQueueId));
@@ -215,11 +215,11 @@ namespace winrt::WindowsSample::implementation
                 RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
 
                 // Update the source camera descriptor we proper stream
-                RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_previewStreamIdx));
+                RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_desiredStreamIdx));
 
                 BOOL selected2 = FALSE;
                 wil::com_ptr_nothrow<IMFStreamDescriptor> spDevStreamDescriptor;
-                RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_previewStreamIdx, &selected2, &spDevStreamDescriptor));
+                RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_desiredStreamIdx, &selected2, &spDevStreamDescriptor));
                 wil::com_ptr_nothrow<IMFMediaTypeHandler> spDevSourceStreamMediaTypeHandler;
                 RETURN_IF_FAILED(spDevStreamDescriptor->GetMediaTypeHandler(&spDevSourceStreamMediaTypeHandler));
 
@@ -987,14 +987,13 @@ namespace winrt::WindowsSample::implementation
                 MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
                 profileCollection.get()));
 
-            //
-            // Virtual camera
-            // MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute need store
-            // Configuration UWP PFN (Package Family Name)
-            // This example is a generic media source that be place in another UWP app, 
-            // so PFN is query programmatically.
-            // If the MediaSource is associate with specific UWP only, you may hardcode
-            // the PFN
+            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+            // virtual camera configuration app's PFN (Package Family Name).
+            // Below we query programmatically the current application info (knowing that the app 
+            // that activates the virtual camera registers it on the system and also acts as its 
+            // configuration app).
+            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+            // a particular PFN.
             try
             {
                 winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();

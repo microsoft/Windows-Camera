@@ -61,13 +61,13 @@ namespace VirtualCameraManager_WinRT
             String friendlyName,
             String wrappedCameraSymbolicLink);
 
-    static VirtualCameraProxy RetakeExistingVirtualCamera(
-        VirtualCameraKind virtualCameraKind,
-        VirtualCameraLifetime lifetime,
-        VirtualCameraAccess access,
-        String friendlyName,
-        String symbolicLink,
-        String wrappedCameraSymbolicLink);
+        static VirtualCameraProxy RetakeExistingVirtualCamera(
+            VirtualCameraKind virtualCameraKind,
+            VirtualCameraLifetime lifetime,
+            VirtualCameraAccess access,
+            String friendlyName,
+            String symbolicLink,
+            String wrappedCameraSymbolicLink);
 
         static Windows.Foundation.Collections.IVector<Windows.Devices.Enumeration.DeviceInformation>
             GetExistingVirtualCameraDevices();

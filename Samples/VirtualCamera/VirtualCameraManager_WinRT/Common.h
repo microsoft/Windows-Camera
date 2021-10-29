@@ -51,8 +51,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
     struct KsSimpleCustomControlPropHeader
     {
-        ULONG      StreamId;
-        ULONG      ColorMode;
+        uint32_t ColorMode;
     };
     struct KsSimpleCustomControlPropValue
     {
@@ -61,9 +60,9 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
     struct KsAugmentedCustomControlPropHeader
     {
-        ULONGLONG           Capability;
-        ULONGLONG           Flags;
-        ULONG               Size;
+        uint64_t Capability;
+        uint64_t Flags;
+        uint32_t Size;
     };
     struct KsAugmentedCustomControlPropValue
     {

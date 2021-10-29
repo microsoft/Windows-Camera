@@ -182,25 +182,25 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     void CameraKsPropertyInquiry::SetSimpleCustomControlFlags(
         winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller, 
-        uint64_t flags)
+        uint32_t flags)
     {
         hstring propertyId = L"";
         UINT controlId = 0;
         uint8_t* pValue = nullptr;
-        array_view<uint8_t const> serializedPropertyValue;
+        array_view<BYTE> serializedPropertyValue;
+        KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S payloadValue{ flags };
 
         switch (customControlKind)
         {
         case winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind::Coloring:
+        {
             propertyId = winrt::to_hstring(PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL);
             controlId = static_cast<int>(customControlKind);
-
-            KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S value;
-            value.ColorMode = (ULONG)flags;
-            pValue = reinterpret_cast<uint8_t*>(&value);
-            serializedPropertyValue = array_view<uint8_t const>(pValue, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
+            pValue = reinterpret_cast<BYTE*>(&payloadValue);
+            serializedPropertyValue = array_view<BYTE>(pValue, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
 
             break;
+        }
 
         default:
             throw winrt::hresult_invalid_argument(L"Attempting to set a custom control unhandled in this sample");
@@ -276,6 +276,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         UINT controlId = 0;
         uint8_t* pValue = nullptr;
         array_view<uint8_t const> serializedPropertyValue;
+        KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX value;
 
         switch (customControlKind)
         {
@@ -284,7 +285,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
                 propertyId = winrt::to_hstring(PROPSETID_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL);
                 controlId = static_cast<int>(customControlKind);
 
-                KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX value;
                 value.Flags = (ULONG)flags;
                 pValue = reinterpret_cast<uint8_t*>(&value);
                 serializedPropertyValue = array_view<uint8_t const>(pValue, sizeof(KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_FX));

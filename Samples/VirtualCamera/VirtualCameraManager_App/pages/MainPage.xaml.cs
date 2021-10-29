@@ -426,7 +426,7 @@ namespace VirtualCameraManager_App
             else
             {
                 UICameraWrappingCheckBox_Checked(null, null);
-            }            
+            }
         }
 
         private void UICameraToWrapList_SelectionChanged(object sender, SelectionChangedEventArgs e)

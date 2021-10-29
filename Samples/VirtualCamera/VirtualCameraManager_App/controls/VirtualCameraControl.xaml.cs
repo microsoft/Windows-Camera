@@ -134,7 +134,6 @@ namespace VirtualCameraManager_App
             try
             {
                 DisposeOfUIPreview();
-
                 VirtualCameraProxyInst.EnableVirtualCamera();
 
                 await InitializeAsync();
@@ -149,8 +148,8 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                VirtualCameraProxyInst.DisableVirtualCamera();
                 DisposeOfUIPreview();
+                VirtualCameraProxyInst.DisableVirtualCamera();
             }
             catch (Exception ex)
             {
@@ -162,9 +161,9 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                VirtualCameraProxyInst.RemoveVirtualCamera();
                 VirtualCameraControlRemoved?.Invoke(VirtualCameraProxyInst.SymbolicLink);
                 DisposeOfUIPreview();
+                VirtualCameraProxyInst.RemoveVirtualCamera();
             }
             catch (Exception ex)
             {
@@ -176,10 +175,9 @@ namespace VirtualCameraManager_App
         {
             try
             {
-                VirtualCameraProxyInst.RemoveVirtualCamera();
-                DisposeOfUIPreview();
-
                 VirtualCameraControlRemoved?.Invoke(VirtualCameraProxyInst.SymbolicLink);
+                DisposeOfUIPreview();
+                VirtualCameraProxyInst.RemoveVirtualCamera();
             }
             catch (Exception ex)
             {

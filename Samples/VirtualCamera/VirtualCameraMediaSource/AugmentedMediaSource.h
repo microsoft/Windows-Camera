@@ -23,13 +23,13 @@ namespace winrt::WindowsSample::implementation
         };
 
     public:
-        // IMFMediaEventGenerator (inherits by IMFMediaSource)
+        // IMFMediaEventGenerator (inherited by IMFMediaSource)
         IFACEMETHODIMP BeginGetEvent(_In_ IMFAsyncCallback* pCallback, _In_ IUnknown* punkState) override;
         IFACEMETHODIMP EndGetEvent(_In_ IMFAsyncResult* pResult, _Out_ IMFMediaEvent** ppEvent) override;
         IFACEMETHODIMP GetEvent(DWORD dwFlags, _Out_ IMFMediaEvent** ppEvent) override;
         IFACEMETHODIMP QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, _In_ const PROPVARIANT* pvValue) override;
 
-        // IMFMediaSource (inherits by IMFMediaSourceEx)
+        // IMFMediaSource (inherited by IMFMediaSourceEx)
         IFACEMETHODIMP CreatePresentationDescriptor(_Out_ IMFPresentationDescriptor** ppPresentationDescriptor) override;
         IFACEMETHODIMP GetCharacteristics(_Out_ DWORD* pdwCharacteristics) override;
         IFACEMETHODIMP Pause() override;
@@ -65,7 +65,7 @@ namespace winrt::WindowsSample::implementation
             _In_ ULONG ulDataLength,
             _Out_opt_ ULONG* pBytesReturned) override;
 
-        // IMFSampleAlloactorControl
+        // IMFSampleAllocatorControl
         IFACEMETHODIMP SetDefaultAllocator(
             _In_  DWORD dwOutputStreamID,
             _In_  IUnknown* pAllocator) override;
@@ -89,21 +89,6 @@ namespace winrt::WindowsSample::implementation
         HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
 
         // DDI handlers
-        HRESULT EyeGazeCorrectionPropertyHandler(
-            _In_       PKSPROPERTY Property,
-            _In_       ULONG       ulPropertyLength,
-            _In_       LPVOID      pData,
-            _In_       ULONG       ulOutputBufferLength,
-            _Inout_    PULONG      pulBytesReturned);
-        bool m_isEyeGazeCorrectionEnabled = false;
-
-        HRESULT BackgroundSegmentationPropertyHandler(
-            _In_       PKSPROPERTY Property,
-            _In_       ULONG       ulPropertyLength,
-            _In_       LPVOID      pData,
-            _In_       ULONG       ulOutputBufferLength,
-            _Inout_    PULONG      pulBytesReturned);
-        bool m_isBackgroundSegmentationEnabled = false;
         bool m_isCustomFXEnabled = false;
 
         wil::com_ptr_nothrow<CAsyncCallback<AugmentedMediaSource>> m_xOnMediaSourceEvent;
@@ -120,7 +105,7 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
         wil::com_ptr_nothrow<IMFPresentationDescriptor> m_spDevSourcePDesc;
 
-        ULONG m_previewStreamIdx;
+        ULONG m_desiredStreamIdx;
 
         const DWORD NUM_STREAMS = 1;
     };

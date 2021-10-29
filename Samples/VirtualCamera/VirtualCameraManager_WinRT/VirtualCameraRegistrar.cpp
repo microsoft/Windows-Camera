@@ -47,7 +47,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             &spVirtualCamera),
             "Failed to create virtual camera");
 
-        // Create custom attribute, to be use by mediasource on activation to specify what kind of virtual camera we are creating
+        // Create custom attribute, to be used by mediasource on activation to specify what kind of virtual camera we are creating
         THROW_IF_FAILED_MSG(spVirtualCamera->SetUINT32(VCAM_KIND, (UINT32)virtualCameraKind),
             "Failed to add device source info attribute onto the virtual camera");
 
@@ -58,7 +58,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             THROW_IF_FAILED_MSG(spVirtualCamera->AddDeviceSourceInfo(strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info of existing camera to virtual camera");
 
-            // Create custom attribute, to be use by mediasource on activation
+            // Create custom attribute, to be used by mediasource on activation
             THROW_IF_FAILED_MSG(spVirtualCamera->SetString(VCAM_DEVICE_INFO, strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info attribute onto the virtual camera");
 
