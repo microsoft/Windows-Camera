@@ -8,7 +8,7 @@
 This is a sample on how to create a virtual camera on Windows ([see API documentation](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/)). This project consists of 5 parts:
 1. **VirtualCameraMediaSource** <br>
 MediaSource for the virtual camera. This CustomMediaSource can run in 3 distinc modes: 
-    1. **SimpleMediaSource** (also reffered to as *Synthetic* in application) which will create syntehtic content to stream from the virtual camera.
+    1. **SimpleMediaSource** (also reffered to as *Synthetic* in application) which will create synthetic content to stream from the virtual camera.
     2. **HWMediaSource** (also reffered to as *CameraWrapper* in application) which will wrap an existing camera on the system but act as a passthrough.
     3. **AugmentedMediaSource** which will wrap an existing camera on the system but
         - filters the set of streams exposed (see [*AugmentedMediaSource::Initialize()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp)
