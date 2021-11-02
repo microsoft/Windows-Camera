@@ -82,9 +82,9 @@ typedef struct
 // reproduction of the enum defined in VirtualCameraManager.idl
 enum class VirtualCameraKind : int32_t
 {
-    Synthetic = 0,
-    BasicCameraWrapper = 1,
-    AugmentedCameraWrapper = 2,
+    Synthetic = 0, // Refer to SimpleMediaSource
+    BasicCameraWrapper = 1, // Refer to HWMediaSource
+    AugmentedCameraWrapper = 2, // Refer to AugmentedMediaSource
 };
 
 #endif

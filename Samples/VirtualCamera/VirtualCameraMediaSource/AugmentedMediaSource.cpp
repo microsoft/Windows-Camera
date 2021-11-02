@@ -770,16 +770,11 @@ namespace winrt::WindowsSample::implementation
         RETURN_HR_IF_NULL(E_POINTER, pdwInputStreamID);
         RETURN_HR_IF_NULL(E_POINTER, peUsage);
 
-        wil::com_ptr_nothrow<IMFSampleAllocatorControl> spAllocatorControl;
-        if (SUCCEEDED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spAllocatorControl))))
-        {
-            RETURN_IF_FAILED(spAllocatorControl->GetAllocatorUsage(m_streamList[0]->m_dwDevSourceStreamIdentifier, pdwInputStreamID, peUsage));
-        }
-        else
-        {
-            *pdwInputStreamID = dwOutputStreamID;
-            *peUsage = MFSampleAllocatorUsage::MFSampleAllocatorUsage_UsesCustomAllocator;
-        }
+        // If the AugmentedMediaStream::ProcessSample() method does 'in place' transform then it 
+        // should report MFSampleAllocatorUsage_DoesNotAllocate. However if it will process and 
+        // place into a new sample it should report MFSampleAllocatorUsage_UsesProvidedAllocator
+        *peUsage = MFSampleAllocatorUsage_DoesNotAllocate;
+        *pdwInputStreamID = m_streamList[0]->m_dwStreamId;
 
         return S_OK;
     }

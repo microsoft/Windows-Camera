@@ -104,7 +104,7 @@ namespace VirtualCameraSystray
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Exception caught: {ex.Message}");
+                Debug.WriteLine($"Exception caught in WaitForConnectionCallBackForStart(): {ex.Message}");
                 return;
             }
 

@@ -49,6 +49,7 @@ namespace winrt::WindowsSample::implementation
             }
             else
             {
+                DEBUG_MSG(L"Attempting to activate virtual camera with an unknown virtual camera kind to wrap an existing camera")
                 return ERROR_BAD_CONFIGURATION;
             }
         }
