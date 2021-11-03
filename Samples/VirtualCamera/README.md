@@ -1,7 +1,7 @@
 # Virtual Camera Sample #
 ### Requirement:
-- Minimum OS version: Windows 11 preview ([10.0.22000.0](https://blogs.windows.com/windows-insider/2021/06/28/announcing-the-first-insider-preview-for-windows-11/))
-- Windows SDK minimum version: [10.0.22000.0](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
+- Minimum OS version: Windows 11 (10.0.22000.0)
+- Windows SDK minimum version: [10.0.22000.0](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
 - Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
 - Latest VCRuntime redistributable installed [link](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
 
