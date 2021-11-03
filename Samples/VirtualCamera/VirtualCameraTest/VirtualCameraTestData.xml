@@ -34,5 +34,19 @@
       <Parameter Name="friendlyname">testMediaSourceVCam</Parameter>
     </Row>
   </Table>
+
+  <Table Id="AugmentedMediaSourceTest">
+    <!-- VidDeviceSymLink or VidDeviceIndex-->
+    <Row Name="DeviceIndex0">
+      <Parameter Name="vidDeviceIndex">0</Parameter>
+    </Row>
+  </Table>
+
+  <Table Id="VirtualCameraAugmentedMediaSourceTest">
+    <!-- VidDeviceSymLink or VidDeviceIndex-->
+    <Row Name="DeviceIndex0">
+      <Parameter Name="vidDeviceIndex">0</Parameter>
+    </Row>
+  </Table>
 </Data>
 

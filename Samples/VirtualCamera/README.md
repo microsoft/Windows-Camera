@@ -3,10 +3,18 @@
 - Minimum OS version: Windows 11 preview ([10.0.22000.0](https://blogs.windows.com/windows-insider/2021/06/28/announcing-the-first-insider-preview-for-windows-11/))
 - Windows SDK minimum version: [10.0.22000.0](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
 - Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
+- Latest VCRuntime redistributable installed [link](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
 
 This is a sample on how to create a virtual camera on Windows ([see API documentation](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/)). This project consists of 5 parts:
 1. **VirtualCameraMediaSource** <br>
-MediaSource for the virtual camera. 
+MediaSource for the virtual camera. This CustomMediaSource can run in 3 distinc modes: 
+    1. **SimpleMediaSource** (also reffered to as *Synthetic* in application) which will create synthetic content to stream from the virtual camera.
+    2. **HWMediaSource** (also reffered to as *CameraWrapper* in application) which will wrap an existing camera on the system but act as a passthrough.
+    3. **AugmentedMediaSource** which will wrap an existing camera on the system but
+        - filters the set of streams exposed (see [*AugmentedMediaSource::Initialize()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp)
+        - filters to set of MediaTypes exposed [*AugmentedMediaStream::Initialize()*](VirtualCameraMediaSource/AugmentedMediaStream.cpp) 
+        - supports a custom DDI not supported originaly by the underlying existing camera [*AugmentedMediaSource::KsProperty()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp)
+        - communicates to the main app's system tray background process via RPC whenever it starts streaming (refer to [*AugmentedMediaSource::Start()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp) and [*SystrayApplicationContext.CreateNamedPipeForStart()*](VirtualCameraSystray\SystrayApplicationContext.cs))
 
 2. **VirtualCamera_Installer** <br>
 A packaged Win32 application installed with *VirtualCameraMSI* that handles adding and removing virtual camera instances that are based on the *VirtualCameraMediaSource*.
@@ -15,8 +23,10 @@ A packaged Win32 application installed with *VirtualCameraMSI* that handles addi
 This project packages binaries from *VirtualCamera_Installer* and *VirtualCameraMediaSource* into MSI for deployment.
 The MSI is reponsible for deploying binaries, register media source dll, and removal of the media source and the associate virtual camera.
 
-4. **VirtualCameraManager_WinRT and VirtualCameraManager_App**  <br>
-WinRT component that projects [lower level APIs for virtual camera](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/) and a UWP application with a GUI to create / remove / configure and interact with virtual cameras.
+4. **VirtualCameraManager_WinRT, VirtualCameraManager_App and VirtualCameraSystray**  <br>
+WinRT component that projects [lower level APIs for virtual camera](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/) and a UWP application with a GUI to create / remove / configure and interact with virtual cameras. 
+VirtualCameraSystray is a sidekick system tray fulltrust process launched from the UWP application to allow system tray user interactions as well as acting as a backround process listening for RPC calls coming from the virtual camera media source in order to launch the UWP app upon starting to stream with the virtual camera **AugmentedMediaSource** (won't launch with other types of virtual camera).
+The UWP app requests to register a [startup task](https://docs.microsoft.com/en-us/uwp/api/Windows.ApplicationModel.StartupTask) upon launching for the first time and registers a [launch protocol](https://docs.microsoft.com/en-us/windows/uwp/launch-resume/how-to-launch-an-app-for-results) to be launched with arguments from it sidekick fulltrust system tray process.
 
 5. **VirtualCameraTest** <br>
 Set of unit tests to validate a virtual camera.
@@ -25,14 +35,14 @@ Set of unit tests to validate a virtual camera.
 Download the project 
 1. Build *VirtualCamera_Installer* 
 2. Build *VirtualCamera_MSI*
-3. Build *VirtualCameraManager_WinRT* and *VirtualCameraManager_App* 
+3. Build *VirtualCameraSystray* and *VirtualCameraManager_WinRT* and *VirtualCameraManager_App* 
 
 4. Install *VirtualCamera_MSI*
 5. Install *VirtualCameraManager_App*
 
 ## VirtualCameraMediaSource 
 ----
-MediaSource for Virtual Camera.  In this sample, the mediasource is run with synthesized frames (SimpleMediaSource) or as a wrapper of existing hardware camera (HWMediaSource).  
+MediaSource for Virtual Camera. In this sample, the mediasource is run with synthesized frames (SimpleMediaSource), as a passthrough wrapper of existing hardware camera (HWMediaSource) or an augmented wrapper of a existing hardware camera (AugmentedMediaSource).  
 Documentation on media source: [link](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/frame-server-custom-media-source#custom-media-source-dll)
 
 ### Project Setup
@@ -74,9 +84,10 @@ This should include the mediasource dll, the executable that is responsbile for 
 ----
 ### To build:
 > Make sure you have already installed the *VirtualCameraMediaSource* by generating the previous MSI and installing it on the target system.
-1. Build the *VirtualCameraManager_WinRT* project
-2. Build the *VirtualCameraManager_App*
-3. Either launch the app right away (right click on the *VirtualCameraManager_App* project and select *deploy*) or create an app package you can share around and sideload (right click on the *VirtualCameraManager_App* project and select *publish*)
+1. Build the *VirtualCameraSystray* project
+2. Build the *VirtualCameraManager_WinRT* project
+3. Build the *VirtualCameraManager_App*
+4. Either launch the app right away (right click on the *VirtualCameraManager_App* project and select *deploy*) or create an app package you can share around and sideload (right click on the *VirtualCameraManager_App* project and select *publish*)
 
 ### What the app does:
 - When you launch the app, it will contain a barebone UI with a ➕ sign button at the top. This opens a dialog to create a new virtual camera.
@@ -200,7 +211,7 @@ In the case where  the virtualCamera is used by application or after VirtualCame
 If you are calling ```MFCreateVirtualCamera()``` (indirectly i.e. using the ```VirtualCameraRegistrar.RegisterNewVirtualCamera()``` method) on a UI thread, it will block it until camera access consent is given. However since that consent prompt is also running on the UI thread, it will actively block interaction and appear to freeze the app. A smart thing to do may be to either trigger consent upon launch of the app by another mean (i.e. calling ```MediaCapture.InitializeAsync()```) or by calling the API in a background thread (which the UWP VirtualCameraManager_App does).
 
 <b> 5. Can 2 virtual cameras concurrently wrap the same existing camera on the system? </b><br/>
-no, only 1 virtual camera at a time can wrap an existing camera. You cannot open an existing camera in shariung mode from within your virtual camera.
+no, only 1 virtual camera at a time can wrap an existing camera. You cannot open an existing camera in sharing mode from within your virtual camera.
 
 
 

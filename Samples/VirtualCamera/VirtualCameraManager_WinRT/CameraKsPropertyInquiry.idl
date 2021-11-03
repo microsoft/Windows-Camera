@@ -11,25 +11,36 @@ namespace VirtualCameraManager_WinRT
     // projection of KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION flag values
     enum EyeGazeCorrectionCapabilityKind
     {
-        Off = 0x0000000000000000, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
-        On = 0x0000000000000001, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+        Off = 0, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
+        On = 1, // KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
     };
 
     // projection of the custom control value defined in the virtual camera media source
     // refer to VirtualCameraMediaSource.h
-    enum CustomControlKind
+    enum SimpleCustomControlKind
     {
-        ColorMode = 0, // KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE
+        Coloring = 0, // KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING
     };   
 
     // projection of the custom control flags defined in the virtual camera media source
     // refer to VirtualCameraMediaSource.h
     enum ColorModeKind
     {
-        Grayscale = 0x00FFFFFFL,
-        Red = 0x00FF0000L,
-        Green = 0x0000FF00L,
-        Blue = 0x000000FFL
+        Grayscale = 0x00FFFFFF,
+        Red = 0x0FF0000,
+        Green = 0x0000FF00,
+        Blue = 0x000000FF
+    };
+
+    enum AugmentedMediaSourceCustomControlKind
+    {
+        KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX = 0
+    };
+
+    enum AugmentedMediaSourceCustomFxFlagKind
+    {
+        Off = 0,
+        Auto = 1
     };
 
     // projection of KSProperty
@@ -54,15 +65,25 @@ namespace VirtualCameraManager_WinRT
     //
     // interface and runtime class that encapsulates a KSProperty payload for a custom control supported in this sample
     //
-    interface ICustomPropertyPayload requires IPropertyPayload
+    interface ISimpleCustomPropertyPayload
     {
-        CustomControlKind CustomControlKind{ get; };
+        SimpleCustomControlKind ControlKind{ get; };
+        UInt32 ColorMode{ get; };
     }
-    runtimeclass BasicCustomPropertyPayload : [default] ICustomPropertyPayload
+    runtimeclass SimpleCustomPropertyPayload : [default] ISimpleCustomPropertyPayload
     {
     }
 
     //
+    // interface and runtime class that encapsulates a KSProperty payload for an augmented media source custom control supported in this sample
+    //
+    interface IAugmentedMediaSourceCustomPropertyPayload requires IPropertyPayload
+    {
+        AugmentedMediaSourceCustomControlKind ControlKind{ get; };
+    }
+    runtimeclass BasicAugmentedMediaSourceCustomPropertyPayload : [default] IAugmentedMediaSourceCustomPropertyPayload
+    {
+    }
     // runtime class with static helper methods to set and get custom and extended controls on a camera
     //
     [default_interface]
@@ -71,8 +92,10 @@ namespace VirtualCameraManager_WinRT
         static IExtendedPropertyPayload GetExtendedControl(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller);
         static void SetExtendedControlFlags(ExtendedControlKind extendedControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
 
-        static ICustomPropertyPayload GetCustomControl(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
-        static void SetCustomControlFlags(CustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
+        static ISimpleCustomPropertyPayload GetSimpleCustomControl(SimpleCustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetSimpleCustomControlFlags(SimpleCustomControlKind customControlKind, Windows.Media.Devices.VideoDeviceController controller, UInt32 flags);
+        static IAugmentedMediaSourceCustomPropertyPayload GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller);
+        static void SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind controlKind, Windows.Media.Devices.VideoDeviceController controller, UInt64 flags);
     }
 }
 

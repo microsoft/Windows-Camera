@@ -405,11 +405,10 @@ namespace winrt::WindowsSample::implementation
         // driver does not register a handler for a KS operation.
         // We want to mimic the driver behavior here if we don't
         // support controls.
-        if ((pProperty->Set != PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL) || (pProperty->Id >= KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END))
+        if (!IsEqualCLSID(pProperty->Set, PROPSETID_SIMPLEMEDIASOURCE_CUSTOMCONTROL) || (pProperty->Id >= KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_END))
         {
             return HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND);
         }
-
 
         if (pPropertyData == NULL && ulDataLength == 0)
         {
@@ -423,7 +422,7 @@ namespace winrt::WindowsSample::implementation
 
             switch (pProperty->Id)
             {
-            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE:
+            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING:
                 *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
                 break;
 
@@ -442,11 +441,14 @@ namespace winrt::WindowsSample::implementation
             // validate properyData length
             switch (pProperty->Id)
             {
-            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE:
+            case KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORING:
+            {
                 if (ulDataLength < sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
                 {
                     return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
                 }
+
+                PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S pPayload = (PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)pPropertyData;
 
                 // Set operation 
                 if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_SET)))
@@ -455,21 +457,21 @@ namespace winrt::WindowsSample::implementation
                     *pBytesReturned = 0;
                     for (size_t i = 0; i < m_streamList.size(); i++)
                     {
-                        m_streamList[i]->SetRGBMask(((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)pPropertyData)->ColorMode);
-                        *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
+                        m_streamList[i]->SetRGBMask(pPayload->ColorMode);
                     }
                 }
                 // Get operation
                 else if (0 != (pProperty->Flags & (KSPROPERTY_TYPE_GET)))
                 {
                     DEBUG_MSG(L"Get filter level KSProperty");
-                    ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)pPropertyData)->ColorMode = m_streamList[0]->GetRGBMask();
+                    pPayload->ColorMode = m_streamList[0]->GetRGBMask();
                     *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
                 }
                 else
                 {
                     return E_INVALIDARG;
                 }
+            }
                 break;
 
             default:
@@ -624,14 +626,13 @@ namespace winrt::WindowsSample::implementation
                 MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
                 profileCollection.get()));
 
-            //
-            // Virtual camera
-            // MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute need store
-            // Configuration UWP PFN (Package Family Name)
-            // This example is a generic media source that be place in another UWP app, 
-            // so PFN is query programmatically.
-            // If the MediaSource is associate with specific UWP only, you may hardcode
-            // the PFN
+            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+            // virtual camera configuration app's PFN (Package Family Name).
+            // Below we query programmatically the current application info (knowing that the app 
+            // that activates the virtual camera registers it on the system and also acts as its 
+            // configuration app).
+            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+            // a particular PFN.
             try
             {
                 winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();

@@ -1,0 +1,57 @@
+﻿<!--Copyright (C) Microsoft Corporation. All rights reserved.-->
+<UserControl
+    x:Class="VirtualCameraManager_App.VirtualCameraControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:VirtualCameraManager_App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="300"
+    d:DesignWidth="400"
+    BorderBrush="Black">
+
+    <StackPanel Name="UIMainPanel" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <ToggleSwitch Name="UIPreviewToggle" OnContent="Preview ON" OffContent="Preview OFF" Toggled="UIPreviewToggle_Toggled" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <MediaPlayerElement x:Name="UIMediaPlayerElement" MaxHeight="200" MaxWidth="200" AreTransportControlsEnabled="False"/>
+            <StackPanel Orientation="Vertical" MaxWidth="200" HorizontalAlignment="Left" >
+                <ContentControl x:Name="UIVCamInfo">
+                    <StackPanel Orientation="Vertical">
+                        <TextBlock Text="Friendly name: " />
+                        <TextBox Name="UIFriendlyName" IsReadOnly="true"/>
+                        <TextBlock Text="Lifetime: " />
+                        <TextBox Name="UILifetime" IsReadOnly="true"/>
+                        <TextBlock Text="Access: " />
+                        <TextBox Name="UIAccess" IsReadOnly="true"/>
+                    </StackPanel>
+                </ContentControl>
+                <TextBlock Text="Symbolic Name: " />
+                <TextBox Name="UISymLinkName" IsReadOnly="true"/>
+            </StackPanel>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal">
+            <ContentControl x:Name="UIEditButtons">
+                <StackPanel Orientation="Horizontal">
+
+                    <Button Name="UIEnable" Click="UIEnable_Click" ToolTipService.ToolTip="Enable">
+                        <Button.Content>
+                            <SymbolIcon Symbol="Play"/>
+                        </Button.Content>
+                    </Button>
+                    <Button Name="UIDisable" Click="UIDisable_Click" ToolTipService.ToolTip="Disable">
+                        <Button.Content>
+                            <SymbolIcon Symbol="Stop"/>
+                        </Button.Content>
+                    </Button>
+                    <Button Name="UIRemove" Click="UIRemove_Click" ToolTipService.ToolTip="Remove">
+                        <Button.Content>
+                            <SymbolIcon Symbol="Delete"/>
+                        </Button.Content>
+                    </Button>
+                </StackPanel>
+            </ContentControl>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

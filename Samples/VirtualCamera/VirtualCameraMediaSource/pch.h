@@ -37,6 +37,8 @@
 #include "SimpleMediaStream.h"
 #include "HWMediaSource.h"
 #include "HWMediaStream.h"
+#include "AugmentedMediaSource.h"
+#include "AugmentedMediaStream.h"
 #include "VirtualCameraMediaSource.h"
 #include "VirtualCameraMediaSourceActivate.h"
 

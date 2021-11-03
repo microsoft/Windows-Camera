@@ -83,10 +83,22 @@ namespace EyeGazeAndBackgroundSegmentation
         /// <summary>
         /// Cleanup
         /// </summary>
-        private void CleanupCamera()
+        private async Task CleanupCameraAsync()
         {
             Debug.WriteLine("CleanupCamera");
-            m_mediaPlayer = null;
+            if(m_mediaPlayer != null)
+            {
+                m_mediaPlayer.Dispose();
+                m_mediaPlayer = null;
+            }
+
+            // disengage frame reader
+            if (m_frameReader != null)
+            {
+                await m_frameReader.StopAsync();
+                m_frameReader.FrameArrived -= FrameReader_FrameArrived;
+                m_frameReader = null;
+            }
 
             if (m_mediaCapture != null)
             {
@@ -105,12 +117,20 @@ namespace EyeGazeAndBackgroundSegmentation
 
             // Find the sources and de-duplicate from source groups not containing VideoCapture devices
             var allGroups = await MediaFrameSourceGroup.FindAllAsync();
-            m_mediaFrameSourceGroupList = allGroups.Where(group => group.SourceInfos.Any(sourceInfo => sourceInfo.SourceKind == MediaFrameSourceKind.Color
+            var colorVideoGroupList = allGroups.Where(group => 
+                                                      group.SourceInfos.Any(sourceInfo => sourceInfo.SourceKind == MediaFrameSourceKind.Color
                                                                                                        && (sourceInfo.MediaStreamType == MediaStreamType.VideoPreview
-                                                                                                           || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord))
-                                                                   && group.SourceInfos.All(sourceInfo => deviceInfoCollection.Any((deviceInfo) => deviceInfo.Id == sourceInfo.DeviceInformation.Id))).ToList();
+                                                                                                           || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord)));
+            var validColorVideoGroupList = colorVideoGroupList.Where(group => 
+                                                                     group.SourceInfos.All(sourceInfo =>
+                                                                                           deviceInfoCollection.Any((deviceInfo) =>
+                                                                                                                     sourceInfo.DeviceInformation == null || deviceInfo.Id == sourceInfo.DeviceInformation.Id)));
 
-            if (m_mediaFrameSourceGroupList.Count == 0)
+            if(validColorVideoGroupList.Count() > 0)
+            {
+                m_mediaFrameSourceGroupList = validColorVideoGroupList.ToList();
+            }
+            else
             {
                 // No camera sources found
                 NotifyUser("No suitable camera found", NotifyType.ErrorMessage);
@@ -182,8 +202,8 @@ namespace EyeGazeAndBackgroundSegmentation
                         m_selectedMediaFrameSource.CurrentFormat.Subtype);
 
             // mirror preview if not streaming from the back
-            if (m_selectedMediaFrameSource.Info.DeviceInformation.EnclosureLocation == null ||
-                m_selectedMediaFrameSource.Info.DeviceInformation.EnclosureLocation.Panel != Windows.Devices.Enumeration.Panel.Back)
+            if (m_selectedMediaFrameSource.Info.DeviceInformation?.EnclosureLocation == null ||
+                m_selectedMediaFrameSource.Info.DeviceInformation?.EnclosureLocation.Panel != Windows.Devices.Enumeration.Panel.Back)
             {
                 var effect = new VideoTransformEffectDefinition();
                 effect.Mirror = MediaMirroringOptions.Horizontal;
@@ -327,17 +347,9 @@ namespace EyeGazeAndBackgroundSegmentation
                 }
 
                 // if we are not procesing frames, clean up
-                CleanupCamera();
+                await CleanupCameraAsync();
             }
             m_frameAquisitionLock.Release();
-
-            // disengage frame reader
-            if (m_frameReader != null)
-            {
-                await m_frameReader.StopAsync();
-                m_frameReader.FrameArrived -= FrameReader_FrameArrived;
-                m_frameReader = null;
-            }
 
             UIShowBackgroundImage.IsChecked = false;
 

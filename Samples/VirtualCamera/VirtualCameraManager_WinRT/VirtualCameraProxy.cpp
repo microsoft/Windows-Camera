@@ -27,6 +27,20 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         
     }
 
+    VirtualCameraProxy::VirtualCameraProxy(
+        winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
+        winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime,
+        winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access,
+        hstring const& friendlyName,
+        hstring const& symbolicLink,
+        hstring const& wrappedCameraSymbolicLink,
+        wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera)
+        : VirtualCameraProxy(virtualCameraKind, lifetime, access, wrappedCameraSymbolicLink, spVirtualCamera)
+    {
+        m_friendlyName = friendlyName;
+        m_symLink = symbolicLink;
+    }
+
     VirtualCameraProxy::~VirtualCameraProxy()
     {
         m_spVirtualCamera = nullptr;
@@ -50,8 +64,14 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         auto friendlyNameEdit = std::wstring(pwszFriendlyName.get());
 
         // remove the virtual camera name tag added by the OS
-        std::wstring portionToRemove = L" (Windows Virtual Camera)";
+        std::wstring portionToRemove = L" (Windows Test Virtual Camera)";
         size_t replaceStart = friendlyNameEdit.rfind(portionToRemove);
+        if (replaceStart != std::wstring::npos)
+        {
+            friendlyNameEdit.erase(replaceStart, portionToRemove.size());
+        }
+        portionToRemove = L" (Windows Virtual Camera)";
+        replaceStart = friendlyNameEdit.rfind(portionToRemove);
         if (replaceStart != std::wstring::npos)
         {
             friendlyNameEdit.erase(replaceStart, portionToRemove.size());

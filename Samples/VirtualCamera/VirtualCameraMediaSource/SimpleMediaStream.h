@@ -41,8 +41,8 @@ namespace winrt::WindowsSample::implementation
         DWORD Id() const { return m_dwStreamId; }
         MFSampleAllocatorUsage SampleAlloactorUsage() const { return m_allocatorUsage; }
 
-        void SetRGBMask(ULONG rgbMask) { winrt::slim_lock_guard lock(m_Lock);  m_rgbMask = rgbMask; }
-        ULONG GetRGBMask() { winrt::slim_lock_guard lock(m_Lock);  return m_rgbMask; }
+        void SetRGBMask(uint32_t rgbMask) { winrt::slim_lock_guard lock(m_Lock);  m_rgbMask = rgbMask; }
+        uint32_t GetRGBMask() { winrt::slim_lock_guard lock(m_Lock);  return m_rgbMask; }
 
     protected:
         HRESULT _CheckShutdownRequiresLock();
@@ -61,7 +61,7 @@ namespace winrt::WindowsSample::implementation
 
         bool m_bIsShutdown = false;
         MF_STREAM_STATE m_streamState = MF_STREAM_STATE_STOPPED;
-        ULONG m_rgbMask = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_BLUE;
+        uint32_t m_rgbMask = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_BLUE;
 
         DWORD m_dwStreamId;
         MFSampleAllocatorUsage m_allocatorUsage;

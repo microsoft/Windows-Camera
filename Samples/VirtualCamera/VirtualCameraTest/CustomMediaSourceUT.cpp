@@ -9,12 +9,13 @@
 
 namespace VirtualCameraTest::impl
 {
-    HRESULT CustomMediaSourceUT::TestMediaSource()
+    HRESULT CustomMediaSourceUT::CreateSourceAttributes(_Outptr_ IMFAttributes** ppAttributes)
     {
+        RETURN_HR_IF_NULL(E_POINTER, ppAttributes);
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
         RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
 
-        RETURN_IF_FAILED(TestMediaSourceRegistration(m_clsid, spAttributes.get()));
+        *ppAttributes = spAttributes.detach();
 
         return S_OK;
     }
@@ -22,7 +23,7 @@ namespace VirtualCameraTest::impl
     HRESULT CustomMediaSourceUT::TestMediaSourceStream()
     {
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
+        RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
 
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
         RETURN_IF_FAILED(CoCreateAndActivateMediaSource(m_clsid, spAttributes.get(), &spMediaSource));
@@ -32,7 +33,7 @@ namespace VirtualCameraTest::impl
         DWORD streamCount = 0;
         RETURN_IF_FAILED(spMediaSource->CreatePresentationDescriptor(&spPD));
         RETURN_IF_FAILED(spPD->GetStreamDescriptorCount(&streamCount));
-        if (streamCount == m_streamCount)
+        if (streamCount != m_streamCount)
         {
             LOG_ERROR_RETURN(E_TEST_FAILED, L"Unexpected stream count: %d (expected: %d) \n", streamCount, m_streamCount);
         }

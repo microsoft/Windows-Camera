@@ -27,6 +27,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         _In_ MFVirtualCameraLifetime lifetime,
         _In_ MFVirtualCameraAccess access,
         _In_ winrt::hstring const& friendlyName,
+        _In_ winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
         _In_ winrt::hstring const& strWrappedCameraSymbolicLink,
         _Inout_ wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera)
     {
@@ -46,6 +47,10 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             &spVirtualCamera),
             "Failed to create virtual camera");
 
+        // Create custom attribute, to be used by mediasource on activation to specify what kind of virtual camera we are creating
+        THROW_IF_FAILED_MSG(spVirtualCamera->SetUINT32(VCAM_KIND, (UINT32)virtualCameraKind),
+            "Failed to add device source info attribute onto the virtual camera");
+
         // if wrapping an existing camera, specify its symbolic link explicitly to the virtual camera 
         // and also store it into an IMFAttribute on the virtual camera
         if (!strWrappedCameraSymbolicLink.empty())
@@ -53,27 +58,51 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             THROW_IF_FAILED_MSG(spVirtualCamera->AddDeviceSourceInfo(strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info of existing camera to virtual camera");
 
-            // Create custom attribute, to be use by mediasource on activation
+            // Create custom attribute, to be used by mediasource on activation
             THROW_IF_FAILED_MSG(spVirtualCamera->SetString(VCAM_DEVICE_INFO, strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info attribute onto the virtual camera");
+
+            // attempt to set PLD info making this camera a front-facing camera (app process needs high privilege)
+            ACPI_PLD_V2_BUFFER acpiPld = {};    /// See acpitable.h for definition.
+
+            /// Initialize the PLD information.  All the other fields can be
+            /// 0, except for the revision and the vertical/horizontal 
+            /// offsets, those have to be initialized to describe the PLD 
+            /// structure type and "no offset" value. 
+            acpiPld.Revision = 2;
+            acpiPld.VerticalOffset = 0xFFFF;
+            acpiPld.HorizontalOffset = 0xFFFF;
+
+            /// Now set the PLD panel to indicate this camera is located on
+            /// the front panel 
+            acpiPld.Panel = 4;// AcpiPldPanelFront
+
+            // swallow error
+            // THROW_IF_FAILED_MSG(
+            spVirtualCamera->AddProperty((const ::DEVPROPKEY*)&DEVPKEY_Device_PhysicalDeviceLocation,
+                DEVPROP_TYPE_BINARY,
+                (const BYTE*)&acpiPld,
+                sizeof(acpiPld));
+            //"Failed to add acpiPld device property onto the virtual camera"); 
         }
     }
 
-    winrt::VirtualCameraManager_WinRT::VirtualCameraProxy 
+    winrt::VirtualCameraManager_WinRT::VirtualCameraProxy
         VirtualCameraRegistrar::RegisterNewVirtualCamera(
-            winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind, 
-            winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime, 
-            winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access, 
+            winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
+            winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime,
+            winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access,
             hstring const& friendlyName,
             hstring const& wrappedCameraSymbolicLink)
     {
         wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
-        
+
         CreateVirtualCamera(
             VIRTUALCAMERAMEDIASOURCE_CLSID,
             (MFVirtualCameraLifetime)lifetime,
             (MFVirtualCameraAccess)access,
             friendlyName,
+            virtualCameraKind,
             wrappedCameraSymbolicLink,
             spVirtualCamera);
 
@@ -87,6 +116,38 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         return result;
     }
 
+    winrt::VirtualCameraManager_WinRT::VirtualCameraProxy
+        VirtualCameraRegistrar::RetakeExistingVirtualCamera(
+            VirtualCameraKind virtualCameraKind,
+            VirtualCameraLifetime lifetime,
+            VirtualCameraAccess access,
+            hstring const& friendlyName,
+            hstring const& symbolicLink,
+            hstring const& wrappedCameraSymbolicLink)
+    {
+        wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+
+        CreateVirtualCamera(
+            VIRTUALCAMERAMEDIASOURCE_CLSID,
+            (MFVirtualCameraLifetime)lifetime,
+            (MFVirtualCameraAccess)access,
+            friendlyName,
+            virtualCameraKind,
+            wrappedCameraSymbolicLink,
+            spVirtualCamera);
+
+        auto result = make<implementation::VirtualCameraProxy>(
+            virtualCameraKind,
+            lifetime,
+            access,
+            friendlyName,
+            symbolicLink,
+            wrappedCameraSymbolicLink,
+            spVirtualCamera);
+
+        return result;
+    }
+
     winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Devices::Enumeration::DeviceInformation>
         VirtualCameraRegistrar::GetExistingVirtualCameraDevices()
     {
@@ -94,9 +155,9 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
         auto taskResult = winrt::Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
             winrt::Windows::Media::Devices::MediaDevice::GetVideoCaptureSelector());
-        
+
         // we wait for max 20s to fetch the list of available camera devices
-        static const int waitTimeInSeconds = 20; 
+        static const int waitTimeInSeconds = 20;
         switch (taskResult.wait_for(std::chrono::seconds(waitTimeInSeconds)))
         {
             case winrt::Windows::Foundation::AsyncStatus::Completed:
@@ -114,19 +175,23 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // for each camera device, check if it is a virtual camera by looking for a specific device interface and a DEVPROPKEY
         for (uint32_t i = 0; i < deviceList.Size(); i++)
         {
-            static const winrt::hstring _DEVPKEY_DeviceInterface_IsVirtualCamera(L"{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 3");
+            static const winrt::hstring _DEVPKEY_DeviceInterface_IsVirtualCamera(L"{6EDC630D-C2E3-43B7-B2D1-20525A1AF120},3");
             auto device = deviceList.GetAt(i);
-            winrt::Windows::Foundation::Collections::IVector<winrt::hstring> requestedProps{ winrt::single_threaded_vector<winrt::hstring>() };;
+            winrt::Windows::Foundation::Collections::IVector<winrt::hstring> requestedProps{ winrt::single_threaded_vector<winrt::hstring>({_DEVPKEY_DeviceInterface_IsVirtualCamera}) };
             auto deviceInterface = winrt::Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(
-                device.Id(), 
-                requestedProps, 
+                device.Id(),
+                requestedProps,
                 winrt::Windows::Devices::Enumeration::DeviceInformationKind::DeviceInterface
             ).get();
 
             if (deviceInterface.Properties().HasKey(_DEVPKEY_DeviceInterface_IsVirtualCamera))
             {
-                auto props = device.Properties();
-                returnList.Append(device);
+                auto prop = deviceInterface.Properties().Lookup(_DEVPKEY_DeviceInterface_IsVirtualCamera);
+                if (prop != nullptr)
+                {
+                    auto props = device.Properties();
+                    returnList.Append(device);
+                }
             }
         }
         return returnList;

@@ -11,6 +11,7 @@
 
 #include "SimpleMediaSourceUT.h"
 #include "HWMediaSourceUT.h"
+#include "AugmentedMediaSourceUT.h"
 
 using namespace VirtualCameraTest::impl;
 
@@ -164,7 +165,7 @@ DeviceInformation SelectPhysicalCamera()
 
 HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
 {
-    LOG_COMMENT(L"\n select opitions: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - quit \n");
+    LOG_COMMENT(L"\n select option: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - VCam-AugmentedMediaSource \n 4 - quit \n");
     uint32_t select = 0;
     std::wcin >> select;
 
@@ -182,6 +183,14 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
+            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), ppVirtualCamera));
+            break;
+        }
+        case 3:
+        {
+            auto devInfo = SelectPhysicalCamera();
+
+            AugmentedMediaSourceUT test(devInfo.Id());
             RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), ppVirtualCamera));
             break;
         }
@@ -214,7 +223,7 @@ HRESULT VCamApp()
 {
     while (true)
     {
-        LOG_COMMENT(L"\n select opitions: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - quit \n");
+        LOG_COMMENT(L"\n select option: \n 1 - register \n 2 - remove \n 3 - TestVCam  \n 4 - TestCustomControl \n 5 - quit \n");
         int select = 0;
         std::wcin >> select;
 
@@ -265,9 +274,9 @@ HRESULT VCamApp()
 
                     LOG_COMMENT(L"Select color mode: ");
                     LOG_COMMENT(L" 1 - Red \n 2 - Green - \n 3 - Blue \n 4 - Gray");
-                    uint32_t select = 0;
-                    std::wcin >> select;
-                    switch(select)
+                    uint32_t colorSelect = 0;
+                    std::wcin >> colorSelect;
+                    switch(colorSelect)
                     {
                     case 1:
                         colorMode = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_RED;

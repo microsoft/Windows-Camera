@@ -4,18 +4,19 @@
 
 #include "pch.h"
 #include "HWMediaSourceUT.h"
-#include "VirtualCameraMediaSource.h"
 #include "VCamutils.h"
 
 namespace VirtualCameraTest::impl
 {
-    HRESULT HWMediaSourceUT::TestMediaSource()
+    HRESULT HWMediaSourceUT::CreateSourceAttributes(_Outptr_ IMFAttributes** ppAttributes)
     {
+        RETURN_HR_IF_NULL(E_POINTER, ppAttributes);
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
+        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 2));
         RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
+        RETURN_IF_FAILED(spAttributes->SetUINT32(VCAM_KIND, (UINT32)VirtualCameraKind::BasicCameraWrapper));
 
-        RETURN_IF_FAILED(TestMediaSourceRegistration(CLSID_VirtualCameraMediaSource, spAttributes.get()));
+        *ppAttributes = spAttributes.detach();
 
         return S_OK;
     }
@@ -23,8 +24,7 @@ namespace VirtualCameraTest::impl
     HRESULT HWMediaSourceUT::TestMediaSourceStream()
     {
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
-        RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
+        RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
 
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
         RETURN_IF_FAILED(CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, spAttributes.get(), &spMediaSource));
@@ -55,8 +55,7 @@ namespace VirtualCameraTest::impl
     HRESULT HWMediaSourceUT::TestKsControl()
     {
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
-        RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
+        RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
 
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
         RETURN_IF_FAILED(CoCreateAndActivateMediaSource(CLSID_VirtualCameraMediaSource, spAttributes.get(), &spMediaSource));
@@ -107,8 +106,7 @@ namespace VirtualCameraTest::impl
         }
 
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
-        RETURN_IF_FAILED(spAttributes->SetString(VCAM_DEVICE_INFO, m_devSymlink.data()));
+        RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
 
         RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, friendlyname, m_devSymlink, spAttributes.get(), ppVirtualCamera));
 

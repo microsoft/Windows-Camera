@@ -55,6 +55,7 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow <IMFAttributes> m_spActivateAttributes;
         winrt::com_ptr<winrt::WindowsSample::implementation::SimpleMediaSource> m_spSimpleMediaSrc;
         winrt::com_ptr<winrt::WindowsSample::implementation::HWMediaSource>m_spHWMediaSrc;
+        winrt::com_ptr<winrt::WindowsSample::implementation::AugmentedMediaSource>m_spAugmentedMediaSrc;
     };
 }
 

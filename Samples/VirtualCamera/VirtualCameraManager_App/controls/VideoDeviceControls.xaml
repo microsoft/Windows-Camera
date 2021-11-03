@@ -1,0 +1,20 @@
+﻿<UserControl
+    x:Class="VirtualCameraManager_App.controls.VideoDeviceControls"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:VirtualCameraManager_App.controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    d:DesignHeight="500"
+    d:DesignWidth="120">
+
+    <ScrollViewer Background="Transparent" 
+                  VerticalScrollBarVisibility="Hidden" 
+                  VerticalScrollMode="Disabled"
+                  HorizontalScrollBarVisibility="Auto" 
+                  HorizontalScrollMode="Auto">
+        <StackPanel x:Name="UIPanelRows" Orientation="Horizontal">
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

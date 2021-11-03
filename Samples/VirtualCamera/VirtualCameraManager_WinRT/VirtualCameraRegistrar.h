@@ -16,6 +16,14 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             hstring const& friendlyName,
             hstring const& wrappedCameraSymbolicLink);
 
+        static winrt::VirtualCameraManager_WinRT::VirtualCameraProxy RetakeExistingVirtualCamera(
+            VirtualCameraKind virtualCameraKind,
+            VirtualCameraLifetime lifetime,
+            VirtualCameraAccess access,
+            hstring const& friendlyName,
+            hstring const& symbolicLink,
+            hstring const& wrappedCameraSymbolicLink);
+
         static winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Devices::Enumeration::DeviceInformation> GetExistingVirtualCameraDevices();
     };
 }

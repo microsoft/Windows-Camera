@@ -112,7 +112,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
         KSCAMERA_EXTENDEDPROP_HEADER header =
         {
             1, // Version
-            1, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
+            0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
             sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE), // Size
             0, // Result
             flags, // Flags

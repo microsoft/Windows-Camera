@@ -1,0 +1,42 @@
+﻿<!--Copyright (C) Microsoft Corporation. All rights reserved.-->
+<Page
+    x:Class="VirtualCameraManager_App.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:VirtualCameraManager_App"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel x:Name="UIMainPanel">
+        <StackPanel Orientation="Horizontal">
+            <Button Name="UICreateVirtualCamera" Content="➕" ToolTipService.ToolTip="Add a new virtual camera" Click="UICreateVirtualCamera_Click"/>
+            <Button Name="UIRefreshList" Content="🔃" ToolTipService.ToolTip="Manual refresh of the list of virtual cameras" Click="UIRefreshList_Click"/>
+        </StackPanel>
+
+        <TextBox x:Name="UIResultText"/>
+
+        <ListBox Name="UIVirtualCameraList" />
+
+        <ContentDialog x:Name="UIAddNewVirtualCameraDialog"
+                   PrimaryButtonText="Add"
+                   IsPrimaryButtonEnabled="true"
+                   CloseButtonText="Cancel"
+                   Title="Add a new virtual camera" 
+                   PrimaryButtonClick="UIAddNewVirtualCameraDialog_PrimaryButtonClick">
+
+            <StackPanel Orientation="Vertical">
+                <TextBlock Text="Lifetime: " />
+                <ComboBox Name="UILifetimeSelector"/>
+                <TextBlock Text="Access: " />
+                <ComboBox Name="UIAccessSelector"/>
+                <TextBlock Text="Virtual camera name: " />
+                <TextBox Name="UIFriendlyName" Text="Simple Media Source"/>
+
+                <CheckBox Name="UICameraWrappingCheckBox"  Content="Wrap an existing camera" Checked="UICameraWrappingCheckBox_Checked" Unchecked="UICameraWrappingCheckBox_Checked"/>
+                <CheckBox Name="UIAugmentedCameraCheckBox" IsEnabled="false" Visibility="Collapsed" Content="Use the augmented virtual camera" Checked="UIAugmentedCameraCheckbox_Checked" Unchecked="UIAugmentedCameraCheckbox_Checked"/>
+                <ComboBox x:Name="UICameraToWrapList" IsEnabled="false" Visibility="Collapsed" SelectionChanged="UICameraToWrapList_SelectionChanged"/>
+            </StackPanel>
+        </ContentDialog>
+    </StackPanel>
+</Page>

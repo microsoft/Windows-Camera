@@ -15,6 +15,15 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             hstring const& wrappedCameraSymbolicLink,
             wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera);
 
+        VirtualCameraProxy(
+            winrt::VirtualCameraManager_WinRT::VirtualCameraKind const& virtualCameraKind,
+            winrt::VirtualCameraManager_WinRT::VirtualCameraLifetime const& lifetime,
+            winrt::VirtualCameraManager_WinRT::VirtualCameraAccess const& access,
+            hstring const& friendlyName,
+            hstring const& symbolicLink,
+            hstring const& wrappedCameraSymbolicLink,
+            wil::com_ptr_nothrow<IMFVirtualCamera>& spVirtualCamera);
+
         ~VirtualCameraProxy();
 
         void EnableVirtualCamera();
