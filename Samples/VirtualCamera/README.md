@@ -33,12 +33,13 @@ Set of unit tests to validate a virtual camera.
 
 ## Getting started
 Download the project 
-1. Build *VirtualCamera_Installer* 
-2. Build *VirtualCamera_MSI*
-3. Build *VirtualCameraSystray* and *VirtualCameraManager_WinRT* and *VirtualCameraManager_App* 
+1. Build *VirtualCamera_Installer* (Release configuration)
+2. Build *VirtualCameraMediaSource* (Release configuration)
+3. Build *VirtualCamera_MSI*
+4. Build *VirtualCameraSystray* and *VirtualCameraManager_WinRT* and *VirtualCameraManager_App* 
 
-4. Install *VirtualCamera_MSI*
-5. Install *VirtualCameraManager_App*
+5. Install *VirtualCamera_MSI*
+6. Install *VirtualCameraManager_App*
 
 ## VirtualCameraMediaSource 
 ----
@@ -60,7 +61,6 @@ such that media source can be use to create virtual camera. On uninstallation, a
 
 3. Add binaries  
 This should include the mediasource dll, the executable that is responsbile for the uninstallation of virtual camera, and all additional dependencies.
-
     1. Right-click on the "Setup Project", go on "Add" then click "Assembly".
     2. Browse for your COM assembly (.dll) and add it to the "Setup Project".
     3. After adding the assembly, right-click on it in "Solution Explorer" and click "Properties".
