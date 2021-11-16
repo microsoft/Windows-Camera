@@ -2,7 +2,7 @@
 ### Requirement:
 - Minimum OS version: Windows 11 (10.0.22000.0)
 - Windows SDK minimum version: [10.0.22000.0](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
-- Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects>)
+- Visual studio MSI project extension [link](https://marketplace.visualstudio.com/items?itemName=visualstudioclient.MicrosoftVisualStudio2017InstallerProjects)
 - Latest VCRuntime redistributable installed [link](https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist)
 
 This is a sample on how to create a virtual camera on Windows ([see API documentation](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/)). This project consists of 5 parts:
