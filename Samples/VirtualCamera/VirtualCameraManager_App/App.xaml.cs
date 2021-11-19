@@ -134,6 +134,7 @@ namespace VirtualCameraManager_App
             // if we are asked to start at startup, exit and defer to systray background process behavior
             else if (args.Kind == ActivationKind.StartupTask)
             {
+                await LaunchSysTrayAsync();
                 Application.Current.Exit();
                 return;
             }
