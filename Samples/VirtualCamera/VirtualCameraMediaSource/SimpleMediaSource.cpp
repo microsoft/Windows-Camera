@@ -610,13 +610,14 @@ namespace winrt::WindowsSample::implementation
             // feature sets.
             const DWORD STREAM_ID = 0;
             RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
-                &profile));
+                profile.put()));
             RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
             RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
+            profile = nullptr;
 
             // High Frame Rate profile will only allow >=60fps.
             RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_HighFrameRate, 0 /*ProfileIndex*/, nullptr,
-                &profile));
+                profile.put()));
             RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT>=60,1;SUT==))"));
             RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
 
