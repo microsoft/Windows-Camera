@@ -1,0 +1,25 @@
+//
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//
+
+namespace DefaultControlHelper
+{
+    enum DefaultControllerType
+    {
+        VideoProcAmp,
+        CameraControl,
+        ExtendedCameraControl,
+    };
+    
+    runtimeclass DefaultController
+    {
+        UInt32 DefaultValue;
+    }
+
+    [default_interface]
+    runtimeclass DefaultControlManager
+    {
+        DefaultControlManager(String cameraSymbolicLink);
+        DefaultController CreateController(DefaultControllerType type, UInt32 controlId);
+    }
+}
