@@ -20,7 +20,7 @@ Adding this information will create a button to launch the application from the 
 **NOTE:** Disable/enable of the camera and restart of the machine might be needed that the new app association is properly configured.
 
 ## Sample functionality
- The app will initialize the given camera, start preview, and show following controls (if camera implements them) that will set current value and save it as the default value by using IMFCameraConfigurationManager functionality.
+ The app will initialize the given camera, start preview, and show following controls (if camera implements them) that will set current value and save it as the default value by using [IMFCameraConfigurationManager](https://docs.microsoft.com/windows/win32/api/mfidl/nn-mfidl-imfcameraconfigurationmanager) functionality.
   - Contrast control slider
   - Brightness control slider
   - Background segmentation toggle for Blur on/off
