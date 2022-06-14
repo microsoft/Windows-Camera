@@ -103,9 +103,9 @@ namespace CameraKsPropertyHelper
     // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
     enum EyeGazeCorrectionCapabilityKind
     {
-        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000,
-        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001,
-        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE = 0x0000000000000002,
+        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0,
+        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 1,
+        KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE = 2,
     };
 
     // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
@@ -186,13 +186,6 @@ namespace CameraKsPropertyHelper
         FrameMetadataKind FrameMetadataKind{ get; };
     }
 
-    struct Rect
-    {
-        Int32 left;
-        Int32 top;
-        Int32 right;
-        Int32 bottom;
-    };
     struct Rectd
     {
         Double left;
@@ -212,9 +205,9 @@ namespace CameraKsPropertyHelper
     // class to encapsulate and access a KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
     runtimeclass BackgroundSegmentationMaskMetadata : [default] IMetadataPayload
     {
-        Rect MaskCoverageBoundingBox { get; };
+        Windows.Graphics.Imaging.BitmapBounds MaskCoverageBoundingBox { get; };
         Windows.Foundation.Size MaskResolution{ get; };
-        Rect ForegroundBoundingBox{ get; };
+        Windows.Graphics.Imaging.BitmapBounds ForegroundBoundingBox{ get; };
         Windows.Graphics.Imaging.SoftwareBitmap MaskData { get; };
     }
 

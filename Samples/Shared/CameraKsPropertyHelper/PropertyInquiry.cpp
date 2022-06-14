@@ -24,10 +24,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
     {
         Windows::Foundation::IPropertyValue propertyValueResult = nullptr;
 
-        KSPROPERTY prop(
+        KSPROPERTY prop{
             KSPROPERTYSETID_ExtendedCameraControl,
-            controlId /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
-            0x00000001 /* KSPROPERTY_TYPE_GET */);
+            static_cast<ULONG>(controlId) /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
+            KSPROPERTY_TYPE_GET };
         uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
 
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
@@ -65,10 +65,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
             KSPROPERTY_VIDEOPROCAMP_S ksSupportProp
             {
-                 KSPROPERTY(
+                 KSPROPERTY{
                   PROPSETID_VIDCAP_VIDEOPROCAMP,
-                  static_cast<int>(vidCapVideoProcAmpKind),
-                  0x00000200 /* KSPROPERTY_TYPE_BASICSUPPORT */),
+                  static_cast<ULONG>(vidCapVideoProcAmpKind),
+                  KSPROPERTY_TYPE_BASICSUPPORT},
                   0
             };
             uint8_t* pksSupportProp = reinterpret_cast<uint8_t*>(&ksSupportProp);
@@ -98,10 +98,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
             KSPROPERTY_VIDEOPROCAMP_S ksValueProp
             {
-                KSPROPERTY(
+                KSPROPERTY{
                  PROPSETID_VIDCAP_VIDEOPROCAMP,
-                 static_cast<int>(vidCapVideoProcAmpKind),
-                 0x00000001 /* KSPROPERTY_TYPE_GET */),
+                 static_cast<uint32_t>(vidCapVideoProcAmpKind),
+                 KSPROPERTY_TYPE_GET },
                  0
             };
             
@@ -148,12 +148,12 @@ namespace winrt::CameraKsPropertyHelper::implementation
 
         KSPROPERTY_VIDEOPROCAMP_S ksValueProp
         {
-            KSPROPERTY(
+            KSPROPERTY{
               PROPSETID_VIDCAP_VIDEOPROCAMP,
-              static_cast<int>(vidCapVideoProcAmpKind),
-              0x00000002 /* KSPROPERTY_TYPE_SET */),
-              (ULONG)value,
-              0X0002L // KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL
+              static_cast<ULONG>(vidCapVideoProcAmpKind),
+              KSPROPERTY_TYPE_SET },
+              (LONG)value,
+              KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL
         };
 
         uint8_t* pksValueProp = reinterpret_cast<uint8_t*>(&ksValueProp);
@@ -190,7 +190,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
                 auto container = winrt::com_array<uint8_t>(sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
                 propertyValueResult.GetUInt8Array(container);
                 KSCAMERA_EXTENDEDPROP_HEADER* payloadHeader = reinterpret_cast<KSCAMERA_EXTENDEDPROP_HEADER*>(&container[0]);
-                if ((payloadHeader->Capability & (ULONGLONG)BackgroundSegmentationCapabilityKind::KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
+                if ((payloadHeader->Capability & KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
                 {
                     payload = make<BackgroundSegmentationPropertyPayload>(propertyValueResult);
                     break;
@@ -223,19 +223,19 @@ namespace winrt::CameraKsPropertyHelper::implementation
         winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind,
         uint64_t flags)
     {
-        int controlId = static_cast<int>(extendedControlKind);
+        uint32_t controlId = static_cast<uint32_t>(extendedControlKind);
         
-        KSPROPERTY prop(
+        KSPROPERTY prop{
             KSPROPERTYSETID_ExtendedCameraControl,
             controlId /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
-            0x00000002 /* KSPROPERTY_TYPE_SET */);
+            KSPROPERTY_TYPE_SET };
         uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
 
         KSCAMERA_EXTENDEDPROP_HEADER header =
         {
             1, // Version
-            0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
+            KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
             sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE), // Size
             0, // Result
             flags, // Flags

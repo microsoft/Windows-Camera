@@ -4,6 +4,7 @@
 #include "BackgroundSegmentationMaskMetadata.g.h"
 #include "KSHelper.h"
 #include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Foundation.h>
 #include <mutex>
 
 namespace winrt::CameraKsPropertyHelper::implementation
@@ -14,14 +15,14 @@ namespace winrt::CameraKsPropertyHelper::implementation
     {
         BackgroundSegmentationMaskMetadata(Windows::Foundation::IPropertyValue property);
 
-        Rect MaskCoverageBoundingBox()
+        Windows::Graphics::Imaging::BitmapBounds MaskCoverageBoundingBox()
         {
             return
             {
-                m_payload->MaskCoverageBoundingBox.left,
-                m_payload->MaskCoverageBoundingBox.top,
-                m_payload->MaskCoverageBoundingBox.right,
-                m_payload->MaskCoverageBoundingBox.bottom
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.left),
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.top),
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.right - m_payload->MaskCoverageBoundingBox.left),
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.bottom - m_payload->MaskCoverageBoundingBox.top)
             };
         }
         Windows::Foundation::Size MaskResolution()
@@ -32,14 +33,14 @@ namespace winrt::CameraKsPropertyHelper::implementation
                 static_cast<float>(m_payload->MaskResolution.cy)
             };
         }
-        Rect ForegroundBoundingBox()
+        Windows::Graphics::Imaging::BitmapBounds ForegroundBoundingBox()
         {
             return
             {
-                m_payload->ForegroundBoundingBox.left,
-                m_payload->ForegroundBoundingBox.top,
-                m_payload->ForegroundBoundingBox.right,
-                m_payload->ForegroundBoundingBox.bottom
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.left),
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.top),
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.right - m_payload->ForegroundBoundingBox.left),
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.bottom - m_payload->ForegroundBoundingBox.top)
             };
         }
 

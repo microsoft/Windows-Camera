@@ -1,48 +1,15 @@
 // Copyright (C) Microsoft Corporation. All rights reserved.
 #pragma once
 
+#include <ks.h>
+#include <ksmedia.h>
+
 namespace winrt::CameraKsPropertyHelper::implementation
 {
 
     // Redefining structs normally available in ksmedia.h but not available due to WINAPI_PARTITION_APP
     //
 #pragma region KsMediaRedefinition
-
-    static GUID PROPSETID_VIDCAP_VIDEOPROCAMP = { 0xC6E13360L, 0x30AC, 0x11d0, 0xa1, 0x8c, 0x00, 0xA0, 0xC9, 0x11, 0x89, 0x56 };
-    static GUID KSPROPERTYSETID_ExtendedCameraControl = { 0x1CB79112, 0xC0D2, 0x4213, 0x9C, 0xA6, 0xCD, 0x4F, 0xDB, 0x92, 0x79, 0x72 };
-
-    struct KSPROPERTY
-    {
-        union
-        {
-            struct
-            {
-                union
-                {
-                    byte Set[16];
-                    GUID SetGuid;
-                };
-                unsigned long Id;
-                unsigned long Flags;
-            };
-            LONGLONG allign;
-        };
-
-        KSPROPERTY(winrt::guid set, unsigned long id = 0, unsigned long flags = 0)
-        {
-            memcpy(Set, &set, sizeof(Set));
-            Id = id;
-            Flags = flags;
-        }
-        KSPROPERTY() : KSPROPERTY(winrt::guid()) {}
-    };
-
-    struct KSIDENTIFIER {
-        union {
-            KSPROPERTY Property;
-            LONGLONG   Alignment;
-        };
-    };
 
     struct KSPROPERTY_BOUNDS_LONG {
         ULONG UnsignedMinimum;
@@ -69,81 +36,6 @@ namespace winrt::CameraKsPropertyHelper::implementation
         ULONG                       Reserved;
         KSPROPERTY_BOUNDS_LONG      Bounds;
     };
-
-    struct KSPROPERTY_VIDEOPROCAMP_S {
-        KSPROPERTY Property;
-        LONG   Value;                       // Value to set or get
-        ULONG  Flags;                       // KSPROPERTY_VIDEOPROCAMP_FLAGS_*
-        ULONG  Capabilities;                // KSPROPERTY_VIDEOPROCAMP_FLAGS_*
-    };
-
-    struct KSCAMERA_EXTENDEDPROP_HEADER {
-        ULONG               Version;
-        ULONG               PinId;
-        ULONG               Size;
-        ULONG               Result;
-        ULONGLONG           Flags;
-        ULONGLONG           Capability;
-    };
-
-    struct KSCAMERA_EXTENDEDPROP_VALUE {
-        union
-        {
-            double          dbl;
-            ULONGLONG       ull;
-            ULONG           ul;
-            ULARGE_INTEGER  ratio;
-            LONG            l;
-            LONGLONG        ll;
-        };
-    };
-
-    struct KSCAMERA_METADATA_ITEMHEADER
-    {
-        ULONG   MetadataId;
-        ULONG   Size;
-    };
-
-    // BackgroundSegmentation-related
-    //
-#pragma region BackgroundSegmentation
-
-    struct KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
-    {
-        // Output width and height in pixels
-        SIZE Resolution;
-
-        // The maximum frame rate the driver can accommodate  for achieving 
-        // background segmentation for each frame corresponding to Resolution
-        struct
-        {
-            LONG Numerator;
-            LONG Denominator;
-        } MaxFrameRate;
-
-        // The width and height of the mask produced when streaming
-        // with a MediaType corresponding to Resolution and MaxFrameRate
-        SIZE MaskResolution;
-
-        // Optional subtype for which this configuration capability applies. If left 
-        // to zero, all streams conforming the Resolution and MaxFrameRate will support 
-        // background segmentation with the specified MaskResolution.
-        GUID SubType;
-
-    };
-
-    struct KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
-    {
-        KSCAMERA_METADATA_ITEMHEADER Header;
-        RECT MaskCoverageBoundingBox;
-        SIZE MaskResolution;
-        RECT ForegroundBoundingBox;
-        BYTE MaskData[1]; // Array of mask data of dimension MaskResolution.cx * MaskResolution.cy
-    };
-
-    //
-    // end of BackgroundSegmentation-related
-#pragma endregion BackgroundSegmentation
 
     //
     // end of ksmedia.h redefinitions

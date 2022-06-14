@@ -572,9 +572,9 @@ namespace EyeGazeAndBackgroundSegmentation
             UIStatusBorder.Visibility = (!string.IsNullOrEmpty(UIStatusBlock.Text)) ? Visibility.Visible : Visibility.Collapsed;
         }
 
-        private Rect ToRectInRelativeCoordinates(BitmapBounds bounds, uint imageWidth, uint imageHeight)
+        private Windows.Foundation.Rect ToRectInRelativeCoordinates(BitmapBounds bounds, uint imageWidth, uint imageHeight)
         {
-            return new Rect(
+            return new Windows.Foundation.Rect(
                 (double)bounds.X / imageWidth,
                 (double)bounds.Y / imageHeight,
                 (double)bounds.Width / imageWidth,
