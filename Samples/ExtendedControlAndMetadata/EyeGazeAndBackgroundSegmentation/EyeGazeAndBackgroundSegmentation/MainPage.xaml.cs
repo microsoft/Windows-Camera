@@ -50,6 +50,55 @@ namespace EyeGazeAndBackgroundSegmentation
         private SoftwareBitmapSource m_backgroundMaskImageSource = new SoftwareBitmapSource();
         private bool m_isShowingBackgroundMask;
         private BoundingBoxRenderer m_bboxRenderer = null;
+        
+        readonly Dictionary<string,ulong> m_possibleBackgroundSegmentationFlagValues = new Dictionary<string, ulong>()
+        {
+            { 
+                "off", 
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF
+            },
+            {
+                "blur", 
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+            },
+            {
+                "mask metadata",
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+            },
+            {
+                "shallow focus blur",
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+            },
+            {
+                "blur and mask metadata", 
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR 
+                    + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+            },
+            { 
+                "shallow focus blur and mask metadata",
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+                    + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+            }
+        };
+
+        readonly Dictionary<string, ulong> m_possibleEyeGazeCorrectionFlagValues = new Dictionary<string, ulong>()
+        {
+            { 
+                "off",
+                (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
+            },
+            {
+                "on",
+                (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+            },
+            {
+                "enhanced",
+                (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+                    + (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE
+            }
+        };
 
         /// <summary>
         /// Constructor
@@ -85,12 +134,7 @@ namespace EyeGazeAndBackgroundSegmentation
         /// </summary>
         private async Task CleanupCameraAsync()
         {
-            Debug.WriteLine("CleanupCamera");
-            if(m_mediaPlayer != null)
-            {
-                m_mediaPlayer.Dispose();
-                m_mediaPlayer = null;
-            }
+            DebugOutput("CleanupCamera");
 
             // disengage frame reader
             if (m_frameReader != null)
@@ -100,11 +144,20 @@ namespace EyeGazeAndBackgroundSegmentation
                 m_frameReader = null;
             }
 
+            if (m_mediaPlayer != null)
+            {
+                m_mediaPlayer.Dispose();
+                m_mediaPlayer = null;
+            }
+            UIPreviewElement.SetMediaPlayer(null);
+
             if (m_mediaCapture != null)
             {
                 m_mediaCapture.Dispose();
                 m_mediaCapture = null;
             }
+
+            m_isCleaningUp = false;
         }
 
         /// <summary>
@@ -201,14 +254,8 @@ namespace EyeGazeAndBackgroundSegmentation
                         m_selectedMediaFrameSource.CurrentFormat.FrameRate.Numerator + "/" + m_selectedMediaFrameSource.CurrentFormat.FrameRate.Denominator,
                         m_selectedMediaFrameSource.CurrentFormat.Subtype);
 
-            // mirror preview if not streaming from the back
-            if (m_selectedMediaFrameSource.Info.DeviceInformation?.EnclosureLocation == null ||
-                m_selectedMediaFrameSource.Info.DeviceInformation?.EnclosureLocation.Panel != Windows.Devices.Enumeration.Panel.Back)
-            {
-                var effect = new VideoTransformEffectDefinition();
-                effect.Mirror = MediaMirroringOptions.Horizontal;
-                m_mediaPlayer.AddVideoEffect(effect.ActivatableClassId, false, effect.Properties);
-            }
+            // leave some time for the player to start the source
+            await Task.Delay(1000);
 
             return true;
         }
@@ -218,7 +265,7 @@ namespace EyeGazeAndBackgroundSegmentation
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        private async void FrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
+        private void FrameReader_FrameArrived(MediaFrameReader sender, MediaFrameArrivedEventArgs args)
         {
             try
             {
@@ -230,7 +277,7 @@ namespace EyeGazeAndBackgroundSegmentation
                     // if we are set to display the background segmentation mask metadata
                     if (m_isBackgroundSegmentationMaskModeOn && m_isShowingBackgroundMask)
                     {
-                        Debug.WriteLine("Attempting to extract background mask");
+                        DebugOutput("Attempting to extract background mask");
 
                         BackgroundSegmentationMaskMetadata maskMetadata = null;
 
@@ -239,80 +286,89 @@ namespace EyeGazeAndBackgroundSegmentation
                         if (metadata != null)
                         {
                             maskMetadata = metadata as BackgroundSegmentationMaskMetadata;
+                            SoftwareBitmap image = SoftwareBitmap.Convert(maskMetadata.MaskData, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore);
+                            var foregroundBBInMaskRelativeCoordinates = ToRectInRelativeCoordinates(maskMetadata.ForegroundBoundingBox, (uint)maskMetadata.MaskResolution.Width, (uint)maskMetadata.MaskResolution.Height);
+                            var foregroundBBInFrameAbsoluteCoordinates = new BitmapBounds()
+                            {
+                                X = (uint)(maskMetadata.MaskCoverageBoundingBox.X + foregroundBBInMaskRelativeCoordinates.X * maskMetadata.MaskCoverageBoundingBox.Width),
+                                Y = (uint)(maskMetadata.MaskCoverageBoundingBox.Y + foregroundBBInMaskRelativeCoordinates.Y * maskMetadata.MaskCoverageBoundingBox.Height),
+                                Width = (uint)(maskMetadata.MaskCoverageBoundingBox.X + foregroundBBInMaskRelativeCoordinates.Width * maskMetadata.MaskCoverageBoundingBox.Width),
+                                Height = (uint)(maskMetadata.MaskCoverageBoundingBox.Y + foregroundBBInMaskRelativeCoordinates.Height * maskMetadata.MaskCoverageBoundingBox.Height)
+                            };
+
+                            var t = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+                            {
+                                // attempt to obtain lock to display mask metadata frame, if we cannot retrieve it (i.e. if we are not done displaying the previous one, skip displaying it
+                                if (m_displayLock.Wait(0))
+                                {
+                                    try
+                                    {
+                                        await m_backgroundMaskImageSource.SetBitmapAsync(image);
+                                        UIBackgroundSegmentationMaskImage.Source = null;
+                                        UIBackgroundSegmentationMaskImage.Source = m_backgroundMaskImageSource;
+
+                                        m_bboxRenderer.Render(
+                                            new List<Rect>
+                                            {
+                                            ToRectInRelativeCoordinates(maskMetadata.MaskCoverageBoundingBox, m_selectedFormat.VideoFormat.Width, m_selectedFormat.VideoFormat.Height),
+                                            ToRectInRelativeCoordinates(foregroundBBInFrameAbsoluteCoordinates, m_selectedFormat.VideoFormat.Width, m_selectedFormat.VideoFormat.Height),
+                                            },
+                                            new List<string>
+                                            {
+                                            "MaskCoverageBoundingBox",
+                                            "ForegroundBoundingBox"
+                                            });
+                                    }
+                                    finally
+                                    {
+                                        m_displayLock.Release();
+                                    }
+                                }
+                                else
+                                {
+                                    DebugOutput("Skip displaying the background segmentation mask metadata frame");
+                                }
+                            });
                         }
                         else
                         {
                             NotifyUser("Could not extract proper background segmentation mask metadata", NotifyType.ErrorMessage);
+                            frame.Dispose();
                             return;
                         }
-
-                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
-                        {
-                            // attempt to obtain lock to display mask metadata frame, if we cannot retrieve it (i.e. if we are not done displaying the previous one, skip displaying it
-                            if (m_displayLock.Wait(0))
-                            {
-                                try
-                                {
-                                    var image = SoftwareBitmap.Convert(maskMetadata.MaskData, BitmapPixelFormat.Bgra8, BitmapAlphaMode.Ignore);
-                                    await m_backgroundMaskImageSource.SetBitmapAsync(image);
-                                    UIBackgroundSegmentationMaskImage.Source = null;
-                                    UIBackgroundSegmentationMaskImage.Source = m_backgroundMaskImageSource;
-
-                                    var foregroundBBInMaskRelativeCoordinates = ToRectInRelativeCoordinates(maskMetadata.ForegroundBoundingBox, (uint)maskMetadata.MaskResolution.Width, (uint)maskMetadata.MaskResolution.Height);
-                                    var foregroundBBInFrameAbsoluteCoordinates = new BitmapBounds()
-                                    {
-                                        X = (uint)(maskMetadata.MaskCoverageBoundingBox.X + foregroundBBInMaskRelativeCoordinates.X * maskMetadata.MaskCoverageBoundingBox.Width),
-                                        Y = (uint)(maskMetadata.MaskCoverageBoundingBox.Y + foregroundBBInMaskRelativeCoordinates.Y * maskMetadata.MaskCoverageBoundingBox.Height),
-                                        Width = (uint)(maskMetadata.MaskCoverageBoundingBox.X + foregroundBBInMaskRelativeCoordinates.Width * maskMetadata.MaskCoverageBoundingBox.Width),
-                                        Height = (uint)(maskMetadata.MaskCoverageBoundingBox.Y + foregroundBBInMaskRelativeCoordinates.Height * maskMetadata.MaskCoverageBoundingBox.Height)
-                                    };
-
-                                    m_bboxRenderer.Render(
-                                        new List<Rect>
-                                        {
-                                            ToRectInRelativeCoordinates(maskMetadata.MaskCoverageBoundingBox, m_selectedFormat.VideoFormat.Width, m_selectedFormat.VideoFormat.Height),
-                                            ToRectInRelativeCoordinates(foregroundBBInFrameAbsoluteCoordinates, m_selectedFormat.VideoFormat.Width, m_selectedFormat.VideoFormat.Height),
-                                        },
-                                        new List<string>
-                                        {
-                                            "MaskCoverageBoundingBox",
-                                            "ForegroundBoundingBox"
-                                        });
-                                }
-                                finally
-                                {
-                                    m_displayLock.Release();
-                                }
-                            }
-                            else
-                            {
-                                Debug.WriteLine("Skip displaying the background segmentation mask metadata frame");
-                            }
-                        });
                     }
+                    frame.Dispose();
                 }
             }
             catch (System.ObjectDisposedException ex)
             {
-                Debug.WriteLine(ex.ToString());
+                DebugOutput(ex.ToString());
             }
             catch (Exception ex)
             {
                 NotifyUser(ex.Message, NotifyType.ErrorMessage);
-                Debug.WriteLine(ex.ToString());
+                DebugOutput(ex.ToString());
             }
         }
 
         private void UIPreviewElement_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (m_selectedFormat == null) return;
-            // Make sure the aspect ratio is honored when rendering the overlay
-            float cameraAspectRatio = (float)m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height;
-            float previewAspectRatio = (float)(UIPreviewElement.ActualWidth / UIPreviewElement.ActualHeight);
-            UICanvasOverlay.Width = cameraAspectRatio >= previewAspectRatio ? UIPreviewElement.ActualWidth : UIPreviewElement.ActualHeight * cameraAspectRatio;
-            UICanvasOverlay.Height = cameraAspectRatio >= previewAspectRatio ? UIPreviewElement.ActualWidth / cameraAspectRatio : UIPreviewElement.ActualHeight;
+            try
+            {
+                if (m_selectedFormat == null) return;
+                // Make sure the aspect ratio is honored when rendering the overlay
+                float cameraAspectRatio = (float)m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height;
+                float previewAspectRatio = (float)(UIPreviewElement.ActualWidth / UIPreviewElement.ActualHeight);
+                UICanvasOverlay.Width = cameraAspectRatio >= previewAspectRatio ? UIPreviewElement.ActualWidth : UIPreviewElement.ActualHeight * cameraAspectRatio;
+                UICanvasOverlay.Height = cameraAspectRatio >= previewAspectRatio ? UIPreviewElement.ActualWidth / cameraAspectRatio : UIPreviewElement.ActualHeight;
 
-            m_bboxRenderer.ResizeContent(e);
+                m_bboxRenderer.ResizeContent(e);
+            }
+            catch(Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
+            }
         }
 
         /// <summary>
@@ -326,32 +382,37 @@ namespace EyeGazeAndBackgroundSegmentation
             {
                 return;
             }
-
-            m_frameAquisitionLock.Wait();
+            try
             {
-                if (m_isCleaningUp != true)
+                m_frameAquisitionLock.Wait();
                 {
-                    m_isCleaningUp = true;
-                }
-
-                // If we are processing frames, re-attempt the camera change later on
-                if (m_isProcessingFrames)
-                {
-                    m_frameAquisitionLock.Release();
-                    var fireAndForgetTask = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    if (m_isCleaningUp != true)
                     {
-                        Thread.Sleep(10);
-                        UICmbCamera_SelectionChanged(sender, e);
-                    }); // fire and forget
-                    return;
-                }
+                        m_isCleaningUp = true;
+                    }
 
-                // if we are not procesing frames, clean up
-                await CleanupCameraAsync();
+                    // If we are processing frames, re-attempt the camera change later on
+                    if (m_isProcessingFrames)
+                    {
+                        m_frameAquisitionLock.Release();
+                        var fireAndForgetTask = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                        {
+                            Thread.Sleep(10);
+                            UICmbCamera_SelectionChanged(sender, e);
+                        }); // fire and forget
+                        return;
+                    }
+
+                    // if we are not processing frames, clean up
+                    await CleanupCameraAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
             }
             m_frameAquisitionLock.Release();
-
-            UIShowBackgroundImage.IsChecked = false;
 
             // cache camera selection
             m_selectedMediaFrameSourceGroup = m_mediaFrameSourceGroupList[UICmbCamera.SelectedIndex];
@@ -362,7 +423,8 @@ namespace EyeGazeAndBackgroundSegmentation
             {
                 SourceGroup = m_selectedMediaFrameSourceGroup,
                 MemoryPreference = MediaCaptureMemoryPreference.Cpu,
-                StreamingCaptureMode = StreamingCaptureMode.Video
+                StreamingCaptureMode = StreamingCaptureMode.Video,
+                SharingMode = MediaCaptureSharingMode.ExclusiveControl
             };
 
             // Initialize MediaCapture
@@ -374,17 +436,29 @@ namespace EyeGazeAndBackgroundSegmentation
                 {
                     // Debug output to see if any of the controls are supported
                     string statusText = "control support:";
-                    Dictionary<ExtendedControlKind, IExtendedPropertyPayload> controlSupport = new Dictionary<ExtendedControlKind, IExtendedPropertyPayload>();
-                    foreach (ExtendedControlKind controlId in Enum.GetValues(typeof(ExtendedControlKind)))
+                    Dictionary<ExtendedControlKind, IExtendedPropertyPayload> controlGetPayload = new Dictionary<ExtendedControlKind, IExtendedPropertyPayload>();
+
+                    // The set of extended properties we will be trying to use in this sample
+                    List<ExtendedControlKind> controlsToTry = new List<ExtendedControlKind>
                     {
-                        controlSupport[controlId] = PropertyInquiry.GetExtendedControl(m_selectedMediaFrameSource.Controller.VideoDeviceController, controlId);
-                        var controlQueryResult = controlSupport[controlId];
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
+                    };
+
+                    foreach (ExtendedControlKind controlId in controlsToTry)
+                    {
+                        controlGetPayload[controlId] = PropertyInquiry.GetExtendedControl(m_selectedMediaFrameSource.Controller.VideoDeviceController, controlId);
+                        var controlQueryResult = controlGetPayload[controlId];
                         bool isSupported = controlQueryResult != null;
                         statusText += $"\n{controlId} : {isSupported}";
                         if (isSupported)
                         {
                             statusText += $"| Capability: {controlQueryResult.Capability} | Flags: {controlQueryResult.Flags} | Size: {controlQueryResult.Size}";
-                            if (controlId == ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION && ((int)controlQueryResult.Capability & (int)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
+
+                            // If KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK is a supported capability,
+                            // then we expect to retrieve a set of configurations in which the driver can provide a segmentation mask and execute blur
+                            if (controlId == ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION 
+                                && ((int)controlQueryResult.Capability & (int)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
                             {
                                 BackgroundSegmentationPropertyPayload bsPayload = (controlQueryResult as BackgroundSegmentationPropertyPayload);
                                 for (int i = 0; i < bsPayload.ConfigCaps.Count; i++)
@@ -398,49 +472,77 @@ namespace EyeGazeAndBackgroundSegmentation
                         }
                     }
 
-                    await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    try
                     {
-                        try
+                        // display debug output
+                        UIControlCapabilityText.Text = statusText;
+
+                        // populate and re-enable parts of the UI
+                        UIPreviewElement_SizeChanged(null, null);
+                        UICmbCamera.IsEnabled = true;
+
+                        // if background segmentation is supported, enable its toggle
+                        UIBackgroundSegmentationPanel.IsEnabled = (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null);
+                        if (UIBackgroundSegmentationPanel.IsEnabled)
                         {
-                            // display debug output
-                            UIControlCapabilityText.Text = statusText;
-
-                            // populate and re-enable parts of the UI
-                            UIPreviewElement_SizeChanged(null, null);
-                            UICmbCamera.IsEnabled = true;
-
-                            // if background segmentation is supported, enable its toggle
-                            UIBackgroundSegmentationPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null;
-                            if (UIBackgroundSegmentationPanel.IsEnabled)
+                            var backgroundSegmentationCapabilities = new List<string>();
+                            int currentFlagValueIndex = 0;
+                            foreach (var capability in m_possibleBackgroundSegmentationFlagValues)
                             {
-                                var possibleFlags = Enum.GetValues(typeof(BackgroundSegmentationCapabilityKind));
-                                var capabilities = new List<BackgroundSegmentationCapabilityKind>();
-                                foreach (BackgroundSegmentationCapabilityKind capability in possibleFlags)
+                                // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
+                                if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability) == capability.Value)
                                 {
-                                    if (capability == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF ||
-                                    ((int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability & (int)capability) != 0)
+                                    backgroundSegmentationCapabilities.Add(capability.Key);
+
+                                    // if the current value for this control corresponds to this potential flag value, select it
+                                    if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags == capability.Value)
                                     {
-                                        capabilities.Add(capability);
+                                        currentFlagValueIndex = backgroundSegmentationCapabilities.Count - 1;
                                     }
                                 }
-                                UIBackgroundSegmentationModes.ItemsSource = capabilities;
-                                UIBackgroundSegmentationModes.SelectedIndex = capabilities.IndexOf((BackgroundSegmentationCapabilityKind)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags);
                             }
 
-                            // if eye gaze correction is supported, enable its toggle
-                            UIEyeGazeCorrectionPanel.IsEnabled = controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
-                            if (UIEyeGazeCorrectionPanel.IsEnabled)
-                            {
-                                UIEyeGazeCorrectionModes.ItemsSource = Enum.GetValues(typeof(EyeGazeCorrectionCapabilityKind));
-                                UIEyeGazeCorrectionModes.SelectedIndex = (int)controlSupport[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags;
-                            }
+                            UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
+                            UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities;
+                            UIBackgroundSegmentationModes.SelectedIndex = currentFlagValueIndex;
+                            UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
+
+                            m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags) != 0);
+                            UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
+                            UIShowBackgroundImage.IsChecked = false;
                         }
-                        catch(Exception ex)
+
+                        // if eye gaze correction is supported, enable its toggle
+                        UIEyeGazeCorrectionPanel.IsEnabled = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
+                        if (UIEyeGazeCorrectionPanel.IsEnabled)
                         {
-                            NotifyUser(ex.Message, NotifyType.ErrorMessage);
-                            Debug.WriteLine(ex.ToString());
+                            var eyeGazeCorrectionCapabilities = new List<string>();
+                            int currentFlagValueIndex = 0;
+                            foreach (var capability in m_possibleEyeGazeCorrectionFlagValues)
+                            {
+                                // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
+                                if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Capability) == capability.Value)
+                                {
+                                    eyeGazeCorrectionCapabilities.Add(capability.Key);
+
+                                    // if the current value for this control corresponds to this potential flag value, select it
+                                    if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags == capability.Value)
+                                    {
+                                        currentFlagValueIndex = eyeGazeCorrectionCapabilities.Count - 1;
+                                    }
+                                }
+                            }
+                            UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
+                            UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities;
+                            UIEyeGazeCorrectionModes.SelectedIndex = currentFlagValueIndex;
+                            UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
                         }
-                    });
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                        DebugOutput(ex.ToString());
+                    }
                 }
                 else
                 {
@@ -450,74 +552,81 @@ namespace EyeGazeAndBackgroundSegmentation
             catch (Exception ex)
             {
                 NotifyUser(ex.Message, NotifyType.ErrorMessage);
-                Debug.WriteLine(ex.ToString());
-            }
-            finally
-            {
-                m_isCleaningUp = false;
+                DebugOutput(ex.ToString());
             }
         }
 
-        private async void UIShowBackgroundImage_Checked(object sender, RoutedEventArgs e)
+        private void UIShowBackgroundImage_Checked(object sender, RoutedEventArgs e)
         {
-            await m_displayLock.WaitAsync();
-            try
+            DebugOutput("show background image checked");
+            
+            if (UIShowBackgroundImage.IsChecked == true)
             {
+                m_isShowingBackgroundMask = true;
+                UIBackgroundSegmentationMaskImage.Visibility = Visibility.Visible;
+                UICanvasOverlay.Visibility = Visibility.Visible;
 
-                if (UIShowBackgroundImage.IsChecked == true)
+                // spin a frame reader to extract the mask metadata
+                var fire_forget = Task.Run(async () =>
                 {
-                    m_isShowingBackgroundMask = true;
-                    UIBackgroundSegmentationMaskImage.Visibility = Visibility.Visible;
-                    UICanvasOverlay.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    UIBackgroundSegmentationMaskImage.Visibility = Visibility.Collapsed;
-                    m_isShowingBackgroundMask = false;
-                    m_bboxRenderer.Reset();
-                    UICanvasOverlay.Visibility = Visibility.Collapsed;
-                }
+                    if (m_frameReader != null)
+                    {
+                        await m_frameReader.StopAsync();
+                        DebugOutput("stop frame reader");
+                        m_frameReader.FrameArrived -= FrameReader_FrameArrived;
+                        m_frameReader = null;
+                    }
+                    m_frameReader = await m_mediaCapture.CreateFrameReaderAsync(m_selectedMediaFrameSource);
+                    await m_frameReader.StartAsync();
+                    DebugOutput("start frame reader");
+                    m_frameReader.FrameArrived += FrameReader_FrameArrived;
+                });
             }
-            finally
+            else
             {
-                m_displayLock.Release();
+                UIBackgroundSegmentationMaskImage.Visibility = Visibility.Collapsed;
+                m_isShowingBackgroundMask = false;
+                m_bboxRenderer.Reset();
+                UICanvasOverlay.Visibility = Visibility.Collapsed;
             }
         }
 
         private void UIEyeGazeCorrectionModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (UIEyeGazeCorrectionModes.SelectedIndex >= 0)
+            try
             {
-                PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION, (ulong)UIEyeGazeCorrectionModes.SelectedIndex);
+                if (UIEyeGazeCorrectionModes.SelectedIndex >= 0)
+                {
+                    ulong flagValueToSet = m_possibleEyeGazeCorrectionFlagValues[(string)UIEyeGazeCorrectionModes.SelectedItem];
+                    PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION, flagValueToSet);
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
             }
         }
 
-        private async void UIBackgroundSegmentationModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void UIBackgroundSegmentationModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (UIBackgroundSegmentationModes.SelectedIndex >= 0)
+            try
             {
-                PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, (ulong)UIBackgroundSegmentationModes.SelectedIndex);
-                
-                // cache whether or not we are asking for background mask metadata to be produced
-                m_isBackgroundSegmentationMaskModeOn = (BackgroundSegmentationCapabilityKind)UIBackgroundSegmentationModes.SelectedItem == BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK;
-                UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
+                if (UIBackgroundSegmentationModes.SelectedIndex >= 0)
+                {
+                    ulong flagValueToSet = m_possibleBackgroundSegmentationFlagValues[(string)UIBackgroundSegmentationModes.SelectedItem];
+                    PropertyInquiry.SetExtendedControlFlags(m_selectedMediaFrameSource.Controller.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, flagValueToSet);
 
-                if (m_isBackgroundSegmentationMaskModeOn)
-                {
-                    if (m_frameReader != null)
-                    {
-                        await m_frameReader.StopAsync();
-                        m_frameReader.FrameArrived -= FrameReader_FrameArrived;
-                        m_frameReader = null;
-                    }
-                    m_frameReader = await m_mediaCapture.CreateFrameReaderAsync(m_selectedMediaFrameSource);
-                    m_frameReader.FrameArrived += FrameReader_FrameArrived;
-                    await m_frameReader.StartAsync();
-                }
-                else
-                {
+                    // cache whether or not we are asking for background mask metadata to be produced
+                    m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & flagValueToSet) != 0);
+                    UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
                     UIShowBackgroundImage.IsChecked = false;
                 }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
             }
         }
 
@@ -547,6 +656,12 @@ namespace EyeGazeAndBackgroundSegmentation
                 var task = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateStatus(strMessage, type));
                 task.AsTask().Wait();
             }
+        }
+
+        private void DebugOutput(string message,
+            [System.Runtime.CompilerServices.CallerMemberName] string memberName = "")
+        {
+            Debug.WriteLine($"{memberName} : {message}");
         }
 
         /// <summary>

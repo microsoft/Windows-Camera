@@ -124,7 +124,7 @@ namespace CameraKsPropertyHelper
         Double Max{ get; };
         Double Step{ get; };
         Int32 Value{ get; };
-    };
+    }
 
     // class to encapsulate a KSPROPERTY containing a KSPROPERTY_DESCRIPTION, a KSPROPERTY_MEMBERSHEADER and a KSPROPERTY_STEPPING_LONG
     runtimeclass VidCapVideoProcAmpPropetyPayload : [default] IVidCapVideoProcAmpPropetyPayload
