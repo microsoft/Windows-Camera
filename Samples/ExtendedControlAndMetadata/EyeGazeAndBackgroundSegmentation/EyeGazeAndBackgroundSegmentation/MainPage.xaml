@@ -35,14 +35,14 @@
             </Border>
 
             <ContentControl x:Name="UIBackgroundSegmentationPanel">
-                <StackPanel>
+                <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
                     <TextBlock Text="BackgroundSegmentation" />
                     <ComboBox Name="UIBackgroundSegmentationModes" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
                     <ToggleButton Content="Show mask" x:Name="UIShowBackgroundImage" Checked="UIShowBackgroundImage_Checked" Unchecked="UIShowBackgroundImage_Checked"/>
                 </StackPanel>
             </ContentControl>
             <ContentControl x:Name="UIEyeGazeCorrectionPanel">
-                <StackPanel>
+                <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
                     <TextBlock Text="EyeGazeCorrection" />
                     <ComboBox Name="UIEyeGazeCorrectionModes" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
                 </StackPanel>
