@@ -78,11 +78,12 @@ namespace winrt::WindowsSample::implementation
             _Out_  DWORD* pdwInputStreamID,
             _Out_  MFSampleAllocatorUsage* peUsage) override;
 
-        HRESULT Initialize(LPCWSTR pwszSymLink);
+        // Non-Interface functions
+        HRESULT Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource);
 
     private:
         HRESULT _CheckShutdownRequiresLock();
-        HRESULT _CreateSourceAttributes();
+        HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
         HRESULT _CreateMediaStreams();
 
         HRESULT OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);

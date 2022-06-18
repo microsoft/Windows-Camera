@@ -22,33 +22,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         KsProperty() : KsProperty(winrt::guid()) {}
     };
 
-    struct KsCameraExtendedPropHeader {
-        ULONG               Version;
-        ULONG               PinId;
-        ULONG               Size;
-        ULONG               Result;
-        ULONGLONG           Flags;
-        ULONGLONG           Capability;
-    };
-
-    struct KsCameraExtendedPropValue {
-        union
-        {
-            double          dbl;
-            ULONGLONG       ull;
-            ULONG           ul;
-            ULARGE_INTEGER  ratio;
-            LONG            l;
-            LONGLONG        ll;
-        };
-    };
-
-    struct KsBasicCameraExtendedPropPayload
-    {
-        KsCameraExtendedPropHeader header;
-        KsCameraExtendedPropValue value;
-    };
-
     struct KsSimpleCustomControlPropHeader
     {
         uint32_t ColorMode;

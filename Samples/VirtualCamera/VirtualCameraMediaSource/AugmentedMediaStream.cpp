@@ -30,18 +30,17 @@ namespace winrt::WindowsSample::implementation
         _In_ DWORD dwWorkQueue)
     {
         DEBUG_MSG(L"AugmentedMediaStream Initialize enter");
+        
         RETURN_HR_IF_NULL(E_INVALIDARG, pSource);
-        m_parent = pSource;
-
         RETURN_HR_IF_NULL(E_INVALIDARG, pStreamDesc);
-
+        
+        m_parent = pSource;
         m_dwStreamId = dwStreamId;
+        m_dwSerialWorkQueueId = dwWorkQueue;
         
         // look at stream descriptor, extract list of MediaTypes and filter to preserve only supported MediaTypes
         wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDesc = pStreamDesc;
         RETURN_IF_FAILED(spStreamDesc->GetStreamIdentifier(&m_dwDevSourceStreamIdentifier));
-
-        m_dwSerialWorkQueueId = dwWorkQueue;
 
         wil::com_ptr_nothrow<IMFMediaTypeHandler> spSourceStreamMediaTypeHandler;
         RETURN_IF_FAILED(spStreamDesc->GetMediaTypeHandler(&spSourceStreamMediaTypeHandler));
@@ -373,6 +372,7 @@ namespace winrt::WindowsSample::implementation
         }
         else if (met == MEStreamStopped)
         {
+            RETURN_IF_FAILED(SetStreamState(MF_STREAM_STATE_STOPPED));
             RETURN_IF_FAILED(Stop());
         }
 

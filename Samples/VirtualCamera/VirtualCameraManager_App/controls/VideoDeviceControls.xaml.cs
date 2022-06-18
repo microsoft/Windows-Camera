@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using VirtualCameraManager_WinRT;
+using CameraKsPropertyHelper;
 using Windows.Media.Devices;
 using Windows.UI.Xaml.Controls;
 
@@ -35,7 +36,7 @@ namespace VirtualCameraManager_App.controls
             UIPanelRows.Children.Clear();
 
             var effect = new EffectToggle();
-            var controlPayload = CameraKsPropertyInquiry.GetExtendedControl(ExtendedControlKind.EyeGazeCorrection, m_controller);
+            var controlPayload = PropertyInquiry.GetExtendedControl(m_controller, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
             effect.Initialize(
                 "Gaze Correction", 
                 Symbol.View, 
@@ -47,7 +48,7 @@ namespace VirtualCameraManager_App.controls
             UIPanelRows.Children.Add(effect);
 
             var effect2 = new EffectToggle();
-            var customControlPayload = CameraKsPropertyInquiry.GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller);
+            var customControlPayload = CustomCameraKsPropertyInquiry.GetAugmentedMediaSourceCustomControl(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller);
             effect2.Initialize(
                 "Custom FX", 
                 Symbol.Emoji, 
@@ -59,7 +60,7 @@ namespace VirtualCameraManager_App.controls
             UIPanelRows.Children.Add(effect2);
 
             var effect3 = new EffectToggle();
-            var customControlPayload2 = CameraKsPropertyInquiry.GetSimpleCustomControl(SimpleCustomControlKind.Coloring, m_controller);
+            var customControlPayload2 = CustomCameraKsPropertyInquiry.GetSimpleCustomControl(SimpleCustomControlKind.Coloring, m_controller);
             var colorModes = (ColorModeKind[])Enum.GetValues(typeof(ColorModeKind));
             var currentValueIndex = customControlPayload2 == null ? 0 : Array.FindIndex(colorModes, (color) => (UInt32)color == customControlPayload2.ColorMode);
             var defaultValueIndex = customControlPayload2 == null ? 0 : Array.FindIndex(colorModes, (color) => color == ColorModeKind.Grayscale);
@@ -77,13 +78,13 @@ namespace VirtualCameraManager_App.controls
         private void EyeGazeCorrectionHandler(object sender, SelectionChangedEventArgs e)
         {
             Debug.WriteLine("EyeGazeCorrectionHandler");
-            CameraKsPropertyInquiry.SetExtendedControlFlags(ExtendedControlKind.EyeGazeCorrection, m_controller, (ulong)(int)e.AddedItems[0]);
+            PropertyInquiry.SetExtendedControlFlags(m_controller, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION, (ulong)(int)e.AddedItems[0]);
         }
 
         private void CustomFXHandler(object sender, SelectionChangedEventArgs e)
         {
             Debug.WriteLine("CustomFXHandler");
-            CameraKsPropertyInquiry.SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller, (UInt64)((int)e.AddedItems[0]));
+            CustomCameraKsPropertyInquiry.SetAugmentedMediaSourceCustomControlFlags(AugmentedMediaSourceCustomControlKind.KSPROPERTY_AUGMENTEDMEDIASOURCE_CUSTOMCONTROL_CUSTOMFX, m_controller, (UInt64)((int)e.AddedItems[0]));
         }
 
         private void ColoringControlHandler(object sender, SelectionChangedEventArgs e)
@@ -91,7 +92,7 @@ namespace VirtualCameraManager_App.controls
             Debug.WriteLine("ColoringControlHandler");
             var colorModeKinds = Enum.GetValues(typeof(ColorModeKind));
             ColorModeKind selection = (ColorModeKind)colorModeKinds.GetValue((int)e.AddedItems[0]);
-            CameraKsPropertyInquiry.SetSimpleCustomControlFlags(SimpleCustomControlKind.Coloring, m_controller, (UInt32)selection);
+            CustomCameraKsPropertyInquiry.SetSimpleCustomControlFlags(SimpleCustomControlKind.Coloring, m_controller, (UInt32)selection);
         }
     }
 }

@@ -15,6 +15,14 @@ DEFINE_GUID(CLSID_VirtualCameraMediaSource ,
 static LPCWSTR VIRTUALCAMERAMEDIASOURCE_CLSID = L"{7B89B92E-FE71-42D0-8A41-E137D06EA184}";
 static LPCWSTR VIRTUALCAMERAMEDIASOURCE_FRIENDLYNAME = L"VirtualCameraMediaSource";
 
+// in Windows build 22621 and above only: 
+// GUIDs for retrieving the device source instead of recreating it from within the vcam
+DEFINE_GUID(MF_VIRTUALCAMERA_PROVIDE_ASSOCIATED_CAMERA_SOURCES,
+    0xF0273718, 0x4A4D, 0x4AC5, 0xA1, 0x5D, 0x30, 0x5E, 0xB5, 0xE9, 0x06, 0x67);
+
+DEFINE_GUID(MF_VIRTUALCAMERA_ASSOCIATED_CAMERA_SOURCES,
+    0x1BB79E7C, 0x5D83, 0x438C, 0x94, 0xD8, 0xE5, 0xF0, 0xDF, 0x6D, 0x32, 0x79);
+
 // --> VirtualCameraMediaSource activation attributes:
 
 // {3C31A5F8-2795-4FB9-A0A1-C733A65C0CE8}

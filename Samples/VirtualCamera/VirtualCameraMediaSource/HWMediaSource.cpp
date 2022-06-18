@@ -16,19 +16,17 @@ namespace winrt::WindowsSample::implementation
         }
     }
     /////////////////////////////////////////////////////////////////////////////////
-    HRESULT HWMediaSource::Initialize(LPCWSTR pwszSymLink)
+    HRESULT HWMediaSource::Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
         DEBUG_MSG(L"Initialize enter");
-        wil::com_ptr_nothrow<IMFAttributes> spDeviceAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spDeviceAttributes, 2));
-        RETURN_IF_FAILED(spDeviceAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
-        RETURN_IF_FAILED(spDeviceAttributes->SetString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, pwszSymLink));
-        RETURN_IF_FAILED(MFCreateDeviceSource(spDeviceAttributes.get(), &m_spDevSource));
+
+        RETURN_HR_IF_NULL(E_POINTER, pMediaSource);
+        m_spDevSource = pMediaSource;
 
         RETURN_IF_FAILED(m_spDevSource->CreatePresentationDescriptor(&m_spPDesc));
-        RETURN_IF_FAILED(_CreateSourceAttributes());
+        RETURN_IF_FAILED(_CreateSourceAttributes(pAttributes));
         RETURN_IF_FAILED(_CreateMediaStreams());
         RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
 
@@ -587,35 +585,54 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT HWMediaSource::_CreateSourceAttributes()
+    HRESULT HWMediaSource::_CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes)
     {
-        if (m_spAttributes == nullptr)
+        // get devicesource attributes, and add additional if needed.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 3));
+
+        // copy deviceSource attributes.
+        wil::com_ptr_nothrow<IMFAttributes> spSourceAttributes;
+        wil::com_ptr_nothrow<IMFMediaSourceEx> spMediaSourceEx;
+        RETURN_IF_FAILED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spMediaSourceEx)));
+        RETURN_IF_FAILED(spMediaSourceEx->GetSourceAttributes(&spSourceAttributes));
+        RETURN_IF_FAILED(spSourceAttributes->CopyAllItems(m_spAttributes.get()));
+
+        // if ActivateAttributes is not null, copy and overwrite the same attributes from the underlying devicesource attributes.
+        if (pActivateAttributes)
         {
-            RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+            UINT32 uiCount = 0;
 
-            wil::com_ptr_nothrow<IMFMediaSourceEx> spMediaSourceEx;
-            RETURN_IF_FAILED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spMediaSourceEx)));
-            RETURN_IF_FAILED(spMediaSourceEx->GetSourceAttributes(&m_spAttributes));
+            RETURN_IF_FAILED(pActivateAttributes->GetCount(&uiCount));
 
-            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
-            // virtual camera configuration app's PFN (Package Family Name).
-            // Below we query programmatically the current application info (knowing that the app 
-            // that activates the virtual camera registers it on the system and also acts as its 
-            // configuration app).
-            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
-            // a particular PFN.
-            try
+            for (UINT32 i = 0; i < uiCount; i++)
             {
-                winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-                DEBUG_MSG(L"AppInfo: %p ", appInfo);
-                if (appInfo != nullptr)
-                {
-                    DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
-                }
+                GUID guid = GUID_NULL;
+                wil::unique_prop_variant spPropVar;
+
+                RETURN_IF_FAILED(pActivateAttributes->GetItemByIndex(i, &guid, &spPropVar));
+                RETURN_IF_FAILED(m_spAttributes->SetItem(guid, spPropVar));
             }
-            catch (...) { DEBUG_MSG(L"Not running in app package"); }
         }
+
+        // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+        // virtual camera configuration app's PFN (Package Family Name).
+        // Below we query programmatically the current application info (knowing that the app 
+        // that activates the virtual camera registers it on the system and also acts as its 
+        // configuration app).
+        // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+        // a particular PFN.
+        try
+        {
+            winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+            DEBUG_MSG(L"AppInfo: %p ", appInfo);
+            if (appInfo != nullptr)
+            {
+                DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+                RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+            }
+        }
+        catch (...) { DEBUG_MSG(L"Not running in app package"); }
+       
         return S_OK;
     }
 }

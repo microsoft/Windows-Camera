@@ -185,6 +185,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj">
+      <Project>{3e174357-0294-40f1-ba11-7330617ddbb5}</Project>
+      <Name>CameraKsPropertyHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\VirtualCameraManager_WinRT\VirtualCameraManager_WinRT.vcxproj">
       <Project>{11e3e0b4-99b5-405d-97a0-7d1b89788216}</Project>
       <Name>VirtualCameraManager_WinRT</Name>

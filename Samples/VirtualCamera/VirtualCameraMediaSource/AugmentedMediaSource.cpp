@@ -22,14 +22,17 @@ namespace winrt::WindowsSample::implementation
     /// </summary>
     /// <param name="pwszSymLink"></param>
     /// <returns></returns>
-    HRESULT AugmentedMediaSource::Initialize(LPCWSTR pwszSymLink)
+    HRESULT AugmentedMediaSource::Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
         DEBUG_MSG(L"AugmentedMediaSource Initialize enter");
 
-        // populate source attributes like profile and control app
-        RETURN_IF_FAILED(_CreateSourceAttributes());
+        RETURN_HR_IF_NULL(E_POINTER, pMediaSource);
+        m_spDevSource = pMediaSource;
+
+        // 1. Populate source attributes like profile and control app
+        RETURN_IF_FAILED(_CreateSourceAttributes(pAttributes));
 
         m_streamList = wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<AugmentedMediaStream>>(NUM_STREAMS);
         RETURN_IF_NULL_ALLOC(m_streamList.get());
@@ -38,13 +41,16 @@ namespace winrt::WindowsSample::implementation
             wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<IMFStreamDescriptor>>(NUM_STREAMS);
         RETURN_IF_NULL_ALLOC(streamDescriptorList.get());
 
-        // look at hardware camera specified and extract stream descriptors
-        wil::com_ptr_nothrow<IMFAttributes> spDeviceAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spDeviceAttributes, 2));
-        RETURN_IF_FAILED(spDeviceAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
-        RETURN_IF_FAILED(spDeviceAttributes->SetString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, pwszSymLink));
-        RETURN_IF_FAILED(MFCreateDeviceSource(spDeviceAttributes.get(), &m_spDevSource));
+        // 2. create event queue and register callbacks..
+        DEBUG_MSG(L"Create and register event queue");
+        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
+        RETURN_IF_FAILED(MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &m_dwSerialWorkQueueId));
 
+        auto ptr = winrt::make_self<CAsyncCallback<AugmentedMediaSource>>(this, &AugmentedMediaSource::OnMediaSourceEvent, m_dwSerialWorkQueueId);
+        m_xOnMediaSourceEvent.attach(ptr.detach());
+        RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
+
+        // 3. Create presentation descriptors
         RETURN_IF_FAILED(m_spDevSource->CreatePresentationDescriptor(&m_spDevSourcePDesc));
 
         DWORD dwStreamCount = 0;
@@ -100,15 +106,6 @@ namespace winrt::WindowsSample::implementation
         {
             return MF_E_CAPTURE_SOURCE_NO_VIDEO_STREAM_PRESENT;
         }
-
-        // create event queue and register callbacks..
-        DEBUG_MSG(L"Create and register event queue");
-        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
-        RETURN_IF_FAILED(MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &m_dwSerialWorkQueueId));
-
-        auto ptr = winrt::make_self<CAsyncCallback<AugmentedMediaSource>>(this, &AugmentedMediaSource::OnMediaSourceEvent, m_dwSerialWorkQueueId);
-        m_xOnMediaSourceEvent.attach(ptr.detach());
-        RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
 
         // initialize the preview stream descriptor..
         DEBUG_MSG(L"Initialize preview stream");
@@ -173,9 +170,9 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (!(m_sourceState != SourceState::Stopped || m_sourceState != SourceState::Shutdown))
+        if (m_sourceState == SourceState::Invalid)
         {
-            return MF_E_INVALID_STATE_TRANSITION;
+            RETURN_IF_FAILED(MF_E_INVALID_STATE_TRANSITION);
         }
         m_sourceState = SourceState::Started;
 
@@ -951,56 +948,81 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT AugmentedMediaSource::_CreateSourceAttributes()
+    HRESULT AugmentedMediaSource::_CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes)
     {
-        if (m_spAttributes.get() == nullptr)
+        // get devicesource attributes, and add additional if needed.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 3));
+
+        // copy deviceSource attributes.
+        wil::com_ptr_nothrow<IMFAttributes> spSourceAttributes;
+        wil::com_ptr_nothrow<IMFMediaSourceEx> spMediaSourceEx;
+        RETURN_IF_FAILED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spMediaSourceEx)));
+        RETURN_IF_FAILED(spMediaSourceEx->GetSourceAttributes(&spSourceAttributes));
+        RETURN_IF_FAILED(spSourceAttributes->CopyAllItems(m_spAttributes.get()));
+
+        // if ActivateAttributes is not null, copy and overwrite the same attributes from the underlying devicesource attributes.
+        if (pActivateAttributes)
         {
-            // Create our source attribute store.
-            RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+            UINT32 uiCount = 0;
 
-            wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
-            wil::com_ptr_nothrow<IMFSensorProfile> profile;
+            RETURN_IF_FAILED(pActivateAttributes->GetCount(&uiCount));
 
-            // Create an empty profile collection...
-            RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
-
-            // In this example since we have just one stream, we only have one
-            // pin to add:  Pin = STREAM_ID.
-
-            // Legacy profile is mandatory.  This is to ensure non-profile
-            // aware applications can still function, but with degraded
-            // feature sets.
-            const DWORD STREAM_ID = 0;
-            RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
-                &profile));
-            RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
-            RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
-
-
-            // Se the profile collection to the attribute store of the IMFTransform.
-            RETURN_IF_FAILED(m_spAttributes->SetUnknown(
-                MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
-                profileCollection.get()));
-
-            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
-            // virtual camera configuration app's PFN (Package Family Name).
-            // Below we query programmatically the current application info (knowing that the app 
-            // that activates the virtual camera registers it on the system and also acts as its 
-            // configuration app).
-            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
-            // a particular PFN.
-            try
+            for (UINT32 i = 0; i < uiCount; i++)
             {
-                winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-                DEBUG_MSG(L"AppInfo: %p ", appInfo);
-                if (appInfo != nullptr)
-                {
-                    DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
-                }
+                GUID guid = GUID_NULL;
+                wil::unique_prop_variant spPropVar;
+
+                RETURN_IF_FAILED(pActivateAttributes->GetItemByIndex(i, &guid, &spPropVar));
+                RETURN_IF_FAILED(m_spAttributes->SetItem(guid, spPropVar));
             }
-            catch (...) { DEBUG_MSG(L"Not running in app package"); }
         }
+
+        // Create our source attribute store.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+
+        wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
+        wil::com_ptr_nothrow<IMFSensorProfile> profile;
+
+        // Create an empty profile collection...
+        RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
+
+        // In this example since we have just one stream, we only have one
+        // pin to add:  Pin = STREAM_ID.
+
+        // Legacy profile is mandatory.  This is to ensure non-profile
+        // aware applications can still function, but with degraded
+        // feature sets.
+        const DWORD STREAM_ID = 0;
+        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
+            &profile));
+        RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
+        RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
+
+
+        // Se the profile collection to the attribute store of the IMFTransform.
+        RETURN_IF_FAILED(m_spAttributes->SetUnknown(
+            MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
+            profileCollection.get()));
+
+        // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+        // virtual camera configuration app's PFN (Package Family Name).
+        // Below we query programmatically the current application info (knowing that the app 
+        // that activates the virtual camera registers it on the system and also acts as its 
+        // configuration app).
+        // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+        // a particular PFN.
+        try
+        {
+            winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+            DEBUG_MSG(L"AppInfo: %p ", appInfo);
+            if (appInfo != nullptr)
+            {
+                DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+                RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+            }
+        }
+        catch (...) { DEBUG_MSG(L"Not running in app package"); }
+        
 
         return S_OK;
     }

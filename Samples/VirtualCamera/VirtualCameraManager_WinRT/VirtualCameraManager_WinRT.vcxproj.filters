@@ -17,15 +17,14 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="VirtualCameraProxy.cpp" />
     <ClCompile Include="VirtualCameraRegistrar.cpp" />
-    <ClCompile Include="CameraKsPropertyInquiry.cpp" />
+    <ClCompile Include="CustomCameraKsPropertyInquiry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="VirtualCameraProxy.h" />
     <ClInclude Include="VirtualCameraRegistrar.h" />
     <ClInclude Include="SimpleCustomPropertyPayload.h" />
-    <ClInclude Include="BasicExtendedPropertyPayload.h" />
-    <ClInclude Include="CameraKsPropertyInquiry.h" />
+    <ClInclude Include="CustomCameraKsPropertyInquiry.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="BasicAugmentedMediaSourceCustomPropertyPayload.h" />
   </ItemGroup>
