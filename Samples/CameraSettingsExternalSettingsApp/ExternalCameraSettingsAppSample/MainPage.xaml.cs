@@ -111,20 +111,24 @@ namespace OutboundSettingsAppTest
             m_mediaPlayer.RealTimePlayback = true;
             m_mediaPlayer.AutoPlay = true;
             m_mediaPlayer.Source = MediaSource.CreateFromMediaFrameSource(frameSource);
-
             UIMediaPlayerElement.SetMediaPlayer(m_mediaPlayer);
 
+            // Creating a default contol manager and controls for Contrast, Brightness, and BackgroundSegmentation/Blur if the camera supports these.
             m_controlManager = new DefaultControlHelper.DefaultControlManager(cameraId);
+
+            // Contrast
             if (m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Supported)
             {
                 m_contrastController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp, (uint) CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST);
             }
 
+            // Brightness
             if (m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Supported)
             {
                 m_brightnessController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp,(uint) CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS);
             }
 
+            // Blur
             bool isDeviceControlSupported = false;
             IExtendedPropertyPayload getPayload = null;
 
@@ -135,6 +139,7 @@ namespace OutboundSettingsAppTest
                 m_backgroundBlurController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint) ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
             }
 
+            // Updating UI elements
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 // The sliders is initialized to work with the values that driver provides as supported range and step

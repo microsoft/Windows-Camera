@@ -10,6 +10,7 @@ namespace DefaultControlHelper
         CameraControl,
         ExtendedCameraControl,
     };
+ 
     
     runtimeclass DefaultController
     {
@@ -19,7 +20,15 @@ namespace DefaultControlHelper
     [default_interface]
     runtimeclass DefaultControlManager
     {
+        // Creates DefaultControlManager for the specified camera
         DefaultControlManager(String cameraSymbolicLink);
+
+        // Creates default value controller for the given type and id.
+        // NOTE: The sample us using the common payload structures, certain controls might require specialized payloads.
+        // Please refer:
+        //      VideoProcAmp https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/propsetid-vidcap-videoprocamp
+        //      CameraControl https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/propsetid-vidcap-cameracontrol
+        //      ExtendedCameraControls https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol
         DefaultController CreateController(DefaultControllerType type, UInt32 controlId);
     }
 }

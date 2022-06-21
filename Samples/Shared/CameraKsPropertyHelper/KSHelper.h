@@ -43,14 +43,14 @@ namespace winrt::CameraKsPropertyHelper::implementation
 
     struct FaceRectInfoBlobHeader
     {
-        ULONG    Size;      // Size of this header + all FaceRectInfo following
-        ULONG    Count;    // Number of FaceRectInfo’s in the blob  
+        ULONG    Size;  // Size of this header + all FaceRectInfo following
+        ULONG    Count; // Number of FaceRectInfo’s in the blob  
     };
 
     struct FaceRectInfo
     {
-        RECT     Region;     // Relative coordinates on the frame that face detection is running (Q31 format)
-        LONG     ConfidenceLevel;    // Confidence level of the region being a face ([0, 100])
+        RECT     Region;            // Relative coordinates on the frame that face detection is running (Q31 format)
+        LONG     ConfidenceLevel;   // Confidence level of the region being a face ([0, 100])
     };
 
     struct FaceDetectionROIsMetadata
@@ -77,7 +77,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
         return (double)x / BASE_Q(31);
     }
 
-    // !@brief Returns the value from x in fixed - point Q24 format.
+    // Returns the value from x in fixed - point Q24 format.
     constexpr
         double
         FROM_Q24(LONGLONG x)
@@ -97,20 +97,6 @@ namespace winrt::CameraKsPropertyHelper::implementation
     {
         KSCAMERA_EXTENDEDPROP_HEADER header;
         KSCAMERA_EXTENDEDPROP_VALUE value;
-    };
-
-    struct KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_SETTING
-    {
-        LONG        OriginX;                // in Q24
-        LONG        OriginY;                // in Q24
-        LONG        WindowSize;             // in Q24
-        ULONG       Reserved;
-    };
-
-    struct KSCAMERA_METADATA_DIGITALWINDOW 
-    {
-        KSCAMERA_METADATA_ITEMHEADER Header;
-        KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_SETTING Window;
     };
 
     // wrapper for a payload returned when the driver supports the KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION 
