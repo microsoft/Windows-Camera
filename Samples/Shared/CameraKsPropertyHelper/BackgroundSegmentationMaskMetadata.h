@@ -4,6 +4,7 @@
 #include "BackgroundSegmentationMaskMetadata.g.h"
 #include "KSHelper.h"
 #include <winrt/Windows.Graphics.Imaging.h>
+#include <winrt/Windows.Foundation.h>
 #include <mutex>
 
 namespace winrt::CameraKsPropertyHelper::implementation
@@ -50,6 +51,5 @@ namespace winrt::CameraKsPropertyHelper::implementation
     private:
         std::mutex m_lock;
         Windows::Graphics::Imaging::SoftwareBitmap m_softwareBitmap = nullptr;
-        bool m_isWritten = false;
     };
 }

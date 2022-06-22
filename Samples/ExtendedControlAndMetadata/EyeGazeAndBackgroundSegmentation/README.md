@@ -7,7 +7,7 @@ This project also contains a helper method to extract and deserialize frame meta
 
 ## Requirements
 	
-This sample is built using Visual Studio 2019 and requires [Windows SDK version 22000](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK).
+This sample is built using Visual Studio 2019 and requires [Windows SDK version 22000](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) at the very least.
 
 ## Getting and setting extended camera controls
 In the **CameraKsPropertyHelper** project, the ```PropertyInquiry``` runtime class containes static helper methods to set and get extended controls via serialized/deserialized byte buffers.
@@ -183,6 +183,29 @@ Programmatically it acts simply as a ON/OFF toggle by setting these flag values 
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF = 0x0000000000000000
 KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 0x0000000000000001
 ```
+And as of Windows **build 22621 and above**, another new mode has been added that achieve a more aggressive gaze correction:
+```
+KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE = 0x0000000000000002
+```
+
+```csharp
+readonly Dictionary<string, ulong> m_possibleEyeGazeCorrectionFlagValues = new Dictionary<string, ulong>()
+{
+    { 
+        "off",
+        (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
+    },
+    {
+        "on",
+        (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+    },
+    {
+        "enhanced",
+        (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+            + (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE
+    }
+};
+```
 
 ## Background Segmentation extended control
 The background segmentation DDI named [```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation) has been introduced in Windows starting with build 20348. In this initial release, if supported by the driver, it blurs the background of a scene and preserves only parts of the image where the main subject is present. This is a popular scenario in video teleconferencing applications.
@@ -192,10 +215,49 @@ KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF = 0x0000000000000000
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR = 0x0000000000000001
 ```
 
-Additionaly in Windows build above 21364, a new mode has been added that requests the driver to attach the segmentation mask as metadata to each frame streamed out. This mode is signaled using this flag value:
+Additionaly in Windows build **above 21364**, a new mode has been added that requests the driver to attach the segmentation mask as metadata to each frame streamed out. This mode is signaled using this flag value:
 ```
 KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK = 0x0000000000000002
 ```
+And as of Windows **build 22621 and above**, another new mode has been added that achieve a subtler blur effect:
+```
+KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS = 0x0000000000000004
+```
+These values can be combined together as demonstrated in the sample app:
+```csharp
+readonly Dictionary<string,ulong> m_possibleBackgroundSegmentationFlagValues = new Dictionary<string, ulong>()
+{
+    { 
+        "off",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF
+    },
+    {
+        "blur",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+    },
+    {
+        "mask metadata",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+    },
+    {
+        "shallow focus blur",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+            + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+    },
+    {
+        "blur and mask metadata",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR 
+            + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+    },
+    { 
+        "shallow focus blur and mask metadata",
+        (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+            + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+            + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+    }
+};
+```
+
 When a GET command is sent for the ```KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION```, **and only** whenever the camera device supports the [```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK```](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation#usage-summary-table) mode, it will advise with which stream configurations it supports the generation of the mask metadata. This is for an application wanting to understand if there are any limitations before attempting to rely on a mask to operate scenarios such as alpha blending of the background portion of an image. A camera device that supports this control may not always do so across all its stream configurations. For example, a camera could be able to segment background at 30fps on a 1080p stream, but not at 60fps even though it may be able to stream at such resolution and framerate combination. The structure returned to advise which stream configuration support the generation of the mask frame metadata is a set of [```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS```](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ns-ksmedia-kscamera_extendedprop_backgroundsegmentation_configcaps). The app can then correlate the available stream configurations of a camera with this set to understand what to expect if it sets this control with the ```KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK``` flag.
 
 ## Background Segmentation mask metadata

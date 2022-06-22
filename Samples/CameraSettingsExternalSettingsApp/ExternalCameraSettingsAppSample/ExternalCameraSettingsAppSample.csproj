@@ -4,27 +4,27 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProjectGuid>{6B0DAB20-BB5C-4738-B8F0-102EE1E2EC6F}</ProjectGuid>
+    <ProjectGuid>{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EyeGazeAndBackgroundSegmentation</RootNamespace>
-    <AssemblyName>EyeGazeAndBackgroundSegmentation</AssemblyName>
+    <RootNamespace>ExternalCameraSettingsAppSample</RootNamespace>
+    <AssemblyName>ExternalCameraSettingsAppSample</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.22621.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <TargetPlatformMinVersion>10.0.22621.0</TargetPlatformMinVersion>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{A5A43C5B-DE2A-4C0C-9213-0A381AF9435A};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WindowsXamlEnableOverview>true</WindowsXamlEnableOverview>
-    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
-    <PackageCertificateThumbprint>3131C84AAB67700DCF328079B44CA38A51B9F7BF</PackageCertificateThumbprint>
+    <PackageCertificateKeyFile>ExternalCameraSettingsAppSample_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
-    <AppxBundle>Never</AppxBundle>
-    <AppxBundlePlatforms>x64|arm64</AppxBundlePlatforms>
+    <AppxBundle>Always</AppxBundle>
+    <AppxBundlePlatforms>x86|x64|arm|arm64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -127,7 +127,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="BoundingBoxRenderer.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -164,10 +163,19 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj">
+    <ProjectReference Include="..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj">
       <Project>{3e174357-0294-40f1-ba11-7330617ddbb5}</Project>
       <Name>CameraKsPropertyHelper</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DefaultControlHelper\DefaultControlHelper.vcxproj">
+      <Project>{3ac253a5-a383-49d8-acc0-102c1e46e42f}</Project>
+      <Name>DefaultControlHelper_WinRT</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <PRIResource Include="Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

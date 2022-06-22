@@ -10,26 +10,20 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="PropertyInquiry.cpp" />
-    <ClCompile Include="BackgroundSegmentationConfigCaps.cpp" />
-    <ClCompile Include="BackgroundSegmentationMaskMetadata.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="PropertyInquiry.h" />
-    <ClInclude Include="BackgroundSegmentationConfigCaps.h" />
-    <ClInclude Include="BackgroundSegmentationMaskMetadata.h" />
-    <ClInclude Include="BackgroundSegmentationPropertyPayload.h" />
-    <ClInclude Include="BasicExtendedPropertyPayload.h" />
-    <ClInclude Include="KSHelper.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="CameraKsPropertyInquiry.idl" />
+    <Midl Include="DefaultControlHelper.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="CameraKsPropertyHelper.def" />
+    <None Include="DefaultControlHelper.def" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PropertySheet.props" />
   </ItemGroup>
 </Project>

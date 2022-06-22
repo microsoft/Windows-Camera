@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EyeGazeAndBackgroundSegmentation", "EyeGazeAndBackgroundSegmentation\EyeGazeAndBackgroundSegmentation.csproj", "{6B0DAB20-BB5C-4738-B8F0-102EE1E2EC6F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CameraKsPropertyHelper", "CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj", "{3E174357-0294-40F1-BA11-7330617DDBB5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CameraKsPropertyHelper", "..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj", "{3E174357-0294-40F1-BA11-7330617DDBB5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
