@@ -10,6 +10,41 @@
 
 namespace winrt::WindowsSample::implementation
 {
+    /// <summary>
+    /// Helper method to clone a MediaType
+    /// </summary>
+    /// <param name="pSourceMediaType"></param>
+    /// <param name="ppDestMediaType"></param>
+    /// <returns></returns>
+    HRESULT CloneMediaType(_In_ IMFMediaType* pSourceMediaType, _Out_ IMFMediaType** ppDestMediaType)
+    {
+        wil::com_ptr_nothrow<IMFVideoMediaType> spVideoMT;
+
+        RETURN_HR_IF_NULL(E_INVALIDARG, pSourceMediaType);
+        RETURN_HR_IF_NULL(E_POINTER, ppDestMediaType);
+
+        *ppDestMediaType = nullptr;
+
+        if (SUCCEEDED(pSourceMediaType->QueryInterface(IID_PPV_ARGS(&spVideoMT))))
+        {
+            wil::com_ptr_nothrow<IMFVideoMediaType> spClonedVideoMT;
+
+            RETURN_IF_FAILED(MFCreateVideoMediaType(spVideoMT->GetVideoFormat(), &spClonedVideoMT));
+            RETURN_IF_FAILED(spVideoMT->CopyAllItems(spClonedVideoMT.get()));
+            RETURN_IF_FAILED(spClonedVideoMT->QueryInterface(IID_PPV_ARGS(ppDestMediaType)));
+        }
+        else
+        {
+            wil::com_ptr_nothrow<IMFMediaType> spClonedMT;
+
+            RETURN_IF_FAILED(MFCreateMediaType(&spClonedMT));
+            RETURN_IF_FAILED(pSourceMediaType->CopyAllItems(spClonedMT.get()));
+            RETURN_IF_FAILED(spClonedMT->QueryInterface(IID_PPV_ARGS(ppDestMediaType)));
+        }
+
+        return S_OK;
+    }
+
     AugmentedMediaStream::~AugmentedMediaStream()
     {
         Shutdown();
@@ -82,7 +117,7 @@ namespace winrt::WindowsSample::implementation
                 && (framerate <= 30 && framerate >= 15))
             {
                 DEBUG_MSG(L"Found a valid and compliant Mediatype=%u", i);
-                sourceStreamMediaTypeList[validMediaTypeCount] = spMediaType.detach();
+                RETURN_IF_FAILED(CloneMediaType(spMediaType.get(), &(sourceStreamMediaTypeList[validMediaTypeCount])));
                 validMediaTypeCount++;
             }
         }
@@ -482,6 +517,7 @@ namespace winrt::WindowsSample::implementation
     {
         RETURN_HR_IF_NULL(E_INVALIDARG, pAttributeStore);
 
+        // adjust accordingly if other types of stream are wrapped
         RETURN_IF_FAILED(pAttributeStore->SetGUID(MF_DEVICESTREAM_STREAM_CATEGORY, PINNAME_VIDEO_CAPTURE));
         RETURN_IF_FAILED(pAttributeStore->SetUINT32(MF_DEVICESTREAM_STREAM_ID, m_dwStreamId));
         RETURN_IF_FAILED(pAttributeStore->SetUINT32(MF_DEVICESTREAM_FRAMESERVER_SHARED, 1));

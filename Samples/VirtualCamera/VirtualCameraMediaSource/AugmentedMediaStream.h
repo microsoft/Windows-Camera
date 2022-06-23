@@ -46,7 +46,7 @@ namespace winrt::WindowsSample::implementation
 
     protected:
         HRESULT _CheckShutdownRequiresLock();
-        HRESULT _SetStreamAttributes(IMFAttributes* pAttributeStore);
+        HRESULT _SetStreamAttributes(_In_ IMFAttributes* pAttributeStore);
 
         wil::com_ptr_nothrow<CAsyncCallback<AugmentedMediaStream>> m_xOnMediaStreamEvent;
 

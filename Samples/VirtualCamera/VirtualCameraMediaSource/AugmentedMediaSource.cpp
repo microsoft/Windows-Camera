@@ -188,83 +188,101 @@ namespace winrt::WindowsSample::implementation
         // and for each selected stream, send the MEUpdatedStream
         // or MENewStream event along with the MEStreamStarted
         // event.
+        BOOL selected = false;
+        bool wasSelected = false;
+        DWORD streamIdx = 0;
+        DWORD streamId = 0;
         for (unsigned int i = 0; i < count; i++)
         {
-            BOOL selected = false;
             wil::com_ptr_nothrow<IMFStreamDescriptor> streamDesc;
             RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorByIndex(
                 i,
                 &selected,
                 &streamDesc));
 
-            DWORD streamId = 0;
             RETURN_IF_FAILED(streamDesc->GetStreamIdentifier(&streamId));
-
-            DWORD streamIdx = 0;
-            bool wasSelected = false;
+            
             wil::com_ptr_nothrow<IMFStreamDescriptor> spLocalStreamDescriptor;
             RETURN_IF_FAILED(_GetStreamDescriptorByStreamId(streamId, &streamIdx, &wasSelected, &spLocalStreamDescriptor));
 
-            if (selected)
-            {
-                DEBUG_MSG(L"Selected stream Id: %d", streamIdx);
-                // Update our internal PresentationDescriptor
-                RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
-
-                // Update the source camera descriptor we proper stream
-                RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_desiredStreamIdx));
-
-                BOOL selected2 = FALSE;
-                wil::com_ptr_nothrow<IMFStreamDescriptor> spDevStreamDescriptor;
-                RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_desiredStreamIdx, &selected2, &spDevStreamDescriptor));
-                wil::com_ptr_nothrow<IMFMediaTypeHandler> spDevSourceStreamMediaTypeHandler;
-                RETURN_IF_FAILED(spDevStreamDescriptor->GetMediaTypeHandler(&spDevSourceStreamMediaTypeHandler));
-
-                wil::com_ptr_nothrow<IMFMediaTypeHandler> spStreamMediaTypeHandler;
-                RETURN_IF_FAILED(streamDesc->GetMediaTypeHandler(&spStreamMediaTypeHandler));
-
-                wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType;
-                RETURN_IF_FAILED(spStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType));
-                {
-                    GUID majorType;
-                    spCurrentMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-
-                    GUID subtype;
-                    spCurrentMediaType->GetGUID(MF_MT_SUBTYPE, &subtype);
-
-                    UINT width = 0, height = 0;
-                    MFGetAttributeSize(spCurrentMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-                    UINT numerator = 0, denominator = 0;
-                    MFGetAttributeRatio(spCurrentMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
-                }
-
-                {
-                    wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType2;
-                    RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType2));
-                    GUID majorType;
-                    spCurrentMediaType2->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-
-                    GUID subtype;
-                    spCurrentMediaType2->GetGUID(MF_MT_SUBTYPE, &subtype);
-
-                    UINT width = 0, height = 0;
-                    MFGetAttributeSize(spCurrentMediaType2.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-                    UINT numerator = 0, denominator = 0;
-                    MFGetAttributeRatio(spCurrentMediaType2.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
-                }
-
-                RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->SetCurrentMediaType(spCurrentMediaType.get()));
-
-                RETURN_IF_FAILED(m_spDevSource->Start(m_spDevSourcePDesc.get(), pguidTimeFormat, pvarStartPos));
-            }
-            else if (wasSelected)
+            if (wasSelected && !selected)
             {
                 // stream was previously selected but not selected this time.
                 RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(streamIdx));
+                RETURN_IF_FAILED(m_spDevSourcePDesc->DeselectStream(m_desiredStreamIdx));
             }
         }
+        for (unsigned int i = 0; i < count; i++)
+        {
+            wil::com_ptr_nothrow<IMFStreamDescriptor> streamDesc;
+            RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorByIndex(
+                i,
+                &selected,
+                &streamDesc));
+
+            RETURN_IF_FAILED(streamDesc->GetStreamIdentifier(&streamId));
+
+            wil::com_ptr_nothrow<IMFStreamDescriptor> spLocalStreamDescriptor;
+			RETURN_IF_FAILED(_GetStreamDescriptorByStreamId(streamId, &streamIdx, &wasSelected, &spLocalStreamDescriptor));
+			if (selected)
+			{
+				if (!wasSelected)
+				{
+					DEBUG_MSG(L"Selected stream Id: %d", streamIdx);
+					// Update our internal PresentationDescriptor
+					RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
+
+					// Update the source camera descriptor we proper stream
+					RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_desiredStreamIdx));
+				}
+
+				BOOL selected2 = FALSE;
+				wil::com_ptr_nothrow<IMFStreamDescriptor> spDevStreamDescriptor;
+				RETURN_IF_FAILED(m_spDevSourcePDesc->GetStreamDescriptorByIndex(m_desiredStreamIdx, &selected2, &spDevStreamDescriptor));
+				wil::com_ptr_nothrow<IMFMediaTypeHandler> spDevSourceStreamMediaTypeHandler;
+				RETURN_IF_FAILED(spDevStreamDescriptor->GetMediaTypeHandler(&spDevSourceStreamMediaTypeHandler));
+
+				wil::com_ptr_nothrow<IMFMediaTypeHandler> spStreamMediaTypeHandler;
+				RETURN_IF_FAILED(streamDesc->GetMediaTypeHandler(&spStreamMediaTypeHandler));
+
+                // debug what is set on the virtual camera
+				wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType;
+				RETURN_IF_FAILED(spStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType));
+				{
+					GUID majorType;
+					spCurrentMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
+
+					GUID subtype;
+					spCurrentMediaType->GetGUID(MF_MT_SUBTYPE, &subtype);
+
+					UINT width = 0, height = 0;
+					MFGetAttributeSize(spCurrentMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
+
+					UINT numerator = 0, denominator = 0;
+					MFGetAttributeRatio(spCurrentMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
+				}
+
+                // debug what is set on the physical camera
+				{
+					wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType2;
+					RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType2));
+					GUID majorType;
+					spCurrentMediaType2->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
+
+					GUID subtype;
+					spCurrentMediaType2->GetGUID(MF_MT_SUBTYPE, &subtype);
+
+					UINT width = 0, height = 0;
+					MFGetAttributeSize(spCurrentMediaType2.get(), MF_MT_FRAME_SIZE, &width, &height);
+
+					UINT numerator = 0, denominator = 0;
+					MFGetAttributeRatio(spCurrentMediaType2.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
+				}
+
+				RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->SetCurrentMediaType(spCurrentMediaType.get()));
+			}
+        }
+        RETURN_IF_FAILED(m_spDevSource->Start(m_spDevSourcePDesc.get(), pguidTimeFormat, pvarStartPos));
 
         // Send event that the source started. Include error code in case it failed.
         RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(
