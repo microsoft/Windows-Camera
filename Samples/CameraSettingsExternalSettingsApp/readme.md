@@ -27,3 +27,5 @@ Adding this information will create a button to launch the application from the 
   - Contrast control slider
   - Brightness control slider
   - Background segmentation toggle for Blur on/off
+
+**NOTE:** For default value configurations the sample uses MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART but some controls might require MF_CAMERA_CONTROL_CONFIGURATION_TYPE_PRESTART. These requirements come from the DDI definitions of that control.

@@ -45,7 +45,7 @@ namespace winrt::DefaultControlHelper::implementation
         uint32_t                                        m_id = 0;
         winrt::weak_ref<DefaultControlManager>          m_controlManager;
 
-        std::unique_ptr<IDefaultControllerInternal>     m_defaultController;
+        std::unique_ptr<IDefaultControllerInternal>     m_internalController;
     };
 
     // This is a helper interface and classes to handle
@@ -53,7 +53,6 @@ namespace winrt::DefaultControlHelper::implementation
     struct IDefaultControllerInternal
     {
         virtual void SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t) = 0;
-        virtual void LoadDefault() = 0;
         virtual void Initialize(const winrt::com_ptr<DefaultControlManager>&, wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t) = 0;
 
         virtual ~IDefaultControllerInternal() = default;
@@ -63,7 +62,6 @@ namespace winrt::DefaultControlHelper::implementation
     {
     public:
         virtual void SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t value) override;
-        virtual void LoadDefault() override;
 
         virtual void Initialize(winrt::com_ptr<DefaultControlManager> const& manager, wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t id) override;
         
@@ -73,18 +71,30 @@ namespace winrt::DefaultControlHelper::implementation
 
     };
 
+    class DefaultControllerCameraControl : public IDefaultControllerInternal
+    {
+    public:
+        virtual void SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t value) override;
+
+        virtual void Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t id) override;
+
+        virtual ~DefaultControllerCameraControl() = default;
+
+    private:
+        const winrt::guid                                     m_typeGuid{ PROPSETID_VIDCAP_CAMERACONTROL };
+    };
+
     class DefaultControllerExtendedControl : public IDefaultControllerInternal
     {
     public:
         virtual void SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t value) override;
-        virtual void LoadDefault() override;
 
         virtual void Initialize (const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t id) override;
 
         virtual ~DefaultControllerExtendedControl() = default;
 
     private:
-        winrt::guid                                     m_typeGuid{ KSPROPERTYSETID_ExtendedCameraControl };
+        const winrt::guid                                     m_typeGuid{ KSPROPERTYSETID_ExtendedCameraControl };
     };
 }
 
