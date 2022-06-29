@@ -1,1 +1,1 @@
-SensorActivityMonitorConsoleApp is the full compileable project seen in the [IMFSensorActivityMonitor API documentation in docs.microsoft.com](https://docs.microsoft.com/windows/win32/api/mfidl/nn-mfidl-imfsensoractivitymonitor)
+SensorActivityMonitorConsoleApp is the full compilable project seen in the [IMFSensorActivityMonitor API documentation in docs.microsoft.com](https://docs.microsoft.com/windows/win32/api/mfidl/nn-mfidl-imfsensoractivitymonitor)
