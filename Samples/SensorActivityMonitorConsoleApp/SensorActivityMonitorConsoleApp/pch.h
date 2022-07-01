@@ -16,4 +16,6 @@
 #include <mfidl.h>
 #include <strsafe.h>
 
+#include <iostream>
+
 #include "cameraActivityCallback.h"
