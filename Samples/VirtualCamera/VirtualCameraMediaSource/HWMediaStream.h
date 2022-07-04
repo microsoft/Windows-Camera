@@ -39,7 +39,7 @@ namespace winrt::WindowsSample::implementation
         DWORD StreamIdentifier() { return m_dwStreamIdentifier; };
         HRESULT SetMediaStream(_In_ IMFMediaStream* pMediaStream);
 
-        HRESULT OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
+        void OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
 
     protected:
         HRESULT _CheckShutdownRequiresLock();

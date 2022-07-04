@@ -262,23 +262,6 @@ namespace winrt::WindowsSample::implementation
 					MFGetAttributeRatio(spCurrentMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
 				}
 
-                // debug what is set on the physical camera
-				{
-					wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType2;
-					RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType2));
-					GUID majorType;
-					spCurrentMediaType2->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-
-					GUID subtype;
-					spCurrentMediaType2->GetGUID(MF_MT_SUBTYPE, &subtype);
-
-					UINT width = 0, height = 0;
-					MFGetAttributeSize(spCurrentMediaType2.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-					UINT numerator = 0, denominator = 0;
-					MFGetAttributeRatio(spCurrentMediaType2.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
-				}
-
 				RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->SetCurrentMediaType(spCurrentMediaType.get()));
 			}
         }
@@ -602,13 +585,20 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
+        
         HRESULT hr = S_OK;
+        RETURN_HR_IF_NULL(E_POINTER, pProperty);
 
         if (ulPropertyLength < sizeof(KSPROPERTY))
         {
             return E_INVALIDARG;
         }
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
+        DEBUG_MSG(L"[enter: Set=%s | id=%u | flags=0x%08x]", 
+            winrt::to_hstring(pProperty->Set).data(), 
+            pProperty->Id, 
+            pProperty->Flags);
         bool isHandled = false;
 
         // you would do the following to catch if an existing standard extended control is passed instead of the below custom control:
@@ -810,8 +800,9 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT AugmentedMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
+    void AugmentedMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
     {
+        HRESULT hr = S_OK;
         MediaEventType met = MEUnknown;
 
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
@@ -820,42 +811,45 @@ namespace winrt::WindowsSample::implementation
 
         DEBUG_MSG(L"OnMediaSourceEvent %p ", pResult);
 
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, pResult);
-        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
-        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)));
+        winrt::slim_lock_guard lock(m_Lock);
 
-        RETURN_IF_FAILED(spMediaSource->EndGetEvent(pResult, &spEvent));
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
-        RETURN_IF_FAILED(spEvent->GetType(&met));
+        CHECKNULL_GOTO(pResult, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(pResult->GetState(&spUnknown), done);
+        CHECKHR_GOTO(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)), done);
+
+        CHECKHR_GOTO(spMediaSource->EndGetEvent(pResult, &spEvent), done);
+        CHECKNULL_GOTO(spEvent, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(spEvent->GetType(&met), done);
 
         switch (met)
         {
         case MENewStream:
         case MEUpdatedStream:
-            RETURN_IF_FAILED(OnNewStream(spEvent.get(), met));
+            CHECKHR_GOTO(OnNewStream(spEvent.get(), met), done);
             break;
         case MESourceStarted:
-            RETURN_IF_FAILED(OnSourceStarted(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStarted(spEvent.get()), done);
             break;
         case MESourceStopped:
-            RETURN_IF_FAILED(OnSourceStopped(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStopped(spEvent.get()), done);
             break;
         default:
             // Forward all device source event out.
-            RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+            CHECKHR_GOTO(m_spEventQueue->QueueEvent(spEvent.get()), done);
             break;
         }
 
+    done:
+        if (SUCCEEDED(_CheckShutdownRequiresLock()))
         {
-            winrt::slim_lock_guard lock(m_Lock);
-            if (SUCCEEDED(_CheckShutdownRequiresLock()))
+            // Continue listening to source event
+            hr = m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get());
+
+            if (FAILED(hr))
             {
-                // Continue listening to source event
-                RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
+                DEBUG_MSG(L"error when processing source event: met=%d, hr=0x%08x", met, hr);
             }
         }
-
-        return S_OK;
     }
 
     HRESULT AugmentedMediaSource::OnNewStream(IMFMediaEvent* pEvent, MediaEventType met)
@@ -880,31 +874,28 @@ namespace winrt::WindowsSample::implementation
         DWORD dwStreamIdentifier = 0;
         RETURN_IF_FAILED(spStreamDesc->GetStreamIdentifier(&dwStreamIdentifier));
 
-        winrt::slim_lock_guard lock(m_Lock);
+        for (DWORD i = 0; i < m_streamList.size(); i++)
         {
-            for (DWORD i = 0; i < m_streamList.size(); i++)
+            if (dwStreamIdentifier == m_streamList[i]->m_dwDevSourceStreamIdentifier)
             {
-                if (dwStreamIdentifier == m_streamList[i]->m_dwDevSourceStreamIdentifier)
-                {
-                    RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
+                RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
 
-                    wil::com_ptr_nothrow<::IUnknown> spunkStream;
-                    RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
+                wil::com_ptr_nothrow<::IUnknown> spunkStream;
+                RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
 
-                    RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
-                        met,
-                        GUID_NULL,
-                        S_OK,
-                        spunkStream.get()));
-                }
+                RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
+                    met,
+                    GUID_NULL,
+                    S_OK,
+                    spunkStream.get()));
             }
         }
+        
         return S_OK;
     }
 
     HRESULT AugmentedMediaSource::OnSourceStarted(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStarted");
 
         m_sourceState = SourceState::Started;
@@ -917,7 +908,6 @@ namespace winrt::WindowsSample::implementation
 
     HRESULT AugmentedMediaSource::OnSourceStopped(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStopped ");
 
         m_sourceState = SourceState::Stopped;
@@ -1011,13 +1001,12 @@ namespace winrt::WindowsSample::implementation
         // aware applications can still function, but with degraded
         // feature sets.
         const DWORD STREAM_ID = 0;
-        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
-            &profile));
+        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr, &profile));
         RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
         RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
 
 
-        // Se the profile collection to the attribute store of the IMFTransform.
+        // Set the profile collection to the attribute store of the IMFTransform.
         RETURN_IF_FAILED(m_spAttributes->SetUnknown(
             MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
             profileCollection.get()));

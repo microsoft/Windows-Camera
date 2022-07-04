@@ -11,7 +11,7 @@ namespace winrt::WindowsSample::implementation
     struct CAsyncCallback : winrt::implements<CAsyncCallback<T>, IMFAsyncCallback>
     {
     public:
-        typedef HRESULT(T::* InvokeFn)(IMFAsyncResult* pAsyncResult);
+        typedef void(T::* InvokeFn)(IMFAsyncResult* pAsyncResult);
 
         CAsyncCallback(_In_ T* pParent, _In_ InvokeFn pCallback, _In_ DWORD dwQueue)
             : m_pParent(pParent)
@@ -23,14 +23,14 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) override
         {
             // Implementation of this method is optional.
-            *pdwFlags = 0; 
-            *pdwQueue = m_dwQueue; 
+            *pdwFlags = 0;
+            *pdwQueue = m_dwQueue;
             return S_OK;
         }
 
         IFACEMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override
         {
-            RETURN_IF_FAILED((m_pParent->*m_pInvokeFn)(pAsyncResult));
+            (m_pParent->*m_pInvokeFn)(pAsyncResult);
             return S_OK;
         };
 

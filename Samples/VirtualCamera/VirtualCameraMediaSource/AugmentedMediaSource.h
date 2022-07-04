@@ -79,14 +79,14 @@ namespace winrt::WindowsSample::implementation
         HRESULT Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource);
 
     private:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPresentationDescriptor);
-        HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
-        HRESULT _GetStreamDescriptorByStreamId(_In_ DWORD dwStreamId, _Out_ DWORD* pdwStreamIdx, _Out_ bool* pSelected, _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor);
-        HRESULT OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
-        HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
-        HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
-        HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPresentationDescriptor);
+        _Requires_lock_held_(m_Lock) HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
+        _Requires_lock_held_(m_Lock) HRESULT _GetStreamDescriptorByStreamId(_In_ DWORD dwStreamId, _Out_ DWORD* pdwStreamIdx, _Out_ bool* pSelected, _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor);
+        void OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
+        _Requires_lock_held_(m_Lock) HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
 
         // DDI handlers
         bool m_isCustomFXEnabled = false;

@@ -437,8 +437,9 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT HWMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
+    void HWMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
     {
+        HRESULT hr = S_OK;
         MediaEventType met = MEUnknown;
 
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
@@ -447,42 +448,45 @@ namespace winrt::WindowsSample::implementation
 
         DEBUG_MSG(L"OnMediaSourceEvent %p ", pResult);
 
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, pResult);
-        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
-        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)));
+        winrt::slim_lock_guard lock(m_Lock);
 
-        RETURN_IF_FAILED(spMediaSource->EndGetEvent(pResult, &spEvent));
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
-        RETURN_IF_FAILED(spEvent->GetType(&met));
+        CHECKNULL_GOTO(pResult, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(pResult->GetState(&spUnknown), done);
+        CHECKHR_GOTO(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)), done);
+
+        CHECKHR_GOTO(spMediaSource->EndGetEvent(pResult, &spEvent), done);
+        CHECKNULL_GOTO(spEvent, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(spEvent->GetType(&met), done);
 
         switch (met)
         {
         case MENewStream:
         case MEUpdatedStream:
-            RETURN_IF_FAILED(OnNewStream(spEvent.get(), met));
+            CHECKHR_GOTO(OnNewStream(spEvent.get(), met), done);
             break;
         case MESourceStarted:
-            RETURN_IF_FAILED(OnSourceStarted(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStarted(spEvent.get()), done);
             break;
         case MESourceStopped:
-            RETURN_IF_FAILED(OnSourceStopped(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStopped(spEvent.get()), done);
             break;
         default:
             // Forward all device source event out.
-            RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+            CHECKHR_GOTO(m_spEventQueue->QueueEvent(spEvent.get()), done);
             break;
         }
 
+    done:
+        if (SUCCEEDED(_CheckShutdownRequiresLock()))
         {
-            winrt::slim_lock_guard lock(m_Lock);
-            if (SUCCEEDED(_CheckShutdownRequiresLock()))
+            // Continue listening to source event
+            hr = m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get());
+
+            if (FAILED(hr))
             {
-                // Continue listening to source event
-                RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
+                DEBUG_MSG(L"error when processing source event: met=%d, hr=0x%08x", met, hr);
             }
         }
-
-        return S_OK;
     }
 
     HRESULT HWMediaSource::OnNewStream(IMFMediaEvent* pEvent, MediaEventType met)
@@ -507,31 +511,28 @@ namespace winrt::WindowsSample::implementation
         DWORD dwStreamIdentifier = 0;
         RETURN_IF_FAILED(spStreamDesc->GetStreamIdentifier(&dwStreamIdentifier));
 
-        winrt::slim_lock_guard lock(m_Lock);
+        for (DWORD i = 0; i < m_streamList.size(); i++)
         {
-            for (DWORD i = 0; i < m_streamList.size(); i++)
+            if (dwStreamIdentifier == m_streamList[i]->StreamIdentifier())
             {
-                if (dwStreamIdentifier == m_streamList[i]->StreamIdentifier())
-                {
-                    RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
+                RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
 
-                    wil::com_ptr_nothrow<::IUnknown> spunkStream;
-                    RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
+                wil::com_ptr_nothrow<::IUnknown> spunkStream;
+                RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
 
-                    RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
-                        met,
-                        GUID_NULL,
-                        S_OK,
-                        spunkStream.get()));
-                }
+                RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
+                    met,
+                    GUID_NULL,
+                    S_OK,
+                    spunkStream.get()));
             }
         }
+        
         return S_OK;
     }
 
     HRESULT HWMediaSource::OnSourceStarted(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStarted");
 
         m_sourceState = SourceState::Started;
@@ -544,7 +545,6 @@ namespace winrt::WindowsSample::implementation
 
     HRESULT HWMediaSource::OnSourceStopped(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStopped ");
 
         m_sourceState = SourceState::Stopped;

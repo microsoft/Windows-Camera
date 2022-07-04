@@ -62,7 +62,7 @@ namespace winrt::WindowsSample::implementation
         _In_ AugmentedMediaSource* pSource, 
         _In_ DWORD dwStreamId, 
         _In_ IMFStreamDescriptor* pStreamDesc, 
-        _In_ DWORD dwWorkQueue)
+        _In_ DWORD /*dwWorkQueue*/ )
     {
         DEBUG_MSG(L"AugmentedMediaStream Initialize enter");
         
@@ -71,7 +71,6 @@ namespace winrt::WindowsSample::implementation
         
         m_parent = pSource;
         m_dwStreamId = dwStreamId;
-        m_dwSerialWorkQueueId = dwWorkQueue;
         
         // look at stream descriptor, extract list of MediaTypes and filter to preserve only supported MediaTypes
         wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDesc = pStreamDesc;
@@ -117,7 +116,12 @@ namespace winrt::WindowsSample::implementation
                 && (framerate <= 30 && framerate >= 15))
             {
                 DEBUG_MSG(L"Found a valid and compliant Mediatype=%u", i);
-                RETURN_IF_FAILED(CloneMediaType(spMediaType.get(), &(sourceStreamMediaTypeList[validMediaTypeCount])));
+
+                // copy the MediaType and cache it
+                wil::com_ptr_nothrow<IMFMediaType> spMediaTypeCopy;
+                RETURN_IF_FAILED(CloneMediaType(spMediaType.get(), &spMediaTypeCopy));
+                m_mediaTypeCache.push_back(spMediaTypeCopy);
+                sourceStreamMediaTypeList[validMediaTypeCount] = spMediaTypeCopy.detach();
                 validMediaTypeCount++;
             }
         }
@@ -127,16 +131,17 @@ namespace winrt::WindowsSample::implementation
             return MF_E_INVALIDMEDIATYPE;
         }
 
-        wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFMediaType>> mediaTypeList = 
+        wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFMediaType>> m_mediaTypeList = 
             wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<IMFMediaType>>(validMediaTypeCount);
-        RETURN_IF_NULL_ALLOC(mediaTypeList.get());
+        RETURN_IF_NULL_ALLOC(m_mediaTypeList.get());
 
         for (DWORD i = 0; i < validMediaTypeCount; i++)
         {
-            mediaTypeList[i] = sourceStreamMediaTypeList[i];
+            m_mediaTypeList[i] = sourceStreamMediaTypeList[i];
         }
 
         RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 10));
+        RETURN_IF_FAILED(spStreamDesc->CopyAllItems(m_spAttributes.get()));
         RETURN_IF_FAILED(_SetStreamAttributes(m_spAttributes.get()));
         
         wil::com_ptr_nothrow<IMFMediaTypeHandler> spTypeHandler;
@@ -145,15 +150,16 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(MFCreateStreamDescriptor(
             m_dwStreamId /*StreamId*/, 
             validMediaTypeCount /*MT count*/, 
-            mediaTypeList.get(), &m_spStreamDesc));
+            m_mediaTypeList.get(), &m_spStreamDesc));
         RETURN_IF_FAILED(m_spStreamDesc->GetMediaTypeHandler(&spTypeHandler));
-        RETURN_IF_FAILED(spTypeHandler->SetCurrentMediaType(mediaTypeList[0]));
+        RETURN_IF_FAILED(spTypeHandler->SetCurrentMediaType(m_mediaTypeList[0]));
 
         // set same attributes on stream descriptor as on stream attribute store
+        RETURN_IF_FAILED(spStreamDesc->CopyAllItems(m_spStreamDesc.get()));
         RETURN_IF_FAILED(_SetStreamAttributes(m_spStreamDesc.get())); 
 
         RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
-        
+        RETURN_IF_FAILED(MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &m_dwSerialWorkQueueId));
         auto ptr = winrt::make_self<CAsyncCallback<AugmentedMediaStream>>(this, &AugmentedMediaStream::OnMediaStreamEvent, m_dwSerialWorkQueueId);
         m_xOnMediaStreamEvent.attach(ptr.detach());
 
@@ -361,27 +367,30 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT AugmentedMediaStream::OnMediaStreamEvent(_In_ IMFAsyncResult* pResult)
+    void AugmentedMediaStream::OnMediaStreamEvent(_In_ IMFAsyncResult* pResult)
     {
+        HRESULT hr = S_OK;
+
         // Forward deviceStream event
         wil::com_ptr_nothrow<IUnknown> spUnknown;
-        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
-
         wil::com_ptr_nothrow<IMFMediaStream> spMediaStream;
-        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaStream)));
-
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
-        RETURN_IF_FAILED(spMediaStream->EndGetEvent(pResult, &spEvent));
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
+        MediaEventType met = MEUnknown;
+        bool bForwardEvent = true;
 
-        MediaEventType met;
-        RETURN_IF_FAILED(spEvent->GetType(&met));
+        CHECKHR_GOTO(pResult->GetState(&spUnknown), done);
+
+        CHECKHR_GOTO(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaStream)), done);
+
+        CHECKHR_GOTO(spMediaStream->EndGetEvent(pResult, &spEvent), done);
+        CHECKNULL_GOTO(spEvent, MF_E_UNEXPECTED, done);
+
+        CHECKHR_GOTO(spEvent->GetType(&met), done);
         DEBUG_MSG(L"[%d] OnMediaStreamEvent, streamId: %d, met:%d ", m_dwStreamId, met);
         
         // This shows how to intercept sample from physical camera
         // and do custom processing on the sample.
         // 
-        bool bForwardEvent = true;
         if (met == MEMediaSample)
         {
             wil::com_ptr_nothrow<IMFSample> spSample;
@@ -389,45 +398,62 @@ namespace winrt::WindowsSample::implementation
             wil::com_ptr_nothrow<IUnknown> spSampleUnk;
 
             wil::unique_prop_variant propVar = {};
-            RETURN_IF_FAILED(spEvent->GetValue(&propVar));
+            CHECKHR_GOTO(spEvent->GetValue(&propVar), done);
             if (VT_UNKNOWN != propVar.vt)
             {
-                RETURN_HR(MF_E_UNEXPECTED);
+                CHECKHR_GOTO(MF_E_UNEXPECTED, done);
             }
             spSampleUnk = propVar.punkVal;
-            RETURN_IF_FAILED(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)));
+            CHECKHR_GOTO(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)), done);
 
-            RETURN_IF_FAILED(ProcessSample(spSample.get()));
+            CHECKHR_GOTO(ProcessSample(spSample.get()), done);
             bForwardEvent = false;
         }
         else if (met == MEStreamStarted)
         {
-            RETURN_IF_FAILED(SetStreamState(MF_STREAM_STATE_RUNNING));
-            RETURN_IF_FAILED(Start());
+            CHECKHR_GOTO(SetStreamState(MF_STREAM_STATE_RUNNING), done);
+            CHECKHR_GOTO(Start(), done);
         }
         else if (met == MEStreamStopped)
         {
-            RETURN_IF_FAILED(SetStreamState(MF_STREAM_STATE_STOPPED));
-            RETURN_IF_FAILED(Stop());
+            CHECKHR_GOTO(SetStreamState(MF_STREAM_STATE_STOPPED), done);
+            CHECKHR_GOTO(Stop(), done);
+        }
+        else if (met == MEError)
+        {
+            goto done;
         }
 
+    done:
+        wil::com_ptr_nothrow<AugmentedMediaSource> spParent;
         {
             winrt::slim_lock_guard lock(m_Lock);
             if (SUCCEEDED(_CheckShutdownRequiresLock()))
             {
-                // Forward event
-                if (bForwardEvent)
+                if (FAILED(hr) || met == MEError)
                 {
-                    RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+                    spParent = m_parent;
+                    DEBUG_MSG(L"[stream:%d] error when processing stream event: met=%d, hr=0x%08x", m_dwStreamId, met, hr);
                 }
+                else
+                {
+                    // Forward event
+                    if (bForwardEvent)
+                    {
+                        (void)(m_spEventQueue->QueueEvent(spEvent.get()));
+                    }
 
-                // Continue listening to source event
-                RETURN_IF_FAILED(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+                    // Continue listening to source event
+                    (void)(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+                }
+            }
+            if (FAILED(hr) && spParent != nullptr)
+            {
+                (void)spParent->QueueEvent(MEError, GUID_NULL, hr, nullptr);
             }
         }
         
         DEBUG_MSG(L"[%d] OnMediaStreamEvent exit", m_dwStreamId);
-        return S_OK;
     }
 
     HRESULT AugmentedMediaStream::Shutdown()

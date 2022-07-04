@@ -96,3 +96,6 @@ namespace winrt
 
     template<> bool is_guid_of<IMFActivate>(guid const& id) noexcept;
 };
+
+#define CHECKHR_GOTO( _hr, _lbl ) { hr = _hr; if( FAILED( hr ) ){ DEBUG_MSG(L"hr=0x%08x", _hr); goto _lbl; } }
+#define CHECKNULL_GOTO( _ptr, _hr, _lbl ) { if(_ptr == nullptr) {hr = _hr; if( FAILED( hr ) ){ DEBUG_MSG(L"hr=0x%08x", _hr); goto _lbl; } } }

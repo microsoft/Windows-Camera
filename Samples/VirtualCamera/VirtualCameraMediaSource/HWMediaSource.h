@@ -82,16 +82,16 @@ namespace winrt::WindowsSample::implementation
         HRESULT Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource);
 
     private:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
-        HRESULT _CreateMediaStreams();
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
+        _Requires_lock_held_(m_Lock) HRESULT _CreateMediaStreams();
 
-        HRESULT OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
+        void OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
         wil::com_ptr_nothrow<CAsyncCallback<HWMediaSource>> m_xOnMediaSourceEvent;
 
-        HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
-        HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
-        HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
 
         winrt::slim_mutex m_Lock;
         SourceState m_sourceState{ SourceState::Invalid };

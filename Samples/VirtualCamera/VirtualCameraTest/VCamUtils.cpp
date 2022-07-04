@@ -142,10 +142,13 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     try 
     {
         AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-        LOG_COMMENT(L"AppInfo: %p ", appInfo);
         if (appInfo != nullptr)
         {
             LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
+        }
+        else
+        {
+            LOG_COMMENT(L"No PFN accodiated with current process");
         }
     }
     catch (winrt::hresult_error) { LOG_WARNING(L"not running in app package"); }

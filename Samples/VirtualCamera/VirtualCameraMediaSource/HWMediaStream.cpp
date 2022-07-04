@@ -181,27 +181,30 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT HWMediaStream::OnMediaStreamEvent(_In_ IMFAsyncResult* pResult)
+    void HWMediaStream::OnMediaStreamEvent(_In_ IMFAsyncResult* pResult)
     {
+        HRESULT hr = S_OK;
+
         // Forward deviceStream event
         wil::com_ptr_nothrow<IUnknown> spUnknown;
-        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
-
         wil::com_ptr_nothrow<IMFMediaStream> spMediaStream;
-        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaStream)));
-
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
-        RETURN_IF_FAILED(spMediaStream->EndGetEvent(pResult, &spEvent));
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
+        MediaEventType met = MEUnknown;
+        bool bForwardEvent = true;
 
-        MediaEventType met;
-        RETURN_IF_FAILED(spEvent->GetType(&met));
+        CHECKHR_GOTO(pResult->GetState(&spUnknown), done);
+
+        CHECKHR_GOTO(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaStream)), done);
+
+        CHECKHR_GOTO(spMediaStream->EndGetEvent(pResult, &spEvent), done);
+        CHECKNULL_GOTO(spEvent, MF_E_UNEXPECTED, done);
+
+        CHECKHR_GOTO(spEvent->GetType(&met), done);
         DEBUG_MSG(L"[%d] OnMediaStreamEvent, streamId: %d, met:%d ", m_dwStreamIdentifier, met);
         
         // This shows how to intercept sample from physical camera
         // and do custom processin gon the sample.
         // 
-        bool bForwardEvent = true;
         if (met == MEMediaSample)
         {
             wil::com_ptr_nothrow<IMFSample> spSample;
@@ -209,35 +212,52 @@ namespace winrt::WindowsSample::implementation
             wil::com_ptr_nothrow<IUnknown> spSampleUnk;
 
             wil::unique_prop_variant propVar = {};
-            RETURN_IF_FAILED(spEvent->GetValue(&propVar));
+            CHECKHR_GOTO(spEvent->GetValue(&propVar), done);
             if (VT_UNKNOWN != propVar.vt)
             {
-                RETURN_HR(MF_E_UNEXPECTED);
+                CHECKHR_GOTO(MF_E_UNEXPECTED, done);
             }
             spSampleUnk = propVar.punkVal;
-            RETURN_IF_FAILED(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)));
+            CHECKHR_GOTO(spSampleUnk->QueryInterface(IID_PPV_ARGS(&spSample)), done);
 
-            RETURN_IF_FAILED(ProcessSample(spSample.get()));
+            CHECKHR_GOTO(ProcessSample(spSample.get()), done);
             bForwardEvent = false;
         }
+        else if (met == MEError)
+        {
+            goto done;
+        }
 
+    done:
+        wil::com_ptr_nothrow<IMFMediaSource> spParent;
         {
             winrt::slim_lock_guard lock(m_Lock);
             if (SUCCEEDED(_CheckShutdownRequiresLock()))
             {
-                // Forward event
-                if (bForwardEvent)
+                if (FAILED(hr) || met == MEError)
                 {
-                    RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+                    spParent = m_parent;
+                    DEBUG_MSG(L"[stream:%d] error when processing stream event: met=%d, hr=0x%08x", m_dwStreamIdentifier, met, hr);
                 }
+                else
+                {
+                    // Forward event
+                    if (bForwardEvent)
+                    {
+                        (void)(m_spEventQueue->QueueEvent(spEvent.get()));
+                    }
 
-                // Continue listening to source event
-                RETURN_IF_FAILED(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+                    // Continue listening to source event
+                    (void)(spMediaStream->BeginGetEvent(m_xOnMediaStreamEvent.get(), m_spDevStream.get()));
+                }
+            }
+            if (FAILED(hr) && spParent != nullptr)
+            {
+                (void)spParent->QueueEvent(MEError, GUID_NULL, hr, nullptr);
             }
         }
-        
+
         DEBUG_MSG(L"[%d] OnMediaStreamEvent exit", m_dwStreamIdentifier);
-        return S_OK;
     }
 
     HRESULT HWMediaStream::ProcessSample(_In_ IMFSample* inputSample)

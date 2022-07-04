@@ -15,9 +15,9 @@ namespace VirtualCameraSystray
         static void Main()
         {
             Mutex mutex = null;
-            if (!Mutex.TryOpenExisting("VCamSystrayMutex", out mutex))
+            if (!Mutex.TryOpenExisting("VirtualCameraSystrayMutex", out mutex))
             {
-                mutex = new Mutex(false, "VCamSystrayMutex");
+                mutex = new Mutex(false, "VirtualCameraSystrayMutex");
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.Run(new SystrayApplicationContext());
