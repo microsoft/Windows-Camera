@@ -42,7 +42,7 @@ namespace winrt::WindowsSample::implementation
         void OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
 
     protected:
-        HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
 
         wil::com_ptr_nothrow<CAsyncCallback<HWMediaStream>> m_xOnMediaStreamEvent;
 

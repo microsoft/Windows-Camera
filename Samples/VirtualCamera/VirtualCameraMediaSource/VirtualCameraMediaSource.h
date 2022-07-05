@@ -16,7 +16,7 @@ static LPCWSTR VIRTUALCAMERAMEDIASOURCE_CLSID = L"{7B89B92E-FE71-42D0-8A41-E137D
 static LPCWSTR VIRTUALCAMERAMEDIASOURCE_FRIENDLYNAME = L"VirtualCameraMediaSource";
 
 // The below 2 GUIDs are defined in Windows build 22621 and above only, 
-// if targetting SDK for Windows 22621 this would need to be commented out.
+// if targetting SDK for Windows 22621 or higher this would need to be commented out.
 // GUIDs for retrieving the device source instead of recreating it from within the vcam
 DEFINE_GUID(MF_VIRTUALCAMERA_PROVIDE_ASSOCIATED_CAMERA_SOURCES,
     0xF0273718, 0x4A4D, 0x4AC5, 0xA1, 0x5D, 0x30, 0x5E, 0xB5, 0xE9, 0x06, 0x67);

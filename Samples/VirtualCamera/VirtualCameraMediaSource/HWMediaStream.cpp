@@ -312,6 +312,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaStream::_CheckShutdownRequiresLock()
     {
         if (m_isShutdown)

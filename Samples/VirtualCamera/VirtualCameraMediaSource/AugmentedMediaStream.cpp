@@ -64,6 +64,8 @@ namespace winrt::WindowsSample::implementation
         _In_ IMFStreamDescriptor* pStreamDesc, 
         _In_ DWORD /*dwWorkQueue*/ )
     {
+        winrt::slim_lock_guard lock(m_Lock);
+
         DEBUG_MSG(L"AugmentedMediaStream Initialize enter");
         
         RETURN_HR_IF_NULL(E_INVALIDARG, pSource);
@@ -522,6 +524,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaStream::_CheckShutdownRequiresLock()
     {
         if (m_isShutdown)
@@ -537,6 +540,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaStream::_SetStreamAttributes(
         _In_ IMFAttributes* pAttributeStore
     )

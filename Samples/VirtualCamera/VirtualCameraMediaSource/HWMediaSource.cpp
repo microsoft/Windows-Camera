@@ -434,6 +434,7 @@ namespace winrt::WindowsSample::implementation
     }
 
     /// Internal methods.
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::_CheckShutdownRequiresLock()
     {
         if (m_sourceState == SourceState::Shutdown)
@@ -501,6 +502,7 @@ namespace winrt::WindowsSample::implementation
         }
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::OnNewStream(IMFMediaEvent* pEvent, MediaEventType met)
     {
         RETURN_HR_IF_NULL(E_INVALIDARG, pEvent);
@@ -543,6 +545,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::OnSourceStarted(IMFMediaEvent* pEvent)
     {
         DEBUG_MSG(L"OnSourceStarted");
@@ -555,6 +558,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::OnSourceStopped(IMFMediaEvent* pEvent)
     {
         DEBUG_MSG(L"OnSourceStopped ");
@@ -573,6 +577,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::_CreateMediaStreams()
     {
         wil::com_ptr_nothrow<IMFPresentationDescriptor> spPDesc;
@@ -597,6 +602,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT HWMediaSource::_CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes)
     {
         // get devicesource attributes, and add additional if needed.

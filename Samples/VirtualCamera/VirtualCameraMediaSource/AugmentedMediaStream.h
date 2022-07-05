@@ -45,8 +45,8 @@ namespace winrt::WindowsSample::implementation
         HRESULT Stop();
 
     protected:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _SetStreamAttributes(_In_ IMFAttributes* pAttributeStore);
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _SetStreamAttributes(_In_ IMFAttributes* pAttributeStore);
 
         wil::com_ptr_nothrow<CAsyncCallback<AugmentedMediaStream>> m_xOnMediaStreamEvent;
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFMediaType>> m_mediaTypeList;

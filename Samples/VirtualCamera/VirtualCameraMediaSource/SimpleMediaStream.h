@@ -45,12 +45,12 @@ namespace winrt::WindowsSample::implementation
         uint32_t GetRGBMask() { winrt::slim_lock_guard lock(m_Lock);  return m_rgbMask; }
 
     private:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _SetStreamAttributes(IMFAttributes* pAttributeStore);
-        HRESULT _SetStreamDescriptorAttributes(IMFAttributes* pAttributeStore);
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _SetStreamAttributes(IMFAttributes* pAttributeStore);
+        _Requires_lock_held_(m_Lock) HRESULT _SetStreamDescriptorAttributes(IMFAttributes* pAttributeStore);
 
-        HRESULT StartInternal(bool bSendEvent, IMFMediaType* pNewMediaType);
-        HRESULT StopInternal(bool bSendEvent);
+        _Requires_lock_held_(m_Lock) HRESULT StartInternal(bool bSendEvent, IMFMediaType* pNewMediaType);
+        _Requires_lock_held_(m_Lock) HRESULT StopInternal(bool bSendEvent);
 
         winrt::slim_mutex  m_Lock;
 

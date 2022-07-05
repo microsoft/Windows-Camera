@@ -272,6 +272,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT SimpleMediaSource::_GetStreamDescriptorByStreamId(DWORD dwStreamId, DWORD* pdwStreamIdx, bool* pSelected, IMFStreamDescriptor** ppStreamDescriptor)
     {
         RETURN_HR_IF_NULL(E_POINTER, ppStreamDescriptor);
@@ -557,6 +558,7 @@ namespace winrt::WindowsSample::implementation
     }
 
     /// Internal methods.
+    _Requires_lock_held_(m_Lock)
     HRESULT SimpleMediaSource::_CheckShutdownRequiresLock()
     {
         if (m_sourceState == SourceState::Shutdown)
@@ -572,6 +574,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT SimpleMediaSource::_ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPD)
     {
         DWORD cStreams = 0;
@@ -589,6 +592,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT SimpleMediaSource::_CreateSourceAttributes(_In_opt_ IMFAttributes* pActivateAttributes)
     {   
         // Create our source attribute store.
@@ -650,6 +654,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT SimpleMediaSource::_GetMediaStreamById(_In_ DWORD dwStreamId, _COM_Outptr_ SimpleMediaStream** ppStream)
     {
         RETURN_HR_IF_NULL(E_POINTER, ppStream);
