@@ -74,12 +74,12 @@ namespace winrt::WindowsSample::implementation
             _Out_  MFSampleAllocatorUsage* peUsage) override;
 
         // Non-Interface functions
-        HRESULT Initialize();
+        HRESULT Initialize(_In_ IMFAttributes* pAttributes);
 
     private:
         HRESULT _CheckShutdownRequiresLock();
         HRESULT _ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPresentationDescriptor);
-        HRESULT _CreateSourceAttributes();
+        HRESULT _CreateSourceAttributes(_In_opt_ IMFAttributes* pActivateAttributes);
         HRESULT _GetStreamDescriptorByStreamId(_In_ DWORD dwStreamId, _Out_ DWORD* pdwStreamIdx, _Out_ bool* pSelected, _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor);
         HRESULT _GetMediaStreamById(_In_ DWORD dwStreamId, _COM_Outptr_ SimpleMediaStream** ppMediaStream);
 
@@ -92,6 +92,7 @@ namespace winrt::WindowsSample::implementation
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<SimpleMediaStream>> m_streamList;
 
         const DWORD NUM_STREAMS = 1;
+        bool m_initalized = false;
     };
 }
 

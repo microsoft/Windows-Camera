@@ -215,5 +215,25 @@ If you are calling ```MFCreateVirtualCamera()``` (indirectly i.e. using the ```V
 <b> 5. Can 2 virtual cameras concurrently wrap the same existing camera on the system? </b><br/>
 To avoid issue like a racing condition, only 1 virtual camera at a time can wrap and use an existing camera if properly identifying the physical camera using the *[IMFVirtualCamera::AddDeviceSourceInfo()](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/nf-mfvirtualcamera-imfvirtualcamera-adddevicesourceinfo)* API at virtual camera registration time. You should not either open an existing camera in sharing mode from within your virtual camera as there a lot of complication and undefined behavior associated with this such as seemingly random and undesired MediaType changes.
 
+## Updates
+----
+
+07/04/2022 Critical fixes:
+* Fix SetStreamState implementation on SimpleMediaSource
+Change stream state to MF_STREAM_STATE_RUNNING will change state to running state (produce frame) but MEStreamStarted will not be send
+Change stream state to MF_STREAM_STATE_STOPPED will stop stream, RequestSample will be rejected.
+Change stream state to MF_STREAM_STATE_PAUSE will not stop the stream but RequestSample will be rejected.
+
+* Fix GetSourceAttributes implementation
+SourceAttributes must return a reference of the attributes (not copy).  The source is being use upstream components and any modification of the attribute store from upstream component must get preserve.
+
+* MediaStream needs to allocate own workqueue
+
+* Fix SimpleMediaSource::Start implementation
+If stream was deselected, ensure stream is put into stop state.
+When stream is reselected with the same mediatype, treat as no-op
+
+* Update VirtualCameraMediaSource build to not link against vcruntime dynamically.
+
 
 

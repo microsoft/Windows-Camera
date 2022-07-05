@@ -6,11 +6,22 @@
 namespace winrt::WindowsSample::implementation
 {
     /////////////////////////////////////////////////////////////////////////////////
-    HRESULT SimpleMediaSource::Initialize()
+
+    /// <summary>
+    /// Initialize the source. This is where we create a synthetic camera.
+    /// </summary>
+    /// <param name="pAttributes"></param>
+    /// <returns></returns>
+    HRESULT SimpleMediaSource::Initialize(_In_ IMFAttributes* pAttributes)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
-        RETURN_IF_FAILED(_CreateSourceAttributes());
+        if (m_initalized)
+        {
+            return MF_E_ALREADY_INITIALIZED;
+        }
+
+        RETURN_IF_FAILED(_CreateSourceAttributes(pAttributes));
         RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
 
         m_streamList = wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<SimpleMediaStream>>(NUM_STREAMS);
@@ -29,7 +40,7 @@ namespace winrt::WindowsSample::implementation
             RETURN_IF_FAILED(m_streamList[i]->GetStreamDescriptor(&streamDescriptorList[i]));
         }
 
-        RETURN_IF_FAILED(MFCreatePresentationDescriptor(m_streamList.size(), streamDescriptorList.get(), &m_spPresentationDescriptor));
+        RETURN_IF_FAILED(MFCreatePresentationDescriptor((DWORD)m_streamList.size(), streamDescriptorList.get(), &m_spPresentationDescriptor));
 
         m_sourceState = SourceState::Stopped;
 
@@ -170,8 +181,7 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
-        DWORD count = 0;
-        wil::unique_prop_variant startTime;
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
         if (pPresentationDescriptor == nullptr || pvarStartPos == nullptr)
         {
@@ -185,24 +195,23 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (!(m_sourceState != SourceState::Stopped || m_sourceState != SourceState::Shutdown))
+        if (m_sourceState == SourceState::Invalid)
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
-        m_sourceState = SourceState::Started;
 
         // This checks the passed in PresentationDescriptor matches the member of streams we
         // have defined internally and that at least one stream is selected
+        DWORD count = 0;
+        wil::unique_prop_variant startTime;
         RETURN_IF_FAILED(_ValidatePresentationDescriptor(pPresentationDescriptor));
         RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorCount(&count));
         RETURN_IF_FAILED(InitPropVariantFromInt64(MFGetSystemTime(), &startTime));
 
-        // We're hardcoding this to the first descriptor
-        // since this sample is a single stream sample.  For
-        // multiple streams, we need to walk the list of streams
-        // and for each selected stream, send the MEUpdatedStream
-        // or MENewStream event along with the MEStreamStarted
-        // event.
+        // Walk the list of streams.
+        // For each selected stream, send the MEUpdatedStream or MENewStream event along 
+        // with the MEStreamStarted event.
+        // For each deslectStream, if was selected, stop stream.
         for (unsigned int i = 0; i < count; i++)
         {
             BOOL selected = false;
@@ -225,12 +234,12 @@ namespace winrt::WindowsSample::implementation
                 // Update our internal PresentationDescriptor
                 RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
 
-                // Update stream state
-                RETURN_IF_FAILED(m_streamList[streamIdx]->SetStreamState(MF_STREAM_STATE_RUNNING));
-                RETURN_IF_FAILED(m_streamList[streamIdx]->Start());
+                wil::com_ptr_nothrow<IMFMediaTypeHandler> spMTHandler;
+                wil::com_ptr_nothrow<IMFMediaType> spMediaType;
+                RETURN_IF_FAILED(streamDesc->GetMediaTypeHandler(&spMTHandler));
+                RETURN_IF_FAILED(spMTHandler->GetCurrentMediaType(&spMediaType));
 
-                // Send the MEUpdatedStream/MENewStream to our source event
-                // queue.
+                // Send the MEUpdatedStream/MENewStream to our source event queue.
                 wil::com_ptr_nothrow<IUnknown> spunkStream;
                 MediaEventType met = (wasSelected ? MEUpdatedStream : MENewStream);
                 RETURN_IF_FAILED(m_streamList[streamIdx]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
@@ -239,11 +248,15 @@ namespace winrt::WindowsSample::implementation
                     GUID_NULL,
                     S_OK,
                     spunkStream.get()));
+
+                // Start Stream will send MEStreamStart event
+                RETURN_IF_FAILED(m_streamList[streamIdx]->Start(spMediaType.get()));
             }
             else if(wasSelected)
             {
                 // stream was previously selected but not selected this time.
                 RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(streamIdx));
+                RETURN_IF_FAILED(m_streamList[streamIdx]->Stop(false));
             }
         }
 
@@ -253,6 +266,8 @@ namespace winrt::WindowsSample::implementation
             GUID_NULL,
             S_OK,
             &startTime));
+
+        m_sourceState = SourceState::Started;
 
         return S_OK;
     }
@@ -297,13 +312,13 @@ namespace winrt::WindowsSample::implementation
     {
         winrt::slim_lock_guard lock(m_Lock);
 
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+
         if (m_sourceState != SourceState::Started)
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
         m_sourceState = SourceState::Stopped;
-
-        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
         wil::unique_prop_variant stopTime;
         RETURN_IF_FAILED(InitPropVariantFromInt64(MFGetSystemTime(), &stopTime));
@@ -311,8 +326,7 @@ namespace winrt::WindowsSample::implementation
         // Deselect the streams and send the stream stopped events.
         for (unsigned int i = 0; i < m_streamList.size(); i++)
         {
-            RETURN_IF_FAILED(m_streamList[i]->SetStreamState(MF_STREAM_STATE_STOPPED));
-            RETURN_IF_FAILED(m_streamList[i]->Stop());
+            RETURN_IF_FAILED(m_streamList[i]->Stop(true));
             RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(i));
         }
 
@@ -331,8 +345,8 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        RETURN_IF_FAILED(MFCreateAttributes(sourceAttributes, 1));
-        RETURN_IF_FAILED(m_spAttributes->CopyAllItems(*sourceAttributes));
+        // NOTE: For VideoCapture MediaSource, implementation must return reference of the source attributes.
+        m_spAttributes.copy_to(sourceAttributes);
 
         return S_OK;
     }
@@ -445,6 +459,7 @@ namespace winrt::WindowsSample::implementation
             {
                 if (ulDataLength < sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
                 {
+                    *pBytesReturned = sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S);
                     return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
                 }
 
@@ -571,80 +586,66 @@ namespace winrt::WindowsSample::implementation
             return E_INVALIDARG;
         }
 
-        // The caller must select at least one stream.
-        for (UINT32 i = 0; i < cStreams; ++i)
-        {
-            wil::com_ptr_nothrow<IMFStreamDescriptor> spSD;
-            BOOL fSelected = FALSE;
-
-            RETURN_IF_FAILED(pPD->GetStreamDescriptorByIndex(i, &fSelected, &spSD));
-            anySelected |= !!fSelected;
-        } 
-
-        if (!anySelected)
-        {
-            return E_INVALIDARG;
-        }
-
         return S_OK;
     }
 
-    HRESULT SimpleMediaSource::_CreateSourceAttributes()
-    {
-        if (m_spAttributes.get() == nullptr)
+    HRESULT SimpleMediaSource::_CreateSourceAttributes(_In_opt_ IMFAttributes* pActivateAttributes)
+    {   
+        // Create our source attribute store.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+        if (pActivateAttributes)
         {
-            // Create our source attribute store.
-            RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
-
-            wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
-            wil::com_ptr_nothrow<IMFSensorProfile> profile;
-
-            // Create an empty profile collection...
-            RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
-
-            // In this example since we have just one stream, we only have one
-            // pin to add:  Pin = STREAM_ID.
-
-            // Legacy profile is mandatory.  This is to ensure non-profile
-            // aware applications can still function, but with degraded
-            // feature sets.
-            const DWORD STREAM_ID = 0;
-            RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
-                &profile));
-            RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
-            RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
-
-            // High Frame Rate profile will only allow >=60fps.
-            RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_HighFrameRate, 0 /*ProfileIndex*/, nullptr,
-                &profile));
-            RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT>=60,1;SUT==))"));
-            RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
-
-
-            // Se the profile collection to the attribute store of the IMFTransform.
-            RETURN_IF_FAILED(m_spAttributes->SetUnknown(
-                MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
-                profileCollection.get()));
-
-            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
-            // virtual camera configuration app's PFN (Package Family Name).
-            // Below we query programmatically the current application info (knowing that the app 
-            // that activates the virtual camera registers it on the system and also acts as its 
-            // configuration app).
-            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
-            // a particular PFN.
-            try
-            {
-                winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-                DEBUG_MSG(L"AppInfo: %p ", appInfo);
-                if (appInfo != nullptr)
-                {
-                    DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
-                }
-            }
-            catch (...) { DEBUG_MSG(L"Not running in app package"); }
+            RETURN_IF_FAILED(pActivateAttributes->CopyAllItems(m_spAttributes.get()));
         }
+
+        wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
+        wil::com_ptr_nothrow<IMFSensorProfile> profile;
+
+        // Create an empty profile collection...
+        RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
+
+        // In this example since we have just one stream, we only have one
+        // pin to add:  Pin = STREAM_ID.
+
+        // Legacy profile is mandatory.  This is to ensure non-profile
+        // aware applications can still function, but with degraded
+        // feature sets.
+        const DWORD STREAM_ID = 0;
+        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
+            &profile));
+        RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
+        RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
+
+        // High Frame Rate profile will only allow >=60fps.
+        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_HighFrameRate, 0 /*ProfileIndex*/, nullptr,
+            &profile));
+        RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT>=60,1;SUT==))"));
+        RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
+
+
+        // Se the profile collection to the attribute store of the IMFTransform.
+        RETURN_IF_FAILED(m_spAttributes->SetUnknown(
+            MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
+            profileCollection.get()));
+
+        // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+        // virtual camera configuration app's PFN (Package Family Name).
+        // Below we query programmatically the current application info (knowing that the app 
+        // that activates the virtual camera registers it on the system and also acts as its 
+        // configuration app).
+        // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+        // a particular PFN.
+        try
+        {
+            winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+            DEBUG_MSG(L"AppInfo: %p ", appInfo);
+            if (appInfo != nullptr)
+            {
+                DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+                RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+            }
+        }
+        catch (...) { DEBUG_MSG(L"Not running in app package"); }
 
         return S_OK;
     }

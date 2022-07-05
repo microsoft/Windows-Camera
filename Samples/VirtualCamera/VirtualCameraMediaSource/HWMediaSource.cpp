@@ -16,9 +16,21 @@ namespace winrt::WindowsSample::implementation
         }
     }
     /////////////////////////////////////////////////////////////////////////////////
+    
+    /// <summary>
+    /// Initialize the source. This is where we wrap an existing camera.
+    /// </summary>
+    /// <param name="pAttributes"></param>
+    /// <param name="pMediaSource"></param>
+    /// <returns></returns>
     HRESULT HWMediaSource::Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource)
     {
         winrt::slim_lock_guard lock(m_Lock);
+
+        if (m_initalized)
+        {
+            return MF_E_ALREADY_INITIALIZED;
+        }
 
         DEBUG_MSG(L"Initialize enter");
 
@@ -37,6 +49,7 @@ namespace winrt::WindowsSample::implementation
         RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
 
         m_sourceState = SourceState::Stopped;
+        m_initalized = true;
 
         DEBUG_MSG(L"Initialize exit");
         return S_OK;
@@ -185,7 +198,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (!(m_sourceState != SourceState::Stopped || m_sourceState != SourceState::Shutdown))
+        if (m_sourceState == SourceState::Invalid)
         {
             return MF_E_INVALID_STATE_TRANSITION;
         }
@@ -240,9 +253,8 @@ namespace winrt::WindowsSample::implementation
         *sourceAttributes = nullptr;
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
-        RETURN_IF_FAILED(MFCreateAttributes(sourceAttributes, 1));
-
-        return m_spAttributes->CopyAllItems(*sourceAttributes);
+        RETURN_IF_FAILED(m_spAttributes.copy_to(sourceAttributes));
+        return S_OK;
     }
 
     IFACEMETHODIMP HWMediaSource::GetStreamAttributes(
@@ -370,7 +382,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
         wil::com_ptr_nothrow<IKsControl> spKsControl;
-        if (m_spDevSource->QueryInterface(IID_PPV_ARGS(&spKsControl)))
+        if (SUCCEEDED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spKsControl))))
         {
             RETURN_IF_FAILED(spKsControl->KsEvent(pEvent, ulEventLength, pEventData, ulDataLength, pBytesReturned));
         }

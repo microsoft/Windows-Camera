@@ -27,7 +27,7 @@ namespace VirtualCameraTest::impl
         HRESULT TestCreateVirtualCamera();
 
         // Helper functions for SimpleMediaSource
-        HRESULT CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera);
+        HRESULT CreateVirtualCamera(MFVirtualCameraLifetime vcamLifetime, MFVirtualCameraAccess vcamAccess, IMFVirtualCamera** ppVirtualCamera);
         static HRESULT GetColorMode(IMFMediaSource* pMediaSource, uint32_t* pColorMode);
         static HRESULT SetColorMode(IMFMediaSource* pMediaSource, uint32_t colorMode);
 

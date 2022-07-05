@@ -79,7 +79,7 @@ namespace VirtualCameraTest::impl
             }
             });
 
-        RETURN_IF_FAILED(CreateVirtualCamera(L"test", &spVirtualCamera));
+        RETURN_IF_FAILED(CreateVirtualCamera(L"test", MFVirtualCameraLifetime_System, MFVirtualCameraAccess_CurrentUser, &spVirtualCamera));
         RETURN_IF_FAILED(ValidateVirtualCamera(spVirtualCamera.get()));
 
         return S_OK;
@@ -87,7 +87,7 @@ namespace VirtualCameraTest::impl
 
     ////////////////////////////////////////////////////////////////////
     // helper function
-    HRESULT AugmentedMediaSourceUT::CreateVirtualCamera(winrt::hstring const& postfix, IMFVirtualCamera** ppVirtualCamera)
+    HRESULT AugmentedMediaSourceUT::CreateVirtualCamera(winrt::hstring const& postfix, MFVirtualCameraLifetime vcamLifetime, MFVirtualCameraAccess vcamAccess, IMFVirtualCamera** ppVirtualCamera)
     {
         wchar_t friendlyname[MAX_PATH];
         int cch = swprintf(friendlyname, MAX_PATH, L"AugmentedMediaSource-%s", postfix.data());
@@ -99,7 +99,14 @@ namespace VirtualCameraTest::impl
         wil::com_ptr_nothrow<IMFAttributes> spAttributes;
         RETURN_IF_FAILED(CreateSourceAttributes(&spAttributes));
 
-        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, friendlyname, m_devSymlink, spAttributes.get(), ppVirtualCamera));
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(
+            VIRTUALCAMERAMEDIASOURCE_CLSID,
+            friendlyname,
+            m_devSymlink,
+            vcamLifetime,
+            vcamAccess,
+            spAttributes.get(),
+            ppVirtualCamera));
 
         return S_OK;
     }

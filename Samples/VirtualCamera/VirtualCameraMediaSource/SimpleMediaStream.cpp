@@ -195,7 +195,7 @@ namespace winrt::WindowsSample::implementation
 
         if (m_streamState != MF_STREAM_STATE_RUNNING)
         {
-            RETURN_HR_MSG(MF_E_INVALIDREQUEST, "Stream is not in running state, state:%d", m_streamState);
+            RETURN_HR_MSG(MF_E_INVALIDREQUEST, "Stream is not in running state, state:%d, selected: %d", m_streamState, m_bSelected);
         }
 
         RETURN_IF_FAILED(m_spSampleAllocator->AllocateSample(&sample));
@@ -233,18 +233,27 @@ namespace winrt::WindowsSample::implementation
         winrt::slim_lock_guard lock(m_Lock);
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
+        if (m_streamState == state)
+        {
+            return S_OK;
+        }
+
         switch (state)
         {
         case MF_STREAM_STATE_PAUSED:
-            // because not supported
+            if (m_streamState != MF_STREAM_STATE_RUNNING)
+            {
+                return MF_E_INVALID_STATE_TRANSITION;
+            }
+            m_streamState = MF_STREAM_STATE_PAUSED;
             break;
 
         case MF_STREAM_STATE_RUNNING:
-            m_streamState = state;
+            RETURN_IF_FAILED(StartInternal(false, nullptr));
             break;
 
         case MF_STREAM_STATE_STOPPED:
-            m_streamState = state;
+            RETURN_IF_FAILED(StopInternal(false));
 
             break;
 
@@ -261,8 +270,10 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
-        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+        
+        RETURN_HR_IF_NULL(E_INVALIDARG, pState);
         *pState = m_streamState;
 
         return S_OK;
@@ -270,51 +281,33 @@ namespace winrt::WindowsSample::implementation
 
     //////////////////////////////////////////////////////////////////////////////////////////
     // Public methods
-    HRESULT SimpleMediaStream::Start()
+    HRESULT SimpleMediaStream::Start(_In_ IMFMediaType* pMediaType)
     {
+        // Set stream seleted state to true, and update current mediatype.
         winrt::slim_lock_guard lock(m_Lock);
 
-        // Create the allocator if one doesn't exist
-        if (m_allocatorUsage == MFSampleAllocatorUsage_UsesProvidedAllocator)
+        RETURN_HR_IF_NULL(E_INVALIDARG, pMediaType);
+        if (m_spMediaType == nullptr)
         {
-            RETURN_HR_IF_NULL_MSG(E_POINTER, m_spSampleAllocator, "Sample allocator is not set");
+            m_spMediaType = pMediaType;
         }
-        else
-        {
-            RETURN_IF_FAILED(MFCreateVideoSampleAllocatorEx(IID_PPV_ARGS(&m_spSampleAllocator)));
-        }
+        m_bSelected = true;
 
-        wil::com_ptr_nothrow<IMFMediaTypeHandler> spMTHandler;
-        RETURN_IF_FAILED(m_spStreamDesc->GetMediaTypeHandler(&spMTHandler));
-
-        wil::com_ptr_nothrow<IMFMediaType> spMediaType;
-        UINT32 width, height;
-        GUID subType;
-        RETURN_IF_FAILED(spMTHandler->GetCurrentMediaType(&spMediaType));
-        RETURN_IF_FAILED(spMediaType->GetGUID(MF_MT_SUBTYPE, &subType));
-        MFGetAttributeSize(spMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-        DEBUG_MSG(L"Initialize sample allocator for mediatype: %s, %dx%d ", winrt::to_hstring(subType).data(), width, height);
-        RETURN_IF_FAILED(m_spSampleAllocator->InitializeSampleAllocator(10, spMediaType.get()));
-        if (m_spFrameGenerator == nullptr)
-        {
-            m_spFrameGenerator = wil::make_unique_nothrow<SimpleFrameGenerator>();
-            RETURN_IF_NULL_ALLOC_MSG(m_spFrameGenerator, "Fail to create SimpleFrameGenerator");
-        }
-        RETURN_IF_FAILED(m_spFrameGenerator->Initialize(spMediaType.get()));
-
-        // Post MEStreamStarted event to signal stream has started 
-        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStarted, GUID_NULL, S_OK, nullptr));
+        // Change Stream state to running.
+        RETURN_IF_FAILED(StartInternal(true, pMediaType));
 
         return S_OK;
     }
 
-    HRESULT SimpleMediaStream::Stop()
+    HRESULT SimpleMediaStream::Stop(_In_ bool bSendEvent)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
-        // Post MEStreamStopped event to signal stream has stopped
-        RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStopped, GUID_NULL, S_OK, nullptr));
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
+
+        m_bSelected = false;
+
+        RETURN_IF_FAILED(StopInternal(bSendEvent));
         return S_OK;
     }
 
@@ -342,6 +335,7 @@ namespace winrt::WindowsSample::implementation
     HRESULT SimpleMediaStream::SetSampleAllocator(IMFVideoSampleAllocator* pAllocator)
     {
         winrt::slim_lock_guard lock(m_Lock);
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
         if (m_streamState == MF_STREAM_STATE_RUNNING)
         {
@@ -400,5 +394,73 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
+    HRESULT SimpleMediaStream::StartInternal(bool bSendEvent, IMFMediaType* pNewMediaType)
+    {
+        BOOL bMatch = FALSE;
+        if (m_spMediaType && pNewMediaType)
+        {
+            (void)m_spMediaType->Compare(pNewMediaType, MF_ATTRIBUTES_MATCH_ALL_ITEMS, &bMatch);
 
+            if (!bMatch)
+            {
+                // update media type
+                m_spMediaType = pNewMediaType;
+            }
+        }
+
+        if ((m_streamState != MF_STREAM_STATE_RUNNING) || !bMatch)
+        {
+            // Create the allocator if one doesn't exist
+            if (m_allocatorUsage == MFSampleAllocatorUsage_UsesProvidedAllocator)
+            {
+                RETURN_HR_IF_NULL_MSG(E_POINTER, m_spSampleAllocator, "Sample allocator is not set");
+            }
+            else
+            {
+                RETURN_IF_FAILED(MFCreateVideoSampleAllocatorEx(IID_PPV_ARGS(&m_spSampleAllocator)));
+            }
+
+            UINT32 width, height;
+            GUID subType;
+            RETURN_IF_FAILED(m_spMediaType->GetGUID(MF_MT_SUBTYPE, &subType));
+            MFGetAttributeSize(m_spMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
+
+            DEBUG_MSG(L"Initialize sample allocator for mediatype: %s, %dx%d ", winrt::to_hstring(subType).data(), width, height);
+            RETURN_IF_FAILED(m_spSampleAllocator->InitializeSampleAllocator(10, m_spMediaType.get()));
+            if (m_spFrameGenerator == nullptr)
+            {
+                m_spFrameGenerator = wil::make_unique_nothrow<SimpleFrameGenerator>();
+                RETURN_IF_NULL_ALLOC_MSG(m_spFrameGenerator, "Fail to create SimpleFrameGenerator");
+            }
+            RETURN_IF_FAILED(m_spFrameGenerator->Initialize(m_spMediaType.get()));
+        }
+
+        if (bSendEvent)
+        {
+            // Post MEStreamStarted event to signal stream has started 
+            RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStarted, GUID_NULL, S_OK, nullptr));
+        }
+
+        // Set stream state
+        m_streamState = MF_STREAM_STATE_RUNNING;
+
+        return S_OK;
+    }
+
+    _Requires_lock_held_(m_Lock)
+    HRESULT SimpleMediaStream::StopInternal(bool bSendEvent)
+    {
+        // Set stream state
+        m_streamState = MF_STREAM_STATE_STOPPED;
+
+        // NOTE: if implementation has sampleRequestQueue or sampleQueue, it must flush the queue on stopped.
+        if (bSendEvent)
+        {
+            // Post MEStreamStopped event to signal stream has stopped
+            RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(MEStreamStopped, GUID_NULL, S_OK, nullptr));
+        }
+
+        return S_OK;
+    }
 }

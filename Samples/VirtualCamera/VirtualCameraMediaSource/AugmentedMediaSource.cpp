@@ -18,13 +18,18 @@ namespace winrt::WindowsSample::implementation
     }
     
     /// <summary>
-    /// Initialize the source. This is where we wrap an existing camera and filter its exposed set of streams.
+    /// /// Initialize the source. This is where we wrap an existing camera and filter its exposed set of streams.
     /// </summary>
-    /// <param name="pwszSymLink"></param>
+    /// <param name="pAttributes"></param>
+    /// <param name="pMediaSource"></param>
     /// <returns></returns>
     HRESULT AugmentedMediaSource::Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource)
     {
         winrt::slim_lock_guard lock(m_Lock);
+        if (m_initalized)
+        {
+            return MF_E_ALREADY_INITIALIZED;
+        }
 
         DEBUG_MSG(L"AugmentedMediaSource Initialize enter");
 
@@ -122,6 +127,7 @@ namespace winrt::WindowsSample::implementation
 
         m_sourceState = SourceState::Stopped;
         DEBUG_MSG(L"Initialize exit");
+        m_initalized = true;
 
         return S_OK;
     }
@@ -176,18 +182,13 @@ namespace winrt::WindowsSample::implementation
         }
         m_sourceState = SourceState::Started;
 
-        // This checks the passed in PresentationDescriptor matches the member of streams we
-        // have defined internally and that at least one stream is selected
+        // This validates that the PresentationDescriptor passed as argument matches the member of streams we
+        // have defined internally
         RETURN_IF_FAILED(_ValidatePresentationDescriptor(pPresentationDescriptor));
         RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorCount(&count));
         RETURN_IF_FAILED(InitPropVariantFromInt64(MFGetSystemTime(), &startTime));
 
-        // We're hardcoding this to the first descriptor
-        // since this sample is a single stream sample.  For
-        // multiple streams, we need to walk the list of streams
-        // and for each selected stream, send the MEUpdatedStream
-        // or MENewStream event along with the MEStreamStarted
-        // event.
+        // Update devicesource presentation descriptor for selected and deselected stream(s)
         BOOL selected = false;
         bool wasSelected = false;
         DWORD streamIdx = 0;
@@ -337,7 +338,7 @@ namespace winrt::WindowsSample::implementation
             }
         }
         m_streamList.reset();
-        m_spPresentationDescriptor.detach(); // calling reset() fails due to the stream also calling reset on its stream descriptor..
+        (void)m_spPresentationDescriptor.detach(); // calling reset() fails due to the stream also calling reset on its stream descriptor..
         
         if (m_spEventQueue != nullptr)
         {
@@ -428,8 +429,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        RETURN_IF_FAILED(MFCreateAttributes(sourceAttributes, 1));
-        RETURN_IF_FAILED(m_spAttributes->CopyAllItems(*sourceAttributes));
+        RETURN_IF_FAILED(m_spAttributes.copy_to(sourceAttributes));
 
         return S_OK;
     }

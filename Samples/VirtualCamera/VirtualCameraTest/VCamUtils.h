@@ -12,6 +12,8 @@ static const size_t GUID_STRING_LENGTH = 39;
 // {6AC1FBF7-45F7-4E06-BDA7-F817EBFA04D1}
 DEFINE_DEVPROPKEY(DEVPKEY_DeviceInterface_VCamCreate_SourceId,   0x6ac1fbf7, 0x45f7, 0x4e06, 0xbd, 0xa7, 0xf8, 0x17, 0xeb, 0xfa, 0x4, 0xd1, 4); /* DEVPROP_TYPE_STRING */
 DEFINE_DEVPROPKEY(DEVPKEY_DeviceInterface_VCamCreate_FriendlyName, 0x6ac1fbf7, 0x45f7, 0x4e06, 0xbd, 0xa7, 0xf8, 0x17, 0xeb, 0xfa, 0x4, 0xd1, 5); /* DEVPROP_TYPE_STRING */
+DEFINE_DEVPROPKEY(DEVPKEY_DeviceInterface_VCamCreate_Lifetime, 0x6ac1fbf7, 0x45f7, 0x4e06, 0xbd, 0xa7, 0xf8, 0x17, 0xeb, 0xfa, 0x4, 0xd1, 6); /* DEVPROP_TYPE_INT32 */
+DEFINE_DEVPROPKEY(DEVPKEY_DeviceInterface_VCamCreate_Access, 0x6ac1fbf7, 0x45f7, 0x4e06, 0xbd, 0xa7, 0xf8, 0x17, 0xeb, 0xfa, 0x4, 0xd1, 7); /* DEVPROP_TYPE_INT32 */
 
 class VCamUtils
 {
@@ -36,6 +38,8 @@ public:
         _In_ winrt::hstring const& strMediaSource, 
         _In_ winrt::hstring const& strFriendlyName,
         _In_ winrt::hstring const& strPhysicalCamSymLink,
+        _In_ MFVirtualCameraLifetime vcamLifetime,
+        _In_ MFVirtualCameraAccess vcamAccess,
         _In_opt_ IMFAttributes* pAttributes,
         _Outptr_ IMFVirtualCamera** ppVirtualCamera);
         

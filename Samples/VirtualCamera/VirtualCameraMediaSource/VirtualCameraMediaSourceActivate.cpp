@@ -81,7 +81,7 @@ namespace winrt::WindowsSample::implementation
         {
             DEBUG_MSG(L"Activate SimpleMediaSource");
             m_spSimpleMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::SimpleMediaSource>();
-            RETURN_IF_FAILED(m_spSimpleMediaSrc->Initialize());
+            RETURN_IF_FAILED(m_spSimpleMediaSrc->Initialize(this));
             RETURN_IF_FAILED(m_spSimpleMediaSrc->QueryInterface(riid, ppv));
         }
         else

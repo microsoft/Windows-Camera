@@ -101,6 +101,7 @@ namespace winrt::WindowsSample::implementation
 
         wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
         DWORD m_dwSerialWorkQueueId;
+        bool m_initalized = false;
 
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<HWMediaStream>> m_streamList;
     };

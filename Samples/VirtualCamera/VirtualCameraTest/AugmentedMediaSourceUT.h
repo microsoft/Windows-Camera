@@ -25,7 +25,7 @@ namespace VirtualCameraTest::impl
 
         HRESULT TestCreateVirtualCamera();
         
-        HRESULT CreateVirtualCamera(winrt::hstring const& postfix, IMFVirtualCamera** ppVirtualCamera);
+        HRESULT CreateVirtualCamera(winrt::hstring const& postfix, MFVirtualCameraLifetime vcamLifetime, MFVirtualCameraAccess vcamAccess, IMFVirtualCamera** ppVirtualCamera);
 
     protected:
         AugmentedMediaSourceUT() { m_clsid = CLSID_VirtualCameraMediaSource; };

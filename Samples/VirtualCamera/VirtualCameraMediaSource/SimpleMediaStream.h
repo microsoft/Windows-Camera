@@ -32,8 +32,8 @@ namespace winrt::WindowsSample::implementation
 
         // Non-interface methods.
         HRESULT Initialize(_In_ SimpleMediaSource* pSource, _In_ DWORD streamId, _In_ MFSampleAllocatorUsage allocatorUsage);
-        HRESULT Start();
-        HRESULT Stop();
+        HRESULT Start(_In_ IMFMediaType* pMediaType);
+        HRESULT Stop(_In_ bool fSendEvent);
         HRESULT Shutdown();
         HRESULT SetSampleAllocator(_In_ IMFVideoSampleAllocator* pAllocator);
 
@@ -44,12 +44,14 @@ namespace winrt::WindowsSample::implementation
         void SetRGBMask(uint32_t rgbMask) { winrt::slim_lock_guard lock(m_Lock);  m_rgbMask = rgbMask; }
         uint32_t GetRGBMask() { winrt::slim_lock_guard lock(m_Lock);  return m_rgbMask; }
 
-    protected:
+    private:
         HRESULT _CheckShutdownRequiresLock();
         HRESULT _SetStreamAttributes(IMFAttributes* pAttributeStore);
         HRESULT _SetStreamDescriptorAttributes(IMFAttributes* pAttributeStore);
 
-    private:
+        HRESULT StartInternal(bool bSendEvent, IMFMediaType* pNewMediaType);
+        HRESULT StopInternal(bool bSendEvent);
+
         winrt::slim_mutex  m_Lock;
 
         wil::com_ptr_nothrow<IMFMediaSource> m_parent;
@@ -58,12 +60,14 @@ namespace winrt::WindowsSample::implementation
         wil::com_ptr_nothrow<IMFStreamDescriptor> m_spStreamDesc;
         wil::com_ptr_nothrow<IMFVideoSampleAllocator> m_spSampleAllocator;
         wistd::unique_ptr<SimpleFrameGenerator> m_spFrameGenerator;
+        wil::com_ptr_nothrow<IMFMediaType> m_spMediaType;
 
         bool m_bIsShutdown = false;
+        bool m_bSelected = false;
         MF_STREAM_STATE m_streamState = MF_STREAM_STATE_STOPPED;
         uint32_t m_rgbMask = KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_BLUE;
 
-        DWORD m_dwStreamId;
+        DWORD m_dwStreamId = 0;
         MFSampleAllocatorUsage m_allocatorUsage;
     };
 }

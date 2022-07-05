@@ -16,7 +16,7 @@ EVRHelper::~EVRHelper()
 {
     if (m_spEVRSinkWriter)
     {
-        m_spEVRSinkWriter->Flush(MF_SINK_WRITER_ALL_STREAMS);
+        m_spEVRSinkWriter->Flush((DWORD)MF_SINK_WRITER_ALL_STREAMS);
         m_spEVRSinkWriter = nullptr;
     }
 }

@@ -30,7 +30,7 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHODIMP QueueEvent(MediaEventType met, REFGUID guidExtendedType, HRESULT hrStatus, _In_ const PROPVARIANT* pvValue) override;
 
         // IMFMediaSource (inherited by IMFMediaSourceEx)
-        IFACEMETHODIMP CreatePresentationDescriptor(_Out_ IMFPresentationDescriptor** ppPresentationDescriptor) override;
+        IFACEMETHODIMP CreatePresentationDescriptor(_COM_Outptr_ IMFPresentationDescriptor** ppPresentationDescriptor) override;
         IFACEMETHODIMP GetCharacteristics(_Out_ DWORD* pdwCharacteristics) override;
         IFACEMETHODIMP Pause() override;
         IFACEMETHODIMP Shutdown() override;
@@ -108,6 +108,7 @@ namespace winrt::WindowsSample::implementation
         ULONG m_desiredStreamIdx;
 
         const DWORD NUM_STREAMS = 1;
+        bool m_initalized = false;
     };
 }
 
