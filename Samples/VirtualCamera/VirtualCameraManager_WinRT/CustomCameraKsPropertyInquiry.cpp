@@ -2,9 +2,8 @@
 
 #include "pch.h"
 #include "Common.h"
-#include "CameraKsPropertyInquiry.h"
-#include "CameraKsPropertyInquiry.g.cpp"
-#include "BasicExtendedPropertyPayload.h"
+#include "CustomCameraKsPropertyInquiry.h"
+#include "CustomCameraKsPropertyInquiry.g.cpp"
 #include "SimpleCustomPropertyPayload.h"
 #include "BasicAugmentedMediaSourceCustomPropertyPayload.h"
 
@@ -12,122 +11,12 @@
 namespace winrt::VirtualCameraManager_WinRT::implementation
 {
     /// <summary>
-    /// Getting an extended control payload
-    /// </summary>
-    /// <param name="extendedControlKind"></param>
-    /// <param name="controller"></param>
-    /// <returns></returns>
-    winrt::VirtualCameraManager_WinRT::IExtendedPropertyPayload CameraKsPropertyInquiry::GetExtendedControl(
-        winrt::VirtualCameraManager_WinRT::ExtendedControlKind const& extendedControlKind, 
-        winrt::Windows::Media::Devices::VideoDeviceController const& controller)
-    {
-        winrt::VirtualCameraManager_WinRT::IExtendedPropertyPayload resultPayload = nullptr;
-
-        UINT controlId = 0;
-        switch (extendedControlKind)
-        {
-        case winrt::VirtualCameraManager_WinRT::ExtendedControlKind::EyeGazeCorrection:
-            controlId = static_cast<int>(extendedControlKind);
-            break;
-        default:
-            throw winrt::hresult_invalid_argument(L"Attempting to get an extendewd control unhandled in this sample");
-        }
-
-        KsProperty prop(
-            { 0x1CB79112, 0xC0D2, 0x4213, {0x9C, 0xA6, 0xCD, 0x4F, 0xDB, 0x92, 0x79, 0x72} } /* KSPROPERTYSETID_ExtendedCameraControl */,
-            controlId /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
-            0x00000001 /* KSPROPERTY_TYPE_GET */);
-        uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
-
-        array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KsProperty));
-
-        // get the control payload
-        auto getResult = controller.GetDevicePropertyByExtendedId(serializedProp, nullptr);
-
-        // if the control is not supported, return null
-        if (getResult.Status() == Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::NotSupported)
-        {
-            return resultPayload;
-        }
-
-        // if getting the control fails, throw
-        if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
-        {
-            throw hresult_invalid_argument(L"Could not retrieve extended device control " + winrt::to_hstring(controlId) + L" with VideoDeviceControllerGetDevicePropertyStatus: " + winrt::to_hstring((int)getResult.Status()));
-        }
-
-        // if we succeed in retrieving the specified control, encapsulate the property payload and return it
-        auto result = getResult.Value();
-        Windows::Foundation::IPropertyValue property = nullptr;
-        property = result.as<Windows::Foundation::IPropertyValue>();
-
-        resultPayload = make<BasicExtendedPropertyPayload>(property, extendedControlKind);
-
-        return resultPayload;
-    }
-
-    /// <summary>
-    /// Setting an extended control value
-    /// </summary>
-    /// <param name="extendedControlKind"></param>
-    /// <param name="controller"></param>
-    /// <param name="flags"></param>
-    void CameraKsPropertyInquiry::SetExtendedControlFlags(
-        winrt::VirtualCameraManager_WinRT::ExtendedControlKind const& extendedControlKind, 
-        winrt::Windows::Media::Devices::VideoDeviceController const& controller, uint64_t flags)
-    {
-        winrt::VirtualCameraManager_WinRT::IExtendedPropertyPayload resultPayload = nullptr;
-
-        UINT controlId = 0;
-        switch (extendedControlKind)
-        {
-        case winrt::VirtualCameraManager_WinRT::ExtendedControlKind::EyeGazeCorrection:
-            controlId = static_cast<int>(extendedControlKind);
-            break;
-        default:
-            throw winrt::hresult_invalid_argument(L"Attempting to get an extendewd control unhandled in this sample");
-        }
-
-        KsProperty prop(
-            { 0x1CB79112, 0xC0D2, 0x4213, {0x9C, 0xA6, 0xCD, 0x4F, 0xDB, 0x92, 0x79, 0x72} } /* KSPROPERTYSETID_ExtendedCameraControl */,
-            controlId /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
-            0x00000002 /* KSPROPERTY_TYPE_SET */);
-        uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
-
-        array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KsProperty));
-
-        KsBasicCameraExtendedPropPayload payload;
-        payload.header = 
-        {
-            1, // Version
-            0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
-            sizeof(KsCameraExtendedPropHeader) + sizeof(KsCameraExtendedPropValue), // Size
-            0, // Result
-            flags, // Flags
-            0 // Capability                
-        };
-        
-        uint8_t* pValue = reinterpret_cast<uint8_t*>(&payload);
-        array_view<uint8_t const> serializedValue = array_view<uint8_t const>(pValue, sizeof(KsCameraExtendedPropHeader) + sizeof(KsCameraExtendedPropValue));
-
-        // set the control payload
-        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedValue);
-
-        // if setting the control fails, throw
-        if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
-        {
-            throw hresult_invalid_argument(L"Could not set extended device property flags " 
-                + winrt::to_hstring(controlId) + L" with VideoDeviceControllerSetDevicePropertyStatus: " + winrt::to_hstring((int)setResult));
-        }
-    }
-
-    /// <summary>
     /// Getting a custom control payload
     /// </summary>
     /// <param name="customControlKind"></param>
     /// <param name="controller"></param>
     /// <returns></returns>
-    winrt::VirtualCameraManager_WinRT::ISimpleCustomPropertyPayload CameraKsPropertyInquiry::GetSimpleCustomControl(
+    winrt::VirtualCameraManager_WinRT::ISimpleCustomPropertyPayload CustomCameraKsPropertyInquiry::GetSimpleCustomControl(
         winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller)
     {
@@ -179,7 +68,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     /// <param name="customControlKind"></param>
     /// <param name="controller"></param>
     /// <param name="flags"></param>
-    void CameraKsPropertyInquiry::SetSimpleCustomControlFlags(
+    void CustomCameraKsPropertyInquiry::SetSimpleCustomControlFlags(
         winrt::VirtualCameraManager_WinRT::SimpleCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller, 
         uint32_t flags)
@@ -219,7 +108,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         }
     }
 
-    winrt::VirtualCameraManager_WinRT::IAugmentedMediaSourceCustomPropertyPayload CameraKsPropertyInquiry::GetAugmentedMediaSourceCustomControl(
+    winrt::VirtualCameraManager_WinRT::IAugmentedMediaSourceCustomPropertyPayload CustomCameraKsPropertyInquiry::GetAugmentedMediaSourceCustomControl(
         winrt::VirtualCameraManager_WinRT::AugmentedMediaSourceCustomControlKind const& customControlKind, 
         winrt::Windows::Media::Devices::VideoDeviceController const& controller)
     {
@@ -267,7 +156,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         return resultPayload;
     }
 
-    void CameraKsPropertyInquiry::SetAugmentedMediaSourceCustomControlFlags(
+    void CustomCameraKsPropertyInquiry::SetAugmentedMediaSourceCustomControlFlags(
         winrt::VirtualCameraManager_WinRT::AugmentedMediaSourceCustomControlKind const& customControlKind,
         winrt::Windows::Media::Devices::VideoDeviceController const& controller,
         uint64_t flags)

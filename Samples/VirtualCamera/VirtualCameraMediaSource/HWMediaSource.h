@@ -78,19 +78,20 @@ namespace winrt::WindowsSample::implementation
             _Out_  DWORD* pdwInputStreamID,
             _Out_  MFSampleAllocatorUsage* peUsage) override;
 
-        HRESULT Initialize(LPCWSTR pwszSymLink);
+        // Non-Interface functions
+        HRESULT Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource);
 
     private:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _CreateSourceAttributes();
-        HRESULT _CreateMediaStreams();
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes);
+        _Requires_lock_held_(m_Lock) HRESULT _CreateMediaStreams();
 
-        HRESULT OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
+        void OnMediaSourceEvent(_In_ IMFAsyncResult* pResult);
         wil::com_ptr_nothrow<CAsyncCallback<HWMediaSource>> m_xOnMediaSourceEvent;
 
-        HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
-        HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
-        HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT OnNewStream(IMFMediaEvent* pEvent, MediaEventType met);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStarted(IMFMediaEvent* pEvent);
+        _Requires_lock_held_(m_Lock) HRESULT OnSourceStopped(IMFMediaEvent* pEvent);
 
         winrt::slim_mutex m_Lock;
         SourceState m_sourceState{ SourceState::Invalid };
@@ -100,6 +101,7 @@ namespace winrt::WindowsSample::implementation
 
         wil::com_ptr_nothrow<IMFMediaSource> m_spDevSource;
         DWORD m_dwSerialWorkQueueId;
+        bool m_initalized = false;
 
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<HWMediaStream>> m_streamList;
     };

@@ -79,7 +79,15 @@ namespace VirtualCameraTest::impl
             }
             });
 
-        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, m_vcamFriendlyName, L"", nullptr, &spVirtualCamera));
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(
+            VIRTUALCAMERAMEDIASOURCE_CLSID,
+            m_vcamFriendlyName,
+            L"",
+            MFVirtualCameraLifetime_System,
+            MFVirtualCameraAccess_CurrentUser,
+            nullptr,
+            &spVirtualCamera));
+
         RETURN_IF_FAILED(ValidateVirtualCamera(spVirtualCamera.get()));
 
         return S_OK;

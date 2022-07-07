@@ -51,6 +51,9 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHODIMP GetItemByIndex(UINT32 unIndex, _Out_ GUID* pguidKey, _Inout_ PROPVARIANT* pValue) override;
         IFACEMETHODIMP CopyAllItems(_In_ IMFAttributes* pDest) override;
 
+        // non interface public method
+        HRESULT Initialize();
+
     private:
         wil::com_ptr_nothrow <IMFAttributes> m_spActivateAttributes;
         winrt::com_ptr<winrt::WindowsSample::implementation::SimpleMediaSource> m_spSimpleMediaSrc;
@@ -71,6 +74,7 @@ public:
         *result = nullptr;
 
         winrt::com_ptr<winrt::WindowsSample::implementation::VirtualCameraMediaSourceActivate> ptr = winrt::make_self<winrt::WindowsSample::implementation::VirtualCameraMediaSourceActivate>();
+        RETURN_IF_FAILED(ptr->Initialize());
         return ptr->QueryInterface(riid, result);
     } CATCH_RETURN()
 

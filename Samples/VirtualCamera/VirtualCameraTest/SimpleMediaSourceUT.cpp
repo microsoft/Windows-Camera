@@ -154,10 +154,6 @@ namespace VirtualCameraTest::impl
             {
                 LOG_ERROR_RETURN(hr, L"Function failed to get support control hr: 0x%08x)", hr);
             }
-            else if (byteReturns != sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S))
-            {
-                LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the correct byteReturn: %d (expected: %d)", byteReturns, sizeof(KSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S));
-            }
             else
             {
                 LOG_SUCCESS(L"Set Support control succeeded, byteReturn: %d, colorMode: 0x%08x", byteReturns, ((PKSPROPERTY_SIMPLEMEDIASOURCE_CUSTOMCONTROL_COLORMODE_S)arr.data())->ColorMode);
@@ -177,7 +173,7 @@ namespace VirtualCameraTest::impl
                     VCamUtils::UnInstallDevice(spVirtualCamera.get());
                 }
             });
-        RETURN_IF_FAILED(CreateVirtualCamera(&spVirtualCamera));
+        RETURN_IF_FAILED(CreateVirtualCamera(MFVirtualCameraLifetime_System, MFVirtualCameraAccess_CurrentUser, &spVirtualCamera));
         RETURN_IF_FAILED(ValidateVirtualCamera(spVirtualCamera.get()));
 
         return S_OK;
@@ -185,10 +181,17 @@ namespace VirtualCameraTest::impl
 
     ////////////////////////////////////////////////////////////////////
     // helper function
-    HRESULT SimpleMediaSourceUT::CreateVirtualCamera(IMFVirtualCamera** ppVirtualCamera)
+    HRESULT SimpleMediaSourceUT::CreateVirtualCamera(MFVirtualCameraLifetime vcamLifetime, MFVirtualCameraAccess vcamAccess, IMFVirtualCamera** ppVirtualCamera)
     {
         winrt::hstring physicalCamSymLink;
-        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(VIRTUALCAMERAMEDIASOURCE_CLSID, L"SWVCamMediaSource", physicalCamSymLink, nullptr, ppVirtualCamera));
+        RETURN_IF_FAILED(VCamUtils::RegisterVirtualCamera(
+            VIRTUALCAMERAMEDIASOURCE_CLSID,
+            L"SWVCamMediaSource",
+            physicalCamSymLink,
+            vcamLifetime,
+            vcamAccess,
+            nullptr,
+            ppVirtualCamera));
 
         return S_OK;
     }

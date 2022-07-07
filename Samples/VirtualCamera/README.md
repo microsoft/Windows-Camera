@@ -16,6 +16,8 @@ MediaSource for the virtual camera. This CustomMediaSource can run in 3 distinc 
         - supports a custom DDI not supported originaly by the underlying existing camera [*AugmentedMediaSource::KsProperty()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp)
         - communicates to the main app's system tray background process via RPC whenever it starts streaming (refer to [*AugmentedMediaSource::Start()*](VirtualCameraMediaSource/AugmentedMediaSource.cpp) and [*SystrayApplicationContext.CreateNamedPipeForStart()*](VirtualCameraSystray\SystrayApplicationContext.cs))
 
+        > For the last 2 types of virtual camera which wrap an existing physical camera on the system, in **Windows build 22621** a new API was introduced to retrieve the associated camera's *IMFMediaSource* instance from *FrameServer* at activation time of the virtual camera instead of instantiating it using *MFCreateDeviceSource()* from within its implementation. This new API is used in *VirtualCameraMediaSourceActivateFactory::CreateInstance()* which in turn will put an *IMFAttribute* in its store called **MF_VIRTUALCAMERA_PROVIDE_ASSOCIATED_CAMERA_SOURCES**. This acts as a query to FrameServer to then provide the IMFMediaSource at activation time as seen in *VirtualCameraMediaSourceActivate::ActivateObject()* where the collection of *IMFDeviceSource* instances for the physical cameras corresponding to the symbolic link names specified at virtual camera creation time using *IMFVirtualCamera::AddDeviceSourceInfo()* can be retrieved by looking for an *IMFAttribute* named **MF_VIRTUALCAMERA_ASSOCIATED_CAMERA_SOURCES**. This alleviates some issues in apps regarding switching quickly between the physical camera and the virtual camera wrapping it, or with virtual camera not showing some MediaTypes exposed by the physical camera such as when FrameServer exposes decoded version (NV12) of MJPEG MediaType.
+
 2. **VirtualCamera_Installer** <br>
 A packaged Win32 application installed with *VirtualCameraMSI* that handles adding and removing virtual camera instances that are based on the *VirtualCameraMediaSource*.
 
@@ -96,10 +98,10 @@ The app caches the set of virtual cameras it creates in a configuration file upo
 (see the methods ```LoadConfigFileAsync()``` and ```WriteToConfigFileAsync()``` in *App.xaml.cs* in the *VirtualCameraManager_App* project).
 A user can recover virtual cameras created in the past after rebooting their system by relaunching the app. You could automate this process on behalf of the user by using a service that would start the app upon startup of the system.
 - If a virtual camera is created from an existing camera that supports the eye gaze correction control, then the UI element for eye gaze correction will be available. This is to show how a virtual camera can forward supported controls to the original camera it is created from. Similarly, if you did not wrap an existing camera, there will be a UI element to interact with the color of the synthesized frame via a custom control defined in the virtual camera (see *VirtualCameraMediaSource.h* in the *VirtualCameraMediaSource* project).
-- The *VirtualCameraManager_WinRT* project contains helpful WinRT runtime classes and methods to encapsulate a virtual camera and interact with them, as well as generate them and query for camera KSProperties (in our case either custom or extended). Refer to the 2 *.idl* files defining the API signatures, they provide a good base to expand upon: 
+- The *VirtualCameraManager_WinRT* project contains helpful WinRT runtime classes and methods to encapsulate a virtual camera and interact with them, as well as generate them and query for custom camera KSProperties (in our case either custom or extended). Refer to the 2 *.idl* files defining the API signatures, they provide a good base to expand upon: 
   - *VirtualCameraManager.idl*
-  - *CameraKsPropertyInquiry.idl*
-
+  - *CustomCameraKsPropertyInquiry.idl*
+- The project named *CameraKsPropertyHelper* is another project shared accross other samples in this repository to aid in interacting with known standard KSProperties from WinRT.
 
 ## VirtualCameraTest
 ----
@@ -205,13 +207,33 @@ In the case where  the virtualCamera is used by application or after VirtualCame
 * Attach debugger to the process
 * Alternative: use the powershell script provided: scripts\Debug-FrameServer.ps1
 
-<b> 3. Can I create a virtual camera that wraps another existing virtual camera with this sample </b><br/>yes, but in this sample virtual camera inception is not currently supported.
+<b> 3. Can I create a virtual camera that wraps another existing virtual camera with this sample </b><br/>this is not a supported scenario currently as it entails a lot of complexity and undesired behavior given the dependency chain.
 
 <b> 4. In a UWP app, if I create a virtual camera on the UI thread without having been prompted for camera access first, the camera access prompt is unresponsive, what is going on? </b><br/>
 If you are calling ```MFCreateVirtualCamera()``` (indirectly i.e. using the ```VirtualCameraRegistrar.RegisterNewVirtualCamera()``` method) on a UI thread, it will block it until camera access consent is given. However since that consent prompt is also running on the UI thread, it will actively block interaction and appear to freeze the app. A smart thing to do may be to either trigger consent upon launch of the app by another mean (i.e. calling ```MediaCapture.InitializeAsync()```) or by calling the API in a background thread (which the UWP VirtualCameraManager_App does).
 
 <b> 5. Can 2 virtual cameras concurrently wrap the same existing camera on the system? </b><br/>
-no, only 1 virtual camera at a time can wrap an existing camera. You cannot open an existing camera in sharing mode from within your virtual camera.
+To avoid issue like a racing condition, only 1 virtual camera at a time can wrap and use an existing camera if properly identifying the physical camera using the *[IMFVirtualCamera::AddDeviceSourceInfo()](https://docs.microsoft.com/en-us/windows/win32/api/mfvirtualcamera/nf-mfvirtualcamera-imfvirtualcamera-adddevicesourceinfo)* API at virtual camera registration time. You should not either open an existing camera in sharing mode from within your virtual camera as there a lot of complication and undefined behavior associated with this such as seemingly random and undesired MediaType changes.
+
+## Updates
+----
+
+07/04/2022 Critical fixes:
+* Fix SetStreamState implementation on SimpleMediaSource
+Change stream state to MF_STREAM_STATE_RUNNING will change state to running state (produce frame) but MEStreamStarted will not be send
+Change stream state to MF_STREAM_STATE_STOPPED will stop stream, RequestSample will be rejected.
+Change stream state to MF_STREAM_STATE_PAUSE will not stop the stream but RequestSample will be rejected.
+
+* Fix GetSourceAttributes implementation
+SourceAttributes must return a reference of the attributes (not copy).  The source is being use upstream components and any modification of the attribute store from upstream component must get preserve.
+
+* MediaStream needs to allocate own workqueue
+
+* Fix SimpleMediaSource::Start implementation
+If stream was deselected, ensure stream is put into stop state.
+When stream is reselected with the same mediatype, treat as no-op
+
+* Update VirtualCameraMediaSource build to not link against vcruntime dynamically.
 
 
 

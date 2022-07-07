@@ -62,28 +62,34 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
             THROW_IF_FAILED_MSG(spVirtualCamera->SetString(VCAM_DEVICE_INFO, strWrappedCameraSymbolicLink.data()),
                 "Failed to add device source info attribute onto the virtual camera");
 
-            // attempt to set PLD info making this camera a front-facing camera (app process needs high privilege)
-            ACPI_PLD_V2_BUFFER acpiPld = {};    /// See acpitable.h for definition.
+            
+            // --> Example code below that can be uncommented to set PLD information for the virtual camera (app registering the virtual camera needs high privilege)
+            // 
+            
+            // attempt to set PLD info making this camera a front-facing camera 
+            //ACPI_PLD_V2_BUFFER acpiPld = {};    /// See acpitable.h for definition.
 
-            /// Initialize the PLD information.  All the other fields can be
-            /// 0, except for the revision and the vertical/horizontal 
-            /// offsets, those have to be initialized to describe the PLD 
-            /// structure type and "no offset" value. 
-            acpiPld.Revision = 2;
-            acpiPld.VerticalOffset = 0xFFFF;
-            acpiPld.HorizontalOffset = 0xFFFF;
+            //// Initialize the PLD information.  All the other fields can be
+            //// 0, except for the revision and the vertical/horizontal 
+            //// offsets, those have to be initialized to describe the PLD 
+            //// structure type and "no offset" value. 
+            //acpiPld.Revision = 2;
+            //acpiPld.VerticalOffset = 0xFFFF;
+            //acpiPld.HorizontalOffset = 0xFFFF;
 
-            /// Now set the PLD panel to indicate this camera is located on
-            /// the front panel 
-            acpiPld.Panel = 4;// AcpiPldPanelFront
+            //// Now set the PLD panel to indicate this camera is located on the front panel 
+            //acpiPld.Panel = 4;// AcpiPldPanelFront
 
-            // swallow error
-            // THROW_IF_FAILED_MSG(
-            spVirtualCamera->AddProperty((const ::DEVPROPKEY*)&DEVPKEY_Device_PhysicalDeviceLocation,
-                DEVPROP_TYPE_BINARY,
-                (const BYTE*)&acpiPld,
-                sizeof(acpiPld));
-            //"Failed to add acpiPld device property onto the virtual camera"); 
+            //// swallow error (i.e. in case the registering app does not have high privilege)
+            //// THROW_IF_FAILED_MSG(
+            //spVirtualCamera->AddProperty((const ::DEVPROPKEY*)&DEVPKEY_Device_PhysicalDeviceLocation,
+            //    DEVPROP_TYPE_BINARY,
+            //    (const BYTE*)&acpiPld,
+            //    sizeof(acpiPld));
+            //"Failed to add acpiPld device property onto the virtual camera");
+
+            // <-- end of example
+            //
         }
     }
 

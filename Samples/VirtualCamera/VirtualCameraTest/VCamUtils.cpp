@@ -10,6 +10,8 @@ const winrt::hstring _DEVPKEY_DeviceInterface_FriendlyName(L"{026e516e-b814-414b
 const winrt::hstring _DEVPKEY_DeviceInterface_IsVirtualCamera(L"{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 3");
 const winrt::hstring _DEVPKEY_DeviceInterface_VCamCreate_SourceId(L"{6ac1fbf7-45f7-4e06-bda7-f817ebfa04d1}, 4");
 const winrt::hstring _DEVPKEY_DeviceInterface_VCamCreate_FriendlyName(L"{6ac1fbf7-45f7-4e06-bda7-f817ebfa04d1}, 5");
+const winrt::hstring _DEVPKEY_DeviceInterface_VCamCreate_Lifetime(L"{6ac1fbf7-45f7-4e06-bda7-f817ebfa04d1}, 6");
+const winrt::hstring _DEVPKEY_DeviceInterface_VCamCreate_Access(L"{6ac1fbf7-45f7-4e06-bda7-f817ebfa04d1}, 7");
 
 HRESULT VCamUtils::GetDeviceInterfaceProperty(
     _In_z_ LPCWSTR pwszDevSymLink,
@@ -92,6 +94,8 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     _In_ winrt::hstring const& strMediaSource, 
     _In_ winrt::hstring const& strFriendlyName, 
     _In_ winrt::hstring const& strPhysicalCamSymLink,
+    _In_ MFVirtualCameraLifetime vcamLifetime,
+    _In_ MFVirtualCameraAccess vcamAccess,
     _In_opt_ IMFAttributes* pAttributes,
     _Outptr_ IMFVirtualCamera** ppVirtualCamera)
 {
@@ -100,10 +104,10 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     LOG_COMMENT(L"Register virtual camera...");
     LOG_COMMENT(L"device string: %s ", strMediaSource.data());
     LOG_COMMENT(L"friendly name: %s ", strFriendlyName.data());
+    LOG_COMMENT(L"Lifetime: %d ", vcamLifetime);
+    LOG_COMMENT(L"Access: %d ", vcamAccess);
 
     MFVirtualCameraType vcamType = MFVirtualCameraType_SoftwareCameraSource;
-    MFVirtualCameraLifetime vcamLifetime = MFVirtualCameraLifetime_System;
-    MFVirtualCameraAccess vcamAccess = MFVirtualCameraAccess_CurrentUser;
 
     wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
     RETURN_IF_FAILED(MFCreateVirtualCamera(
@@ -142,10 +146,13 @@ HRESULT VCamUtils::RegisterVirtualCamera(
     try 
     {
         AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-        LOG_COMMENT(L"AppInfo: %p ", appInfo);
         if (appInfo != nullptr)
         {
             LOG_COMMENT(L"PFN: %s ", appInfo.PackageFamilyName().data());
+        }
+        else
+        {
+            LOG_COMMENT(L"No PFN accodiated with current process");
         }
     }
     catch (winrt::hresult_error) { LOG_WARNING(L"not running in app package"); }
@@ -171,6 +178,20 @@ HRESULT VCamUtils::RegisterVirtualCamera(
         sizeof(winrt::hstring::value_type) * (strFriendlyName.size() + 1)), 
         "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_FriendlyName ");
 
+    RETURN_IF_FAILED_MSG(spVirtualCamera->AddProperty(
+        &DEVPKEY_DeviceInterface_VCamCreate_Lifetime,
+        DEVPROP_TYPE_INT32,
+        (BYTE*)&vcamLifetime,
+        sizeof(int32_t)),
+        "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_Lifetime ");
+
+    RETURN_IF_FAILED_MSG(spVirtualCamera->AddProperty(
+        &DEVPKEY_DeviceInterface_VCamCreate_Access,
+        DEVPROP_TYPE_INT32,
+        (BYTE*)&vcamAccess,
+        sizeof(int32_t)),
+        "Fail to addproperty - DEVPKEY_DeviceInterface_VCamCreate_Access ");
+
     LOG_COMMENT(L"Start camera ");
     RETURN_IF_FAILED(spVirtualCamera->Start(nullptr));
     LOG_COMMENT(L"Succeeded!");
@@ -195,11 +216,21 @@ HRESULT VCamUtils::UnInstallVirtualCamera(
     RETURN_HR_IF_NULL(E_INVALIDARG, sourceId);
     LOG_COMMENT(L"sourceId: %s", sourceId.Value().data());
 
+    winrt::Windows::Foundation::IReference<int32_t> lifetime;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_Lifetime, DeviceInformationKind::DeviceInterface, lifetime));
+    RETURN_HR_IF_NULL(E_INVALIDARG, lifetime);
+    LOG_COMMENT(L"Lifetime: %d", lifetime.Value());
+
+    winrt::Windows::Foundation::IReference<int32_t> access;
+    RETURN_IF_FAILED(CMediaCaptureUtils::GetDeviceProperty(strDevSymLink, _DEVPKEY_DeviceInterface_VCamCreate_Access, DeviceInformationKind::DeviceInterface, access));
+    RETURN_HR_IF_NULL(E_INVALIDARG, access);
+    LOG_COMMENT(L"Access: %d", access.Value());
+
     wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
     RETURN_IF_FAILED(MFCreateVirtualCamera(
         MFVirtualCameraType_SoftwareCameraSource,
-        MFVirtualCameraLifetime_System,    /*MFVirtualCameraLifetime_Session,*/
-        MFVirtualCameraAccess_CurrentUser, /*MFVirtualCameraAccess_System,*/ // access_denied on enabled.
+        (MFVirtualCameraLifetime)lifetime.Value(),
+        (MFVirtualCameraAccess)access.Value(),
         friendlyName.Value().data(),
         sourceId.Value().data(),
         nullptr, /*Catetgorylist*/
@@ -260,14 +291,13 @@ HRESULT VCamUtils::MSIUninstall(GUID const& clsid)
 {
     wil::com_ptr_nothrow<IMFAttributes> spAttributes;
     wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFActivate>> spActivates;
-    UINT32 numActivates = 0;
 
     RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
     RETURN_IF_FAILED(spAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
     RETURN_IF_FAILED(spAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_CATEGORY, KSCATEGORY_VIDEO_CAMERA));
-    RETURN_IF_FAILED(MFEnumDeviceSources(spAttributes.get(), &spActivates, &numActivates));
+    RETURN_IF_FAILED(MFEnumDeviceSources(spAttributes.get(), &spActivates, (UINT32*)spActivates.size_address()));
 
-    for (unsigned int i = 0; i < numActivates; i++)
+    for (unsigned int i = 0; i < spActivates.size(); i++)
     {
         wil::com_ptr_nothrow<IMFActivate>spActivate = spActivates[i];
         wil::unique_cotaskmem_string spwszSymLink;
@@ -294,18 +324,15 @@ HRESULT VCamUtils::MSIUninstall(GUID const& clsid)
 HRESULT VCamUtils::GetCameraActivate(const wchar_t* pwszSymLink, IMFActivate** ppActivate)
 {
     wil::com_ptr_nothrow<IMFAttributes> spAttributes;
-    IMFActivate** ppActivates;
     wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFActivate>> spActivates;
-    UINT32 numActivates = 0;
 
     RETURN_HR_IF_NULL(E_POINTER, ppActivate);
     RETURN_IF_FAILED(MFCreateAttributes(&spAttributes, 1));
     RETURN_IF_FAILED(spAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
     RETURN_IF_FAILED(spAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_CATEGORY, KSCATEGORY_VIDEO_CAMERA));
-    RETURN_IF_FAILED(MFEnumDeviceSources(spAttributes.get(), &ppActivates, &numActivates));
-    spActivates.reset(ppActivates, numActivates);
+    RETURN_IF_FAILED(MFEnumDeviceSources(spAttributes.get(), spActivates.addressof(), (UINT32*)spActivates.size_address()));
 
-    for (unsigned int i = 0; i < numActivates; i++)
+    for (unsigned int i = 0; i < spActivates.size(); i++)
     {
         wil::com_ptr_nothrow<IMFActivate>spActivate = spActivates[i];
         wil::unique_cotaskmem_string spszSymLink;

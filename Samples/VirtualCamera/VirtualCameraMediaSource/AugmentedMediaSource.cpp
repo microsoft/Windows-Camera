@@ -18,18 +18,26 @@ namespace winrt::WindowsSample::implementation
     }
     
     /// <summary>
-    /// Initialize the source. This is where we wrap an existing camera and filter its exposed set of streams.
+    /// /// Initialize the source. This is where we wrap an existing camera and filter its exposed set of streams.
     /// </summary>
-    /// <param name="pwszSymLink"></param>
+    /// <param name="pAttributes"></param>
+    /// <param name="pMediaSource"></param>
     /// <returns></returns>
-    HRESULT AugmentedMediaSource::Initialize(LPCWSTR pwszSymLink)
+    HRESULT AugmentedMediaSource::Initialize(_In_ IMFAttributes* pAttributes, _In_ IMFMediaSource* pMediaSource)
     {
         winrt::slim_lock_guard lock(m_Lock);
+        if (m_initalized)
+        {
+            return MF_E_ALREADY_INITIALIZED;
+        }
 
         DEBUG_MSG(L"AugmentedMediaSource Initialize enter");
 
-        // populate source attributes like profile and control app
-        RETURN_IF_FAILED(_CreateSourceAttributes());
+        RETURN_HR_IF_NULL(E_POINTER, pMediaSource);
+        m_spDevSource = pMediaSource;
+
+        // 1. Populate source attributes like profile and control app
+        RETURN_IF_FAILED(_CreateSourceAttributes(pAttributes));
 
         m_streamList = wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<AugmentedMediaStream>>(NUM_STREAMS);
         RETURN_IF_NULL_ALLOC(m_streamList.get());
@@ -38,13 +46,16 @@ namespace winrt::WindowsSample::implementation
             wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<IMFStreamDescriptor>>(NUM_STREAMS);
         RETURN_IF_NULL_ALLOC(streamDescriptorList.get());
 
-        // look at hardware camera specified and extract stream descriptors
-        wil::com_ptr_nothrow<IMFAttributes> spDeviceAttributes;
-        RETURN_IF_FAILED(MFCreateAttributes(&spDeviceAttributes, 2));
-        RETURN_IF_FAILED(spDeviceAttributes->SetGUID(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID));
-        RETURN_IF_FAILED(spDeviceAttributes->SetString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, pwszSymLink));
-        RETURN_IF_FAILED(MFCreateDeviceSource(spDeviceAttributes.get(), &m_spDevSource));
+        // 2. create event queue and register callbacks..
+        DEBUG_MSG(L"Create and register event queue");
+        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
+        RETURN_IF_FAILED(MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &m_dwSerialWorkQueueId));
 
+        auto ptr = winrt::make_self<CAsyncCallback<AugmentedMediaSource>>(this, &AugmentedMediaSource::OnMediaSourceEvent, m_dwSerialWorkQueueId);
+        m_xOnMediaSourceEvent.attach(ptr.detach());
+        RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
+
+        // 3. Create presentation descriptors
         RETURN_IF_FAILED(m_spDevSource->CreatePresentationDescriptor(&m_spDevSourcePDesc));
 
         DWORD dwStreamCount = 0;
@@ -101,15 +112,6 @@ namespace winrt::WindowsSample::implementation
             return MF_E_CAPTURE_SOURCE_NO_VIDEO_STREAM_PRESENT;
         }
 
-        // create event queue and register callbacks..
-        DEBUG_MSG(L"Create and register event queue");
-        RETURN_IF_FAILED(MFCreateEventQueue(&m_spEventQueue));
-        RETURN_IF_FAILED(MFAllocateSerialWorkQueue(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, &m_dwSerialWorkQueueId));
-
-        auto ptr = winrt::make_self<CAsyncCallback<AugmentedMediaSource>>(this, &AugmentedMediaSource::OnMediaSourceEvent, m_dwSerialWorkQueueId);
-        m_xOnMediaSourceEvent.attach(ptr.detach());
-        RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
-
         // initialize the preview stream descriptor..
         DEBUG_MSG(L"Initialize preview stream");
         wil::com_ptr_nothrow<IMFStreamDescriptor> spStreamDesc;
@@ -125,6 +127,7 @@ namespace winrt::WindowsSample::implementation
 
         m_sourceState = SourceState::Stopped;
         DEBUG_MSG(L"Initialize exit");
+        m_initalized = true;
 
         return S_OK;
     }
@@ -173,49 +176,66 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        if (!(m_sourceState != SourceState::Stopped || m_sourceState != SourceState::Shutdown))
+        if (m_sourceState == SourceState::Invalid)
         {
-            return MF_E_INVALID_STATE_TRANSITION;
+            RETURN_IF_FAILED(MF_E_INVALID_STATE_TRANSITION);
         }
         m_sourceState = SourceState::Started;
 
-        // This checks the passed in PresentationDescriptor matches the member of streams we
-        // have defined internally and that at least one stream is selected
+        // This validates that the PresentationDescriptor passed as argument matches the member of streams we
+        // have defined internally
         RETURN_IF_FAILED(_ValidatePresentationDescriptor(pPresentationDescriptor));
         RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorCount(&count));
         RETURN_IF_FAILED(InitPropVariantFromInt64(MFGetSystemTime(), &startTime));
 
-        // We're hardcoding this to the first descriptor
-        // since this sample is a single stream sample.  For
-        // multiple streams, we need to walk the list of streams
-        // and for each selected stream, send the MEUpdatedStream
-        // or MENewStream event along with the MEStreamStarted
-        // event.
+        // Update devicesource presentation descriptor for selected and deselected stream(s)
+        BOOL selected = false;
+        bool wasSelected = false;
+        DWORD streamIdx = 0;
+        DWORD streamId = 0;
         for (unsigned int i = 0; i < count; i++)
         {
-            BOOL selected = false;
             wil::com_ptr_nothrow<IMFStreamDescriptor> streamDesc;
             RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorByIndex(
                 i,
                 &selected,
                 &streamDesc));
 
-            DWORD streamId = 0;
             RETURN_IF_FAILED(streamDesc->GetStreamIdentifier(&streamId));
-
-            DWORD streamIdx = 0;
-            bool wasSelected = false;
+            
             wil::com_ptr_nothrow<IMFStreamDescriptor> spLocalStreamDescriptor;
             RETURN_IF_FAILED(_GetStreamDescriptorByStreamId(streamId, &streamIdx, &wasSelected, &spLocalStreamDescriptor));
 
+            if (wasSelected && !selected)
+            {
+                // stream was previously selected but not selected this time.
+                RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(streamIdx));
+                RETURN_IF_FAILED(m_spDevSourcePDesc->DeselectStream(m_desiredStreamIdx));
+            }
+        }
+        for (unsigned int i = 0; i < count; i++)
+        {
+            wil::com_ptr_nothrow<IMFStreamDescriptor> streamDesc;
+            RETURN_IF_FAILED(pPresentationDescriptor->GetStreamDescriptorByIndex(
+                i,
+                &selected,
+                &streamDesc));
+
+            RETURN_IF_FAILED(streamDesc->GetStreamIdentifier(&streamId));
+
+            wil::com_ptr_nothrow<IMFStreamDescriptor> spLocalStreamDescriptor;
+            RETURN_IF_FAILED(_GetStreamDescriptorByStreamId(streamId, &streamIdx, &wasSelected, &spLocalStreamDescriptor));
             if (selected)
             {
-                DEBUG_MSG(L"Selected stream Id: %d", streamIdx);
-                // Update our internal PresentationDescriptor
-                RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
+                if (!wasSelected)
+                {
+                    DEBUG_MSG(L"Selected stream Id: %d", streamIdx);
+                    // Update our internal PresentationDescriptor
+                    RETURN_IF_FAILED(m_spPresentationDescriptor->SelectStream(streamIdx));
 
-                // Update the source camera descriptor we proper stream
-                RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_desiredStreamIdx));
+                    // Update the source camera descriptor we proper stream
+                    RETURN_IF_FAILED(m_spDevSourcePDesc->SelectStream(m_desiredStreamIdx));
+                }
 
                 BOOL selected2 = FALSE;
                 wil::com_ptr_nothrow<IMFStreamDescriptor> spDevStreamDescriptor;
@@ -226,48 +246,27 @@ namespace winrt::WindowsSample::implementation
                 wil::com_ptr_nothrow<IMFMediaTypeHandler> spStreamMediaTypeHandler;
                 RETURN_IF_FAILED(streamDesc->GetMediaTypeHandler(&spStreamMediaTypeHandler));
 
+                // debug what is set on the virtual camera
                 wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType;
                 RETURN_IF_FAILED(spStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType));
                 {
                     GUID majorType;
-                    spCurrentMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
+                    RETURN_IF_FAILED(spCurrentMediaType->GetGUID(MF_MT_MAJOR_TYPE, &majorType));
 
                     GUID subtype;
-                    spCurrentMediaType->GetGUID(MF_MT_SUBTYPE, &subtype);
+                    RETURN_IF_FAILED(spCurrentMediaType->GetGUID(MF_MT_SUBTYPE, &subtype));
 
                     UINT width = 0, height = 0;
-                    MFGetAttributeSize(spCurrentMediaType.get(), MF_MT_FRAME_SIZE, &width, &height);
+                    RETURN_IF_FAILED(MFGetAttributeSize(spCurrentMediaType.get(), MF_MT_FRAME_SIZE, &width, &height));
 
                     UINT numerator = 0, denominator = 0;
-                    MFGetAttributeRatio(spCurrentMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
-                }
-
-                {
-                    wil::com_ptr_nothrow<IMFMediaType> spCurrentMediaType2;
-                    RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->GetCurrentMediaType(&spCurrentMediaType2));
-                    GUID majorType;
-                    spCurrentMediaType2->GetGUID(MF_MT_MAJOR_TYPE, &majorType);
-
-                    GUID subtype;
-                    spCurrentMediaType2->GetGUID(MF_MT_SUBTYPE, &subtype);
-
-                    UINT width = 0, height = 0;
-                    MFGetAttributeSize(spCurrentMediaType2.get(), MF_MT_FRAME_SIZE, &width, &height);
-
-                    UINT numerator = 0, denominator = 0;
-                    MFGetAttributeRatio(spCurrentMediaType2.get(), MF_MT_FRAME_RATE, &numerator, &denominator);
+                    RETURN_IF_FAILED(MFGetAttributeRatio(spCurrentMediaType.get(), MF_MT_FRAME_RATE, &numerator, &denominator));
                 }
 
                 RETURN_IF_FAILED(spDevSourceStreamMediaTypeHandler->SetCurrentMediaType(spCurrentMediaType.get()));
-
-                RETURN_IF_FAILED(m_spDevSource->Start(m_spDevSourcePDesc.get(), pguidTimeFormat, pvarStartPos));
-            }
-            else if (wasSelected)
-            {
-                // stream was previously selected but not selected this time.
-                RETURN_IF_FAILED(m_spPresentationDescriptor->DeselectStream(streamIdx));
             }
         }
+        RETURN_IF_FAILED(m_spDevSource->Start(m_spDevSourcePDesc.get(), pguidTimeFormat, pvarStartPos));
 
         // Send event that the source started. Include error code in case it failed.
         RETURN_IF_FAILED(m_spEventQueue->QueueEventParamVar(
@@ -339,7 +338,7 @@ namespace winrt::WindowsSample::implementation
             }
         }
         m_streamList.reset();
-        m_spPresentationDescriptor.detach(); // calling reset() fails due to the stream also calling reset on its stream descriptor..
+        (void)m_spPresentationDescriptor.detach(); // calling reset() fails due to the stream also calling reset on its stream descriptor..
         
         if (m_spEventQueue != nullptr)
         {
@@ -350,6 +349,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::_GetStreamDescriptorByStreamId(
         _In_ DWORD dwStreamId, 
         _Out_ DWORD* pdwStreamIdx, 
@@ -430,8 +430,7 @@ namespace winrt::WindowsSample::implementation
 
         RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
-        RETURN_IF_FAILED(MFCreateAttributes(sourceAttributes, 1));
-        RETURN_IF_FAILED(m_spAttributes->CopyAllItems(*sourceAttributes));
+        RETURN_IF_FAILED(m_spAttributes.copy_to(sourceAttributes));
 
         return S_OK;
     }
@@ -587,13 +586,20 @@ namespace winrt::WindowsSample::implementation
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
+        
         HRESULT hr = S_OK;
+        RETURN_HR_IF_NULL(E_POINTER, pProperty);
 
         if (ulPropertyLength < sizeof(KSPROPERTY))
         {
             return E_INVALIDARG;
         }
+        RETURN_IF_FAILED(_CheckShutdownRequiresLock());
 
+        DEBUG_MSG(L"[enter: Set=%s | id=%u | flags=0x%08x]", 
+            winrt::to_hstring(pProperty->Set).data(), 
+            pProperty->Id, 
+            pProperty->Flags);
         bool isHandled = false;
 
         // you would do the following to catch if an existing standard extended control is passed instead of the below custom control:
@@ -780,6 +786,7 @@ namespace winrt::WindowsSample::implementation
     }
 
     /// Internal methods.
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::_CheckShutdownRequiresLock()
     {
         if (m_sourceState == SourceState::Shutdown)
@@ -795,8 +802,9 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT AugmentedMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
+    void AugmentedMediaSource::OnMediaSourceEvent(_In_ IMFAsyncResult* pResult)
     {
+        HRESULT hr = S_OK;
         MediaEventType met = MEUnknown;
 
         wil::com_ptr_nothrow<IMFMediaEvent> spEvent;
@@ -805,44 +813,48 @@ namespace winrt::WindowsSample::implementation
 
         DEBUG_MSG(L"OnMediaSourceEvent %p ", pResult);
 
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, pResult);
-        RETURN_IF_FAILED(pResult->GetState(&spUnknown));
-        RETURN_IF_FAILED(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)));
+        winrt::slim_lock_guard lock(m_Lock);
 
-        RETURN_IF_FAILED(spMediaSource->EndGetEvent(pResult, &spEvent));
-        RETURN_HR_IF_NULL(MF_E_UNEXPECTED, spEvent);
-        RETURN_IF_FAILED(spEvent->GetType(&met));
+        CHECKNULL_GOTO(pResult, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(pResult->GetState(&spUnknown), done);
+        CHECKHR_GOTO(spUnknown->QueryInterface(IID_PPV_ARGS(&spMediaSource)), done);
+
+        CHECKHR_GOTO(spMediaSource->EndGetEvent(pResult, &spEvent), done);
+        CHECKNULL_GOTO(spEvent, MF_E_UNEXPECTED, done);
+        CHECKHR_GOTO(spEvent->GetType(&met), done);
 
         switch (met)
         {
         case MENewStream:
         case MEUpdatedStream:
-            RETURN_IF_FAILED(OnNewStream(spEvent.get(), met));
+            CHECKHR_GOTO(OnNewStream(spEvent.get(), met), done);
             break;
         case MESourceStarted:
-            RETURN_IF_FAILED(OnSourceStarted(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStarted(spEvent.get()), done);
             break;
         case MESourceStopped:
-            RETURN_IF_FAILED(OnSourceStopped(spEvent.get()));
+            CHECKHR_GOTO(OnSourceStopped(spEvent.get()), done);
             break;
         default:
             // Forward all device source event out.
-            RETURN_IF_FAILED(m_spEventQueue->QueueEvent(spEvent.get()));
+            CHECKHR_GOTO(m_spEventQueue->QueueEvent(spEvent.get()), done);
             break;
         }
 
+    done:
+        if (SUCCEEDED(_CheckShutdownRequiresLock()))
         {
-            winrt::slim_lock_guard lock(m_Lock);
-            if (SUCCEEDED(_CheckShutdownRequiresLock()))
+            // Continue listening to source event
+            hr = m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get());
+
+            if (FAILED(hr))
             {
-                // Continue listening to source event
-                RETURN_IF_FAILED(m_spDevSource->BeginGetEvent(m_xOnMediaSourceEvent.get(), m_spDevSource.get()));
+                DEBUG_MSG(L"error when processing source event: met=%d, hr=0x%08x", met, hr);
             }
         }
-
-        return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::OnNewStream(IMFMediaEvent* pEvent, MediaEventType met)
     {
         RETURN_HR_IF_NULL(E_INVALIDARG, pEvent);
@@ -865,31 +877,29 @@ namespace winrt::WindowsSample::implementation
         DWORD dwStreamIdentifier = 0;
         RETURN_IF_FAILED(spStreamDesc->GetStreamIdentifier(&dwStreamIdentifier));
 
-        winrt::slim_lock_guard lock(m_Lock);
+        for (DWORD i = 0; i < m_streamList.size(); i++)
         {
-            for (DWORD i = 0; i < m_streamList.size(); i++)
+            if (dwStreamIdentifier == m_streamList[i]->m_dwDevSourceStreamIdentifier)
             {
-                if (dwStreamIdentifier == m_streamList[i]->m_dwDevSourceStreamIdentifier)
-                {
-                    RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
+                RETURN_IF_FAILED(m_streamList[i]->SetMediaStream(spMediaStream.get()));
 
-                    wil::com_ptr_nothrow<::IUnknown> spunkStream;
-                    RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
+                wil::com_ptr_nothrow<::IUnknown> spunkStream;
+                RETURN_IF_FAILED(m_streamList[i]->QueryInterface(IID_PPV_ARGS(&spunkStream)));
 
-                    RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
-                        met,
-                        GUID_NULL,
-                        S_OK,
-                        spunkStream.get()));
-                }
+                RETURN_IF_FAILED(m_spEventQueue->QueueEventParamUnk(
+                    met,
+                    GUID_NULL,
+                    S_OK,
+                    spunkStream.get()));
             }
         }
+        
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::OnSourceStarted(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStarted");
 
         m_sourceState = SourceState::Started;
@@ -900,9 +910,9 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::OnSourceStopped(IMFMediaEvent* pEvent)
     {
-        winrt::slim_lock_guard lock(m_Lock);
         DEBUG_MSG(L"OnSourceStopped ");
 
         m_sourceState = SourceState::Stopped;
@@ -919,6 +929,7 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
+    _Requires_lock_held_(m_Lock)
     HRESULT AugmentedMediaSource::_ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPD)
     {
         DWORD cStreams = 0;
@@ -951,56 +962,81 @@ namespace winrt::WindowsSample::implementation
         return S_OK;
     }
 
-    HRESULT AugmentedMediaSource::_CreateSourceAttributes()
+    _Requires_lock_held_(m_Lock)
+    HRESULT AugmentedMediaSource::_CreateSourceAttributes(_In_ IMFAttributes* pActivateAttributes)
     {
-        if (m_spAttributes.get() == nullptr)
+        // get devicesource attributes, and add additional if needed.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 3));
+
+        // copy deviceSource attributes.
+        wil::com_ptr_nothrow<IMFAttributes> spSourceAttributes;
+        wil::com_ptr_nothrow<IMFMediaSourceEx> spMediaSourceEx;
+        RETURN_IF_FAILED(m_spDevSource->QueryInterface(IID_PPV_ARGS(&spMediaSourceEx)));
+        RETURN_IF_FAILED(spMediaSourceEx->GetSourceAttributes(&spSourceAttributes));
+        RETURN_IF_FAILED(spSourceAttributes->CopyAllItems(m_spAttributes.get()));
+
+        // if ActivateAttributes is not null, copy and overwrite the same attributes from the underlying devicesource attributes.
+        if (pActivateAttributes)
         {
-            // Create our source attribute store.
-            RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+            UINT32 uiCount = 0;
 
-            wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
-            wil::com_ptr_nothrow<IMFSensorProfile> profile;
+            RETURN_IF_FAILED(pActivateAttributes->GetCount(&uiCount));
 
-            // Create an empty profile collection...
-            RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
-
-            // In this example since we have just one stream, we only have one
-            // pin to add:  Pin = STREAM_ID.
-
-            // Legacy profile is mandatory.  This is to ensure non-profile
-            // aware applications can still function, but with degraded
-            // feature sets.
-            const DWORD STREAM_ID = 0;
-            RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr,
-                &profile));
-            RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
-            RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
-
-
-            // Se the profile collection to the attribute store of the IMFTransform.
-            RETURN_IF_FAILED(m_spAttributes->SetUnknown(
-                MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
-                profileCollection.get()));
-
-            // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
-            // virtual camera configuration app's PFN (Package Family Name).
-            // Below we query programmatically the current application info (knowing that the app 
-            // that activates the virtual camera registers it on the system and also acts as its 
-            // configuration app).
-            // If the MediaSource is associated with a specific UWP only, you may instead hardcode
-            // a particular PFN.
-            try
+            for (UINT32 i = 0; i < uiCount; i++)
             {
-                winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
-                DEBUG_MSG(L"AppInfo: %p ", appInfo);
-                if (appInfo != nullptr)
-                {
-                    DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
-                    RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
-                }
+                GUID guid = GUID_NULL;
+                wil::unique_prop_variant spPropVar;
+
+                RETURN_IF_FAILED(pActivateAttributes->GetItemByIndex(i, &guid, &spPropVar));
+                RETURN_IF_FAILED(m_spAttributes->SetItem(guid, spPropVar));
             }
-            catch (...) { DEBUG_MSG(L"Not running in app package"); }
         }
+
+        // Create our source attribute store.
+        RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 1));
+
+        wil::com_ptr_nothrow<IMFSensorProfileCollection>  profileCollection;
+        wil::com_ptr_nothrow<IMFSensorProfile> profile;
+
+        // Create an empty profile collection...
+        RETURN_IF_FAILED(MFCreateSensorProfileCollection(&profileCollection));
+
+        // In this example since we have just one stream, we only have one
+        // pin to add:  Pin = STREAM_ID.
+
+        // Legacy profile is mandatory.  This is to ensure non-profile
+        // aware applications can still function, but with degraded
+        // feature sets.
+        const DWORD STREAM_ID = 0;
+        RETURN_IF_FAILED(MFCreateSensorProfile(KSCAMERAPROFILE_Legacy, 0 /*ProfileIndex*/, nullptr, &profile));
+        RETURN_IF_FAILED(profile->AddProfileFilter(STREAM_ID, L"((RES==;FRT<=30,1;SUT==))"));
+        RETURN_IF_FAILED(profileCollection->AddProfile(profile.get()));
+
+
+        // Set the profile collection to the attribute store of the IMFTransform.
+        RETURN_IF_FAILED(m_spAttributes->SetUnknown(
+            MF_DEVICEMFT_SENSORPROFILE_COLLECTION,
+            profileCollection.get()));
+
+        // The MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME attribute specifies the 
+        // virtual camera configuration app's PFN (Package Family Name).
+        // Below we query programmatically the current application info (knowing that the app 
+        // that activates the virtual camera registers it on the system and also acts as its 
+        // configuration app).
+        // If the MediaSource is associated with a specific UWP only, you may instead hardcode
+        // a particular PFN.
+        try
+        {
+            winrt::Windows::ApplicationModel::AppInfo appInfo = winrt::Windows::ApplicationModel::AppInfo::Current();
+            DEBUG_MSG(L"AppInfo: %p ", appInfo);
+            if (appInfo != nullptr)
+            {
+                DEBUG_MSG(L"PFN: %s \n", appInfo.PackageFamilyName().data());
+                RETURN_IF_FAILED(m_spAttributes->SetString(MF_VIRTUALCAMERA_CONFIGURATION_APP_PACKAGE_FAMILY_NAME, appInfo.PackageFamilyName().data()));
+            }
+        }
+        catch (...) { DEBUG_MSG(L"Not running in app package"); }
+        
 
         return S_OK;
     }

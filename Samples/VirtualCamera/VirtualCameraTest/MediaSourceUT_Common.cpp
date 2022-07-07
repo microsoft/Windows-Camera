@@ -246,9 +246,13 @@ namespace VirtualCameraTest::impl
         {
             LOG_SUCCESS(L"Function return ERROR_SET_NOT_FOUND on invalid control");
         }
+        else if (FAILED(hr))
+        {
+            LOG_WARNING(L"Function didn't return the expected error: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
+        }
         else
         {
-            LOG_ERROR_RETURN(E_TEST_FAILED, L"Function didn't return the expected error: 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
+            LOG_ERROR_RETURN(E_TEST_FAILED, L"Function call didn't fail with expected error (or any error): 0x%08x (expected: 0x%08x)", hr, HRESULT_FROM_WIN32(ERROR_SET_NOT_FOUND));
         }
 
         return S_OK;

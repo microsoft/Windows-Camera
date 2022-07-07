@@ -39,16 +39,18 @@ namespace winrt::WindowsSample::implementation
         DWORD StreamIdentifier() { return m_dwStreamId; };
         HRESULT SetMediaStream(_In_ IMFMediaStream* pMediaStream);
 
-        HRESULT OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
+        void OnMediaStreamEvent(_In_ IMFAsyncResult* pResult);
 
         HRESULT Start();
         HRESULT Stop();
 
     protected:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _SetStreamAttributes(IMFAttributes* pAttributeStore);
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _SetStreamAttributes(_In_ IMFAttributes* pAttributeStore);
 
         wil::com_ptr_nothrow<CAsyncCallback<AugmentedMediaStream>> m_xOnMediaStreamEvent;
+        wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFMediaType>> m_mediaTypeList;
+        std::vector<wil::com_ptr_nothrow<IMFMediaType>> m_mediaTypeCache;
 
         winrt::slim_mutex  m_Lock;
 

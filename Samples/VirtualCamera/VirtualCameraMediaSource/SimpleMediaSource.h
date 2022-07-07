@@ -74,14 +74,14 @@ namespace winrt::WindowsSample::implementation
             _Out_  MFSampleAllocatorUsage* peUsage) override;
 
         // Non-Interface functions
-        HRESULT Initialize();
+        HRESULT Initialize(_In_ IMFAttributes* pAttributes);
 
     private:
-        HRESULT _CheckShutdownRequiresLock();
-        HRESULT _ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPresentationDescriptor);
-        HRESULT _CreateSourceAttributes();
-        HRESULT _GetStreamDescriptorByStreamId(_In_ DWORD dwStreamId, _Out_ DWORD* pdwStreamIdx, _Out_ bool* pSelected, _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor);
-        HRESULT _GetMediaStreamById(_In_ DWORD dwStreamId, _COM_Outptr_ SimpleMediaStream** ppMediaStream);
+        _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();
+        _Requires_lock_held_(m_Lock) HRESULT _ValidatePresentationDescriptor(_In_ IMFPresentationDescriptor* pPresentationDescriptor);
+        _Requires_lock_held_(m_Lock) HRESULT _CreateSourceAttributes(_In_opt_ IMFAttributes* pActivateAttributes);
+        _Requires_lock_held_(m_Lock) HRESULT _GetStreamDescriptorByStreamId(_In_ DWORD dwStreamId, _Out_ DWORD* pdwStreamIdx, _Out_ bool* pSelected, _COM_Outptr_ IMFStreamDescriptor** ppStreamDescriptor);
+        _Requires_lock_held_(m_Lock) HRESULT _GetMediaStreamById(_In_ DWORD dwStreamId, _COM_Outptr_ SimpleMediaStream** ppMediaStream);
 
         winrt::slim_mutex m_Lock;
         SourceState m_sourceState{ SourceState::Invalid };
@@ -92,6 +92,7 @@ namespace winrt::WindowsSample::implementation
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<SimpleMediaStream>> m_streamList;
 
         const DWORD NUM_STREAMS = 1;
+        bool m_initalized = false;
     };
 }
 

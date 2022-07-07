@@ -163,11 +163,59 @@ DeviceInformation SelectPhysicalCamera()
     return camList[devIdx - 1];
 }
 
+HRESULT SelectLifetimeAndAccess(_Out_ MFVirtualCameraLifetime* pLifetime, _Out_ MFVirtualCameraAccess* pAccess)
+{
+    LOG_COMMENT(L"\n select VCam lifetime: \n 1 - System \n 2 - Session \n 3 - quit \n");
+    uint32_t select = 0;
+    std::wcin >> select;
+
+    wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
+    switch (select)
+    {
+    case 1:
+    {
+        *pLifetime = MFVirtualCameraLifetime_System;
+        break;
+    }
+    case 2:
+    {
+        *pLifetime = MFVirtualCameraLifetime_Session;
+        break;
+    }
+
+    default:
+        return E_FAIL;
+    }
+
+    LOG_COMMENT(L"\n select VCam user access: \n 1 - Current User \n 2 - All  \n 3 - quit \n");
+    std::wcin >> select;
+    switch (select)
+    {
+    case 1:
+    {
+        *pAccess = MFVirtualCameraAccess_CurrentUser;
+        break;
+    }
+    case 2:
+    {
+        *pAccess = MFVirtualCameraAccess_AllUsers;
+        break;
+    }
+
+    default:
+        return E_FAIL;
+    }
+
+    return S_OK;
+}
+
 HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
 {
     LOG_COMMENT(L"\n select option: \n 1 - VCam-SimpleMediaSource \n 2 - VCam-HWMediaSource \n 3 - VCam-AugmentedMediaSource \n 4 - quit \n");
     uint32_t select = 0;
     std::wcin >> select;
+    MFVirtualCameraLifetime lifetime;
+    MFVirtualCameraAccess access;
 
     wil::com_ptr_nothrow<IMFVirtualCamera> spVirtualCamera;
     switch (select)
@@ -175,7 +223,8 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
         case 1:
         {
             SimpleMediaSourceUT test;
-            RETURN_IF_FAILED(test.CreateVirtualCamera(ppVirtualCamera));
+            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
+            RETURN_IF_FAILED(test.CreateVirtualCamera(lifetime, access, ppVirtualCamera));
             break;
         }
         case 2: 
@@ -183,7 +232,8 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
             
             HWMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), ppVirtualCamera));
+            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
+            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera));
             break;
         }
         case 3:
@@ -191,7 +241,8 @@ HRESULT SelectRegisterVirtualCamera(_Outptr_ IMFVirtualCamera** ppVirtualCamera)
             auto devInfo = SelectPhysicalCamera();
 
             AugmentedMediaSourceUT test(devInfo.Id());
-            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), ppVirtualCamera));
+            RETURN_IF_FAILED(SelectLifetimeAndAccess(&lifetime, &access));
+            RETURN_IF_FAILED(test.CreateVirtualCamera(devInfo.Name(), lifetime, access, ppVirtualCamera));
             break;
         }
 
