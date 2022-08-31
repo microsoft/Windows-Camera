@@ -165,9 +165,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="CameraControlMonitorAppSample_TemporaryKey.pfx" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj">
+      <Project>{3e174357-0294-40f1-ba11-7330617ddbb5}</Project>
+      <Name>CameraKsPropertyHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ControlMonitorHelper\ControlMonitorHelper.vcxproj">
       <Project>{3ac253a5-a383-49d8-acc0-102c1e46e42f}</Project>
       <Name>ControlMonitorHelper_WinRT</Name>

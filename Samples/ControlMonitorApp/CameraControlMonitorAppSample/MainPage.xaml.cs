@@ -24,7 +24,6 @@ namespace OutboundSettingsAppTest
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        string cameraId = null;
         private MediaCapture m_mediaCapture = null;
         private MediaPlayer m_mediaPlayer = null;
         private List<DeviceInformation> m_cameraDeviceList;
@@ -67,7 +66,8 @@ namespace OutboundSettingsAppTest
             // to preview its stream without blocking other app from using it
             var initSettings = new MediaCaptureInitializationSettings()
             {
-                //SharingMode = MediaCaptureSharingMode.SharedReadOnly,
+                // This app could define "SharingMode= MediaCaptureSharingMode.SharedReadOnly" here if
+                // the app only wants to be informed of the changes and not have full control camera app.
                 VideoDeviceId = m_cameraDeviceList[selectedIndex].Id,
                 StreamingCaptureMode = StreamingCaptureMode.Video
             };
@@ -98,19 +98,40 @@ namespace OutboundSettingsAppTest
 
             UIMediaPlayerElement.SetMediaPlayer(m_mediaPlayer);
 
-            //m_controlManager = new DefaultControlHelper.DefaultControlManager(m_mediaCapture.MediaCaptureSettings.VideoDeviceId);
-            m_controlManager = ControlMonitorHelper.ControlMonitorManager.CreateCameraControlMonitor(m_mediaCapture.MediaCaptureSettings.VideoDeviceId);
+            // Creating a controls data for listening changes on these controls.
+            var controlContrast = new ControlMonitorHelper.ControlData()
+            {
+                controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind,
+                controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST
+            };
+
+            var controlBrightness = new ControlMonitorHelper.ControlData()
+            {
+                controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind,
+                controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS
+            };
+
+            ControlMonitorHelper.ControlData[] controls = { controlContrast, controlBrightness };
+
+            m_controlManager = ControlMonitorHelper.ControlMonitorManager.CreateCameraControlMonitor(m_mediaCapture.MediaCaptureSettings.VideoDeviceId, controls);
             m_controlManager.VidCapCameraControlChanged += CameraControlMonitor_VidCapCameraControlChanged;
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
-                // The slider is initialized to work with the values that driver provides as supported range and step
+                // The sliders is initialized to work with the values that driver provides as supported range and step
                 ContrastSlider.Minimum = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Min;
                 ContrastSlider.Maximum = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Max;
                 ContrastSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Step;
                 ContrastSlider.Visibility = Visibility.Visible;
-                double uiContrastValue = 0;
-                m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out uiContrastValue);
-                ContrastSlider.Value = uiContrastValue;
+                double value = 0;
+                m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value);
+                ContrastSlider.Value = value;
+
+                BrightnessSlider.Minimum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Min;
+                BrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Max;
+                BrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
+                BrightnessSlider.Visibility = Visibility.Visible;
+                m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
+                BrightnessSlider.Value = value;
             });
         }
 
@@ -136,17 +157,31 @@ namespace OutboundSettingsAppTest
                 m_mediaCapture = null;
             }
         }
-        private async void CameraControlMonitor_VidCapCameraControlChanged(object sender, uint e)
+        private async void CameraControlMonitor_VidCapCameraControlChanged(object sender, ControlMonitorHelper.ControlData control)
         {
             try
             {
-                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                {
-                    double uiContrastValue = 0;
-                    m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out uiContrastValue);
-                    ContrastSlider.Value = uiContrastValue;
 
-                });
+                if (control.controlKind == ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST)
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        double value = 0;
+                        m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value);
+                        ContrastSlider.Value = value;
+
+                    });
+                }
+                else if(control.controlKind == ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS)
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        double value = 0;
+                        m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
+                        BrightnessSlider.Value = value;
+
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -157,6 +192,11 @@ namespace OutboundSettingsAppTest
         private void ContrastSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             m_mediaCapture.VideoDeviceController.Contrast.TrySetValue(e.NewValue);
+        }
+
+        private void BrightnessSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            m_mediaCapture.VideoDeviceController.Brightness.TrySetValue(e.NewValue);
         }
 
         private async void UICameraList_SelectionChanged(object sender, SelectionChangedEventArgs e)

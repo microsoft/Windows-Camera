@@ -9,14 +9,14 @@ namespace winrt::ControlMonitorHelper::implementation
 {
     struct ControlMonitorManager : ControlMonitorManagerT<ControlMonitorManager>
     {
-        static winrt::ControlMonitorHelper::ControlMonitorManager CreateCameraControlMonitor(winrt::hstring symlink);
-        ControlMonitorManager(winrt::hstring cameraSymbolicLink);
+        static winrt::ControlMonitorHelper::ControlMonitorManager CreateCameraControlMonitor(winrt::hstring symlink, array_view<winrt::ControlMonitorHelper::ControlData const> controls);
+        ControlMonitorManager(winrt::hstring cameraSymbolicLink, array_view<winrt::ControlMonitorHelper::ControlData const> controls);
         virtual ~ControlMonitorManager() noexcept;
         void Stop();
         void Start();
 
     public:
-        winrt::event_token VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<uint32_t> const& handler);
+        winrt::event_token VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler);
         void VidCapCameraControlChanged(winrt::event_token const& token) noexcept;
     private:
 
@@ -34,11 +34,12 @@ namespace winrt::ControlMonitorHelper::implementation
 
             LONG m_lRef = 0;
             wil::critical_section m_lock;
-            winrt::event<Windows::Foundation::EventHandler<uint32_t>> m_vidCapCameraControlChangedEvent;
+            winrt::event<Windows::Foundation::EventHandler<ControlData>> m_vidCapCameraControlChangedEvent;
             ControlMonitorManager* m_pParent = nullptr;
         };
         winrt::com_ptr<CameraControlCallback> m_spCallback;
         wil::com_ptr<IMFCameraControlMonitor> m_spMonitor;
+        winrt::array_view<ControlData const> m_controls;
     };
 }
 

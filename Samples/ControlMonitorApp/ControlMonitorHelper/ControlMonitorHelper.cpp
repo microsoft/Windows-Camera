@@ -8,13 +8,13 @@
 
 namespace winrt::ControlMonitorHelper::implementation
 {
-    winrt::ControlMonitorHelper::ControlMonitorManager ControlMonitorManager::CreateCameraControlMonitor(winrt::hstring symlink)
+    winrt::ControlMonitorHelper::ControlMonitorManager ControlMonitorManager::CreateCameraControlMonitor(winrt::hstring symlink, winrt::array_view<winrt::ControlMonitorHelper::ControlData const> controls)
     {
-        auto result = winrt::make<ControlMonitorManager>(symlink);
+        auto result = winrt::make<ControlMonitorManager>(symlink, controls);
         return result;
     }
 
-    ControlMonitorManager::ControlMonitorManager(winrt::hstring cameraSymbolicLink)
+    ControlMonitorManager::ControlMonitorManager(winrt::hstring cameraSymbolicLink, array_view<winrt::ControlMonitorHelper::ControlData const> controls)
     {
         m_spCallback = winrt::make_self<CameraControlCallback>(this);
 
@@ -24,10 +24,31 @@ namespace winrt::ControlMonitorHelper::implementation
             throw winrt::hresult_error(hr, L"error from MFCreateCameraControlMonitor..");
         }
 
-        hr = m_spMonitor->AddControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, KSPROPERTY_VIDEOPROCAMP_CONTRAST);
-        if (FAILED(hr))
+        m_controls = controls;
+
+        for each (auto&& var in m_controls)
         {
-            throw winrt::hresult_error(hr, L"error from IMFCameraControlMonitor::AddControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, 0)..");
+            GUID guid{};
+            switch (var.controlKind)
+            {
+            case ControlKind::VidCapCameraControlKind:
+                guid = PROPSETID_VIDCAP_CAMERACONTROL;
+                break;
+            case ControlKind::VidCapVideoProcAmpKind:
+                guid = PROPSETID_VIDCAP_VIDEOPROCAMP;
+                break;
+            case ControlKind::ExtendedControlKind:
+                guid = KSPROPERTYSETID_ExtendedCameraControl;
+                break;
+            default:
+                throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
+            }
+
+            hr = m_spMonitor->AddControlSubscription(guid, var.controlId);
+            if (FAILED(hr))
+            {
+                throw winrt::hresult_error(hr, L"error from IMFCameraControlMonitor::AddControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, 0)..");
+            }
         }
 
         hr = m_spMonitor->Start();
@@ -42,10 +63,30 @@ namespace winrt::ControlMonitorHelper::implementation
         if (m_spMonitor != nullptr)
         {
             THROW_IF_FAILED(m_spMonitor->Stop());
-            THROW_IF_FAILED(m_spMonitor->RemoveControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, KSPROPERTY_VIDEOPROCAMP_CONTRAST));
+            for each (auto && var in m_controls)
+            {
+                GUID guid{};
+                switch (var.controlKind)
+                {
+                case ControlKind::VidCapCameraControlKind:
+                    guid = PROPSETID_VIDCAP_CAMERACONTROL;
+                    break;
+                case ControlKind::VidCapVideoProcAmpKind:
+                    guid = PROPSETID_VIDCAP_VIDEOPROCAMP;
+                    break;
+                case ControlKind::ExtendedControlKind:
+                    guid = KSPROPERTYSETID_ExtendedCameraControl;
+                    break;
+                default:
+                    throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
+                }
+
+                THROW_IF_FAILED(m_spMonitor->RemoveControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, KSPROPERTY_VIDEOPROCAMP_CONTRAST));
+            }
+            
             m_spMonitor = nullptr;
         }
-    } CATCH_FAIL_FAST()
+    } CATCH_LOG()
 
     void ControlMonitorManager::Stop()
     {
@@ -69,9 +110,27 @@ namespace winrt::ControlMonitorHelper::implementation
     //
     IFACEMETHODIMP_(void) ControlMonitorManager::CameraControlCallback::OnChange(_In_ REFGUID controlSet, _In_ UINT32 id)
     {
+        
         if (controlSet == PROPSETID_VIDCAP_VIDEOPROCAMP)
         {
-            m_vidCapCameraControlChangedEvent(*m_pParent, id);
+            ControlData control;
+            control.controlKind = ControlKind::VidCapVideoProcAmpKind;
+            control.controlId = id;
+            m_vidCapCameraControlChangedEvent(*m_pParent, control);
+        }
+        else if (controlSet == PROPSETID_VIDCAP_CAMERACONTROL)
+        {
+            ControlData control;
+            control.controlKind = ControlKind::VidCapCameraControlKind;
+            control.controlId = id;
+            m_vidCapCameraControlChangedEvent(*m_pParent, control);
+        }
+        else if (controlSet == KSPROPERTYSETID_ExtendedCameraControl)
+        {
+            ControlData control;
+            control.controlKind = ControlKind::ExtendedControlKind;
+            control.controlId = id;
+            m_vidCapCameraControlChangedEvent(*m_pParent, control);
         }
     }
 
@@ -80,7 +139,7 @@ namespace winrt::ControlMonitorHelper::implementation
         UNREFERENCED_PARAMETER(hrStatus);
     }
 
-    winrt::event_token ControlMonitorManager::VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<uint32_t> const& handler)
+    winrt::event_token ControlMonitorManager::VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler)
     {
         return m_spCallback->m_vidCapCameraControlChangedEvent.add(handler);
     }
