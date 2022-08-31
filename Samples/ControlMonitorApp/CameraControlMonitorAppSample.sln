@@ -1,0 +1,69 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32428.217
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControlMonitorAppSample", "CameraControlMonitorAppSample\CameraControlMonitorAppSample.csproj", "{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlMonitorHelper_WinRT", "ControlMonitorHelper\ControlMonitorHelper.vcxproj", "{3AC253A5-A383-49D8-ACC0-102C1E46E42F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
+		Debug|ARM64 = Debug|ARM64
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|ARM = Release|ARM
+		Release|ARM64 = Release|ARM64
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM.ActiveCfg = Debug|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM.Build.0 = Debug|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM.Deploy.0 = Debug|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM64.Build.0 = Debug|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|ARM64.Deploy.0 = Debug|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x64.ActiveCfg = Debug|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x64.Build.0 = Debug|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x64.Deploy.0 = Debug|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x86.ActiveCfg = Debug|x86
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x86.Build.0 = Debug|x86
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Debug|x86.Deploy.0 = Debug|x86
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM.ActiveCfg = Release|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM.Build.0 = Release|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM.Deploy.0 = Release|ARM
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM64.ActiveCfg = Release|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM64.Build.0 = Release|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|ARM64.Deploy.0 = Release|ARM64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.ActiveCfg = Release|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.Build.0 = Release|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.Deploy.0 = Release|x64
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x86.ActiveCfg = Release|x86
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x86.Build.0 = Release|x86
+		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x86.Deploy.0 = Release|x86
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM.ActiveCfg = Debug|ARM
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM.Build.0 = Debug|ARM
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM64.Build.0 = Debug|ARM64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x64.ActiveCfg = Debug|x64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x64.Build.0 = Debug|x64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x86.ActiveCfg = Debug|Win32
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x86.Build.0 = Debug|Win32
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM.ActiveCfg = Release|ARM
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM.Build.0 = Release|ARM
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM64.ActiveCfg = Release|ARM64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM64.Build.0 = Release|ARM64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x64.ActiveCfg = Release|x64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x64.Build.0 = Release|x64
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x86.ActiveCfg = Release|Win32
+		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B2207908-2DCD-4EFC-A65D-78E8AFC4EC05}
+	EndGlobalSection
+EndGlobal

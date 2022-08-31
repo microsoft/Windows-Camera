@@ -1,0 +1,16 @@
+//
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//
+
+namespace ControlMonitorHelper
+{
+    [default_interface]
+    runtimeclass ControlMonitorManager
+    {
+        static ControlMonitorManager CreateCameraControlMonitor(String symlink);
+        ControlMonitorManager(String cameraSymbolicLink);
+        void Stop();
+        void Start();
+        event Windows.Foundation.EventHandler<UInt32> VidCapCameraControlChanged;
+    }
+}
