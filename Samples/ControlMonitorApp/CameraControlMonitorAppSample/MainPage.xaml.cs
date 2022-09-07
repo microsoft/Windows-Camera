@@ -15,7 +15,6 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Navigation;
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
 namespace OutboundSettingsAppTest
 {
@@ -74,7 +73,6 @@ namespace OutboundSettingsAppTest
 
             await m_mediaCapture.InitializeAsync(initSettings);
 
-            
             // Retrieve the source associated with the video preview stream.
             // On 1-pin camera, this may be the VideoRecord MediaStreamType as opposed to VideoPreview on multi-pin camera
             var frameSource = m_mediaCapture.FrameSources.FirstOrDefault(source => source.Value.Info.MediaStreamType == MediaStreamType.VideoPreview
@@ -114,7 +112,7 @@ namespace OutboundSettingsAppTest
             ControlMonitorHelper.ControlData[] controls = { controlContrast, controlBrightness };
 
             m_controlManager = ControlMonitorHelper.ControlMonitorManager.CreateCameraControlMonitor(m_mediaCapture.MediaCaptureSettings.VideoDeviceId, controls);
-            m_controlManager.VidCapCameraControlChanged += CameraControlMonitor_VidCapCameraControlChanged;
+            m_controlManager.CameraControlChanged += CameraControlMonitor_VidCapCameraControlChanged;
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 // The sliders is initialized to work with the values that driver provides as supported range and step
@@ -139,7 +137,7 @@ namespace OutboundSettingsAppTest
         {
             if(m_controlManager != null)
             {
-                m_controlManager.VidCapCameraControlChanged -= CameraControlMonitor_VidCapCameraControlChanged;
+                m_controlManager.CameraControlChanged -= CameraControlMonitor_VidCapCameraControlChanged;
                 m_controlManager = null;
             }
             if (m_mediaPlayer != null)

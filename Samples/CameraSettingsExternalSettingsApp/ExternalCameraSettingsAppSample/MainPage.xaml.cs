@@ -16,8 +16,6 @@ using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Navigation;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 namespace OutboundSettingsAppTest
 {
     /// <summary>
@@ -74,7 +72,6 @@ namespace OutboundSettingsAppTest
 
             base.OnNavigatedTo(e);
         }
-
         private async Task InitializeAsync()
         {
             m_mediaCapture = new MediaCapture();

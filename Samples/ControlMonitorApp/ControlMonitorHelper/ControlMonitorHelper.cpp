@@ -81,7 +81,7 @@ namespace winrt::ControlMonitorHelper::implementation
                     throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
                 }
 
-                THROW_IF_FAILED(m_spMonitor->RemoveControlSubscription(PROPSETID_VIDCAP_VIDEOPROCAMP, KSPROPERTY_VIDEOPROCAMP_CONTRAST));
+                THROW_IF_FAILED(m_spMonitor->RemoveControlSubscription(guid, var.controlId));
             }
             
             m_spMonitor = nullptr;
@@ -116,21 +116,21 @@ namespace winrt::ControlMonitorHelper::implementation
             ControlData control;
             control.controlKind = ControlKind::VidCapVideoProcAmpKind;
             control.controlId = id;
-            m_vidCapCameraControlChangedEvent(*m_pParent, control);
+            m_cameraControlChangedEvt(*m_pParent, control);
         }
         else if (controlSet == PROPSETID_VIDCAP_CAMERACONTROL)
         {
             ControlData control;
             control.controlKind = ControlKind::VidCapCameraControlKind;
             control.controlId = id;
-            m_vidCapCameraControlChangedEvent(*m_pParent, control);
+            m_cameraControlChangedEvt(*m_pParent, control);
         }
         else if (controlSet == KSPROPERTYSETID_ExtendedCameraControl)
         {
             ControlData control;
             control.controlKind = ControlKind::ExtendedControlKind;
             control.controlId = id;
-            m_vidCapCameraControlChangedEvent(*m_pParent, control);
+            m_cameraControlChangedEvt(*m_pParent, control);
         }
     }
 
@@ -139,12 +139,12 @@ namespace winrt::ControlMonitorHelper::implementation
         UNREFERENCED_PARAMETER(hrStatus);
     }
 
-    winrt::event_token ControlMonitorManager::VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler)
+    winrt::event_token ControlMonitorManager::CameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler)
     {
-        return m_spCallback->m_vidCapCameraControlChangedEvent.add(handler);
+        return m_spCallback->m_cameraControlChangedEvt.add(handler);
     }
-    void ControlMonitorManager::VidCapCameraControlChanged(winrt::event_token const& token) noexcept
+    void ControlMonitorManager::CameraControlChanged(winrt::event_token const& token) noexcept
     {
-        m_spCallback->m_vidCapCameraControlChangedEvent.remove(token);
+        m_spCallback->m_cameraControlChangedEvt.remove(token);
     }
 }

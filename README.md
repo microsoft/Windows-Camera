@@ -88,3 +88,13 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
   <td><a href="Samples/VirtualCamera"> Sample of Virtual Camera mediasource and configuration app </a></td>
  </tr>
 </table>
+<table>
+ <tr>
+  <td><a href="Samples/CameraSettingsExternalSettingsApp"> Sample of Companion Settings app to read and save default configurations via IMFCameraConfigurationManager APIs</a></td>
+ </tr>
+</table>
+<table>
+ <tr>
+  <td><a href="Samples/ControlMonitorApp">Sample of Control Monitoring app that listens changes to various camera controls</a></td>
+ </tr>
+</table>

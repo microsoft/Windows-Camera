@@ -16,8 +16,8 @@ namespace winrt::ControlMonitorHelper::implementation
         void Start();
 
     public:
-        winrt::event_token VidCapCameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler);
-        void VidCapCameraControlChanged(winrt::event_token const& token) noexcept;
+        winrt::event_token CameraControlChanged(winrt::Windows::Foundation::EventHandler<ControlData> const& handler);
+        void CameraControlChanged(winrt::event_token const& token) noexcept;
     private:
 
         struct CameraControlCallback : public winrt::implements<CameraControlCallback, IMFCameraControlNotify>
@@ -34,7 +34,7 @@ namespace winrt::ControlMonitorHelper::implementation
 
             LONG m_lRef = 0;
             wil::critical_section m_lock;
-            winrt::event<Windows::Foundation::EventHandler<ControlData>> m_vidCapCameraControlChangedEvent;
+            winrt::event<Windows::Foundation::EventHandler<ControlData>> m_cameraControlChangedEvt;
             ControlMonitorManager* m_pParent = nullptr;
         };
         winrt::com_ptr<CameraControlCallback> m_spCallback;

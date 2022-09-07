@@ -26,8 +26,6 @@ namespace ControlMonitorHelper
         ControlMonitorManager(String cameraSymbolicLink, ControlData[] controls);
         void Stop();
         void Start();
-        event Windows.Foundation.EventHandler<ControlData> VidCapCameraControlChanged;
+        event Windows.Foundation.EventHandler<ControlData> CameraControlChanged;
     }
-
-    
 }
