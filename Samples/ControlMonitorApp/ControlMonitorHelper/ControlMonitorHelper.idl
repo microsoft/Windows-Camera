@@ -1,0 +1,31 @@
+//
+// Copyright (c) Microsoft Corporation.  All rights reserved.
+//
+
+//import "CameraKsPropertyInquiry.idl"
+
+namespace ControlMonitorHelper
+{
+    enum ControlKind
+    {
+        VidCapCameraControlKind,
+        VidCapVideoProcAmpKind,
+        ExtendedControlKind,
+    };
+
+    struct ControlData
+    {
+        ControlKind controlKind;
+        UInt32      controlId;
+    };
+
+    [default_interface]
+    runtimeclass ControlMonitorManager
+    {
+        static ControlMonitorManager CreateCameraControlMonitor(String symlink, ControlData[] controls);
+        ControlMonitorManager(String cameraSymbolicLink, ControlData[] controls);
+        void Stop();
+        void Start();
+        event Windows.Foundation.EventHandler<ControlData> CameraControlChanged;
+    }
+}
