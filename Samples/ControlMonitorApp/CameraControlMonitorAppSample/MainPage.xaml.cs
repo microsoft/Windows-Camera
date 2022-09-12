@@ -10,6 +10,7 @@ using Windows.Devices.Enumeration;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
+using Windows.Media.Devices;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -26,6 +27,8 @@ namespace OutboundSettingsAppTest
         private MediaCapture m_mediaCapture = null;
         private MediaPlayer m_mediaPlayer = null;
         private List<DeviceInformation> m_cameraDeviceList;
+
+        private bool m_useEVComp = false;
 
         private ControlMonitorHelper.ControlMonitorManager m_controlManager = null;
         public MainPage()
@@ -103,11 +106,20 @@ namespace OutboundSettingsAppTest
                 controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST
             };
 
-            var controlBrightness = new ControlMonitorHelper.ControlData()
+            ControlMonitorHelper.ControlData controlBrightness;
+            // If the device supports ExposureCompensationControl we opt use that one instead of Brightness
+            // to follow similar logic as the Windows Camera Settings has.
+            m_useEVComp = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Supported;
+            if (m_useEVComp)
             {
-                controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind,
-                controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS
-            };
+                controlBrightness.controlKind = ControlMonitorHelper.ControlKind.ExtendedControlKind;
+                controlBrightness.controlId = (UInt32)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION;
+            }
+            else
+            {
+                controlBrightness.controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind;
+                controlBrightness.controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS;
+            }
 
             ControlMonitorHelper.ControlData[] controls = { controlContrast, controlBrightness };
 
@@ -124,12 +136,24 @@ namespace OutboundSettingsAppTest
                 m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value);
                 ContrastSlider.Value = value;
 
-                BrightnessSlider.Minimum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Min;
-                BrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Max;
-                BrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
-                BrightnessSlider.Visibility = Visibility.Visible;
-                m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
-                BrightnessSlider.Value = value;
+                if (m_useEVComp)
+                {
+                    BrightnessTB.Text = "EVCompensation";
+                    BrightnessSlider.Minimum = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Min;
+                    BrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Max;
+                    BrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Step;
+                    BrightnessSlider.Visibility = Visibility.Visible;
+                    BrightnessSlider.Value = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Value;
+                }
+                else
+                {
+                    BrightnessSlider.Minimum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Min;
+                    BrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Max;
+                    BrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
+                    BrightnessSlider.Visibility = Visibility.Visible;
+                    m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
+                    BrightnessSlider.Value = value;
+                }
             });
         }
 
@@ -180,6 +204,14 @@ namespace OutboundSettingsAppTest
 
                     });
                 }
+                else if(control.controlKind == ControlMonitorHelper.ControlKind.ExtendedControlKind && control.controlId == (UInt32)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION)
+                {
+                    await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        BrightnessSlider.Value = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Value;
+
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -192,9 +224,17 @@ namespace OutboundSettingsAppTest
             m_mediaCapture.VideoDeviceController.Contrast.TrySetValue(e.NewValue);
         }
 
-        private void BrightnessSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private async void BrightnessSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            m_mediaCapture.VideoDeviceController.Brightness.TrySetValue(e.NewValue);
+            if(m_useEVComp)
+            {
+                await m_mediaCapture.VideoDeviceController.ExposureCompensationControl.SetValueAsync((float)e.NewValue);
+            }
+            else
+            {
+                m_mediaCapture.VideoDeviceController.Brightness.TrySetValue(e.NewValue);
+            }
+            
         }
 
         private async void UICameraList_SelectionChanged(object sender, SelectionChangedEventArgs e)
