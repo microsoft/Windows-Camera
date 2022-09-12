@@ -133,8 +133,15 @@ namespace OutboundSettingsAppTest
                 ContrastSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Step;
                 ContrastSlider.Visibility = Visibility.Visible;
                 double value = 0;
-                m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value);
-                ContrastSlider.Value = value;
+                if(m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value))
+                {
+                    ContrastSlider.Value = value;
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to get value");
+                }
+                
 
                 if (m_useEVComp)
                 {
@@ -151,8 +158,14 @@ namespace OutboundSettingsAppTest
                     BrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Max;
                     BrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
                     BrightnessSlider.Visibility = Visibility.Visible;
-                    m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
-                    BrightnessSlider.Value = value;
+                    if (m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value))
+                    {
+                        BrightnessSlider.Value = value;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to get value");
+                    }
                 }
             });
         }
@@ -189,8 +202,14 @@ namespace OutboundSettingsAppTest
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         double value = 0;
-                        m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value);
-                        ContrastSlider.Value = value;
+                        if (m_mediaCapture.VideoDeviceController.Contrast.TryGetValue(out value))
+                        {
+                            ContrastSlider.Value = value;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Failed to get value");
+                        }
 
                     });
                 }
@@ -199,8 +218,14 @@ namespace OutboundSettingsAppTest
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
                         double value = 0;
-                        m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value);
-                        BrightnessSlider.Value = value;
+                        if (m_mediaCapture.VideoDeviceController.Brightness.TryGetValue(out value))
+                        {
+                            BrightnessSlider.Value = value;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Failed to get value");
+                        }
 
                     });
                 }
@@ -221,7 +246,10 @@ namespace OutboundSettingsAppTest
 
         private void ContrastSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            m_mediaCapture.VideoDeviceController.Contrast.TrySetValue(e.NewValue);
+            if(!m_mediaCapture.VideoDeviceController.Contrast.TrySetValue(e.NewValue))
+            {
+                Console.WriteLine($"Failed to set a new contrast value({e.NewValue})");
+            }
         }
 
         private async void BrightnessSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -232,7 +260,10 @@ namespace OutboundSettingsAppTest
             }
             else
             {
-                m_mediaCapture.VideoDeviceController.Brightness.TrySetValue(e.NewValue);
+                if(!m_mediaCapture.VideoDeviceController.Brightness.TrySetValue(e.NewValue))
+                {
+                    Console.WriteLine($"Failed to set a new brightness value({e.NewValue})");
+                }
             }
             
         }
