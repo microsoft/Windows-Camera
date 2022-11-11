@@ -31,6 +31,7 @@ namespace OutboundSettingsAppTest
         private DefaultControlHelper.DefaultController m_contrastController = null;
         private DefaultControlHelper.DefaultController m_brightnessController = null;
         private DefaultControlHelper.DefaultController m_backgroundBlurController = null;
+        private DefaultControlHelper.DefaultController m_evCompController = null;
 
         public MainPage()
         {
@@ -125,6 +126,12 @@ namespace OutboundSettingsAppTest
                 m_brightnessController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp,(uint) CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS);
             }
 
+            // EVComp
+            if (m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Supported)
+            {
+                m_evCompController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION);
+            }
+
             // Blur
             bool isDeviceControlSupported = false;
             IExtendedPropertyPayload getPayload = null;
@@ -142,26 +149,46 @@ namespace OutboundSettingsAppTest
                 // The sliders is initialized to work with the values that driver provides as supported range and step
                 if (m_contrastController != null)
                 {
+                    DefaultContrastSlider.ValueChanged -= DefaultContrastSlider_ValueChanged;
                     DefaultContrastSlider.Minimum = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Min;
                     DefaultContrastSlider.Maximum = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Max;
                     DefaultContrastSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Step;
                     DefaultContrastSlider.Visibility = Visibility.Visible;
                     DefaultContrastSlider.Value = m_contrastController.DefaultValue;
+                    DefaultContrastSlider.ValueChanged += DefaultContrastSlider_ValueChanged;
                 }
 
                 if (m_brightnessController != null)
                 {
+                    DefaultBrightnessSlider.ValueChanged -= DefaultBrightnessSlider_ValueChanged;
                     DefaultBrightnessSlider.Minimum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Min;
                     DefaultBrightnessSlider.Maximum = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Max;
                     DefaultBrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
                     DefaultBrightnessSlider.Visibility = Visibility.Visible;
                     DefaultBrightnessSlider.Value = m_brightnessController.DefaultValue;
+                    DefaultBrightnessSlider.ValueChanged -= DefaultBrightnessSlider_ValueChanged;
+                }
+                if (m_evCompController != null)
+                {
+                    DefaultEVCompSlider.ValueChanged -= DefaultEVCompSlider_ValueChanged;
+                    DefaultEVCompSlider.Minimum = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Min;
+                    DefaultEVCompSlider.Maximum = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Max;
+                    DefaultEVCompSlider.StepFrequency = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Step;
+                    DefaultEVCompSlider.Visibility = Visibility.Visible;
+                    DefaultEVCompSlider.Value = m_evCompController.DefaultValue;
+                    if(DefaultEVCompSlider.Value > DefaultEVCompSlider.Maximum || DefaultEVCompSlider.Value < DefaultEVCompSlider.Minimum)
+                    {
+                        DefaultEVCompSlider.Value = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Value;
+                    }
+                    DefaultEVCompSlider.ValueChanged += DefaultEVCompSlider_ValueChanged;
                 }
 
                 if (m_backgroundBlurController != null)
                 {
+                    DefaultBlurToggle.Toggled -= DefaultBlurToggle_Toggled;
                     DefaultBlurToggle.Visibility = Visibility.Visible;
                     DefaultBlurToggle.IsOn = m_backgroundBlurController.DefaultValue != 0;
+                    DefaultBlurToggle.Toggled += DefaultBlurToggle_Toggled;
                 }
             });
         }
@@ -183,6 +210,12 @@ namespace OutboundSettingsAppTest
             uint flags = (DefaultBlurToggle.IsOn == true) ? (uint)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR : (uint)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF;
             m_backgroundBlurController.DefaultValue = flags;
             PropertyInquiry.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, flags);
+        }
+
+        private async void DefaultEVCompSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            m_evCompController.DefaultValue = (uint)e.NewValue;
+            await m_mediaCapture.VideoDeviceController.ExposureCompensationControl.SetValueAsync((float)e.NewValue);
         }
     }
 }

@@ -37,12 +37,12 @@ namespace winrt::DefaultControlHelper::implementation
 
     private:
 
-        uint32_t                                        m_defaultValue = 0;
+        uint32_t    m_defaultValue = 0;
         std::optional<MF_CAMERA_CONTROL_RANGE_INFO>     m_rangeInfo;
         wil::com_ptr<IMFCameraControlDefaults>          m_controlDefaults;
 
         
-        uint32_t                                        m_id = 0;
+        uint32_t    m_id = 0;
         winrt::weak_ref<DefaultControlManager>          m_controlManager;
 
         std::unique_ptr<IDefaultControllerInternal>     m_internalController;
@@ -67,7 +67,7 @@ namespace winrt::DefaultControlHelper::implementation
         
         virtual ~DefaultControllerVidCapVideoProcAmp() = default;
     private:
-        const winrt::guid                                     m_typeGuid{ PROPSETID_VIDCAP_VIDEOPROCAMP };
+        const winrt::guid m_typeGuid{ PROPSETID_VIDCAP_VIDEOPROCAMP };
 
     };
 
@@ -81,7 +81,7 @@ namespace winrt::DefaultControlHelper::implementation
         virtual ~DefaultControllerCameraControl() = default;
 
     private:
-        const winrt::guid                                     m_typeGuid{ PROPSETID_VIDCAP_CAMERACONTROL };
+        const winrt::guid m_typeGuid{ PROPSETID_VIDCAP_CAMERACONTROL };
     };
 
     class DefaultControllerExtendedControl : public IDefaultControllerInternal
@@ -94,7 +94,20 @@ namespace winrt::DefaultControlHelper::implementation
         virtual ~DefaultControllerExtendedControl() = default;
 
     private:
-        const winrt::guid                                     m_typeGuid{ KSPROPERTYSETID_ExtendedCameraControl };
+        const winrt::guid m_typeGuid{ KSPROPERTYSETID_ExtendedCameraControl };
+    };
+
+    class DefaultControllerEVCompExtendedControl : public IDefaultControllerInternal
+    {
+    public:
+        virtual void SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t value) override;
+
+        virtual void Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>&, const uint32_t id = KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION) override;
+
+        virtual ~DefaultControllerEVCompExtendedControl() = default;
+
+    private:
+        const winrt::guid m_typeGuid{ KSPROPERTYSETID_ExtendedCameraControl };
     };
 }
 
