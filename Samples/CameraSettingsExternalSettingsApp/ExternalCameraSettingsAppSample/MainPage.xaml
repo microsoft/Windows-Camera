@@ -13,6 +13,7 @@
         <StackPanel>
             <TextBlock x:Name="SelectedCameraTB"/>
             <MediaPlayerElement x:Name="UIMediaPlayerElement" AreTransportControlsEnabled="False"/>
+            <TextBox x:Name="UITextOutput" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
                 <TextBlock
                     x:Uid="DefaultContrast"

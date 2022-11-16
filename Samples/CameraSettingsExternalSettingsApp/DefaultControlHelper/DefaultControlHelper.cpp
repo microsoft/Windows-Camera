@@ -24,7 +24,7 @@ namespace winrt::DefaultControlHelper::implementation
 
     winrt::DefaultControlHelper::DefaultController DefaultControlManager::CreateController(DefaultControllerType type, uint32_t id)
     {
-        return winrt::make<DefaultController>(type, id, get_weak());
+        return winrt::make<DefaultController>(type, id, get_strong());
     }
 
     HRESULT DefaultControlManager::Save()
@@ -36,7 +36,7 @@ namespace winrt::DefaultControlHelper::implementation
 
 #pragma region DefaultController
 
-    DefaultController::DefaultController(winrt::DefaultControlHelper::DefaultControllerType type,const uint32_t id, winrt::weak_ref<DefaultControlManager> manager)
+    DefaultController::DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, const uint32_t id, winrt::com_ptr<DefaultControlManager> manager)
     {
         m_id = id;
         m_controlManager = manager;
@@ -46,13 +46,16 @@ namespace winrt::DefaultControlHelper::implementation
         {
         case winrt::DefaultControlHelper::DefaultControllerType::VideoProcAmp:
             m_internalController = std::make_unique< DefaultControllerVidCapVideoProcAmp>();
+            m_setGuid = PROPSETID_VIDCAP_VIDEOPROCAMP;
             break;
         
         case winrt::DefaultControlHelper::DefaultControllerType::CameraControl:
-            m_internalController = std::make_unique<DefaultControllerCameraControl>();
+            m_internalController = std::make_unique<DefaultControllerVidCapVideoProcAmp>();
+            m_setGuid = PROPSETID_VIDCAP_CAMERACONTROL;
             break;
         
         case winrt::DefaultControlHelper::DefaultControllerType::ExtendedCameraControl:
+            m_setGuid = KSPROPERTYSETID_ExtendedCameraControl;
             switch (id)
             {
                 case KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION:
@@ -69,203 +72,232 @@ namespace winrt::DefaultControlHelper::implementation
             break;
         }
 
-        auto strongManager{ m_controlManager.get() };
-        THROW_HR_IF_NULL(E_POINTER, strongManager);
-
-        m_internalController->Initialize(strongManager, m_controlDefaults, id);
-
-        // Getting range info if available
-        MF_CAMERA_CONTROL_RANGE_INFO rangeInfo = {};
-
-        try
+        // check if there is an existing entry for this control to store a default value
+        auto collection = m_controlManager.get()->GetCollection();
+        auto count = collection->GetControlCount();
+        m_hasDefaultValueStored = false;
+        if (count > 0)
         {
-            THROW_IF_FAILED(m_controlDefaults->GetRangeInfo(&rangeInfo));
-            m_rangeInfo.emplace(rangeInfo);
-        }
-        catch (const wil::ResultException& e)
-        {
-            // GetRangeInfo will return MF_E_NOT_FOUND if the control does
-            // not support range information.
-            if (e.GetErrorCode() != MF_E_NOT_FOUND)
+            wil::com_ptr<IMFCameraControlDefaults> existingControlDefaults;
+            for (ULONG i = 0; i < count && !m_hasDefaultValueStored; i++)
             {
-                THROW_EXCEPTION(e);
+                byte* pProperty = nullptr;
+                ULONG cbProperty = 0;
+                byte* pControlHeader = nullptr;
+                ULONG cbData = 0;
+
+                collection->GetControl(i, &existingControlDefaults);
+                THROW_IF_FAILED(existingControlDefaults->LockControlData((void**)&pProperty, &cbProperty, (void**)&pControlHeader, &cbData));
+
+                // we assume we get a KSProperty at the very least
+                if (cbProperty < sizeof(KSPROPERTY))
+                {
+                    continue;
+                }
+                THROW_IF_NULL_ALLOC(pProperty);
+                KSPROPERTY* pKsProperty = (KSPROPERTY*)pProperty;
+
+                if (pKsProperty->Id == id && IsEqualGUID(pKsProperty->Set, m_setGuid))
+                {
+                    m_hasDefaultValueStored = true;
+                }
+                THROW_IF_FAILED(existingControlDefaults->UnlockControlData());
             }
         }
     };
 
-    uint32_t DefaultController::DefaultValue()
+    int32_t DefaultController::DefaultValue()
     {
-        KSPROPERTY_VIDEOPROCAMP_S* pControl = nullptr;
-        ULONG                       cbControl = 0;
-        KSPROPERTY_VIDEOPROCAMP_S* pData = nullptr;
-        ULONG                       cbData = 0;
-
-        uint32_t valueOut = 0;
-
-        THROW_IF_FAILED(m_controlDefaults->LockControlData((void**)&pControl, &cbControl, (void**)&pData, &cbData));
+        int32_t resultValue = INT32_MAX;
+        if (m_hasDefaultValueStored)
         {
-            auto unlock = wil::scope_exit([&]()
+            m_internalController->Initialize(m_controlManager, m_controlDefaults, m_setGuid, m_id);
+            try
             {
-                try
+                void* pControl = nullptr;
+                ULONG cbControl = 0;
+                void* pData = nullptr;
+                ULONG cbData = 0;
+
+                THROW_IF_FAILED(m_controlDefaults->LockControlData(&pControl, &cbControl, &pData, &cbData));
+                {
+                    THROW_IF_NULL_ALLOC(pControl);
+                    THROW_IF_NULL_ALLOC(pData);
+                    auto unlock = wil::scope_exit([&]()
+                        {
+                            // The Unlock call can fail if there's no existing configuration or the required flags/capabilities
+                            // are otherwise wrong or unset.
+                            THROW_IF_FAILED(m_controlDefaults->UnlockControlData());
+                        });
+
+                    resultValue = m_internalController->GetStoredDefaultValue((void*)pControl, cbControl, (void*)pData, cbData);
+
+                    // Getting range info if available
+                    MF_CAMERA_CONTROL_RANGE_INFO rangeInfo = {};
+
+                    try
+                    {
+                        THROW_IF_FAILED(m_controlDefaults->GetRangeInfo(&rangeInfo));
+                        m_rangeInfo.emplace(rangeInfo);
+                    }
+                    catch (const wil::ResultException& e)
+                    {
+                        // GetRangeInfo will return MF_E_NOT_FOUND if the control does
+                        // not support range information.
+                        if (e.GetErrorCode() != MF_E_NOT_FOUND)
+                        {
+                            THROW_EXCEPTION(e);
+                        }
+                    }
+                }
+            }
+            catch (...)
+            {
+                if (m_rangeInfo.has_value())
+                {
+                    resultValue = m_rangeInfo->defaultValue;
+                }
+            }
+        }
+        
+        return resultValue;
+    }
+
+    void DefaultController::DefaultValue(int32_t const& value)
+    {
+        void* pControl = nullptr;
+        ULONG cbControl = 0;
+        void* pData = nullptr;
+        ULONG cbData = 0;
+
+        auto collection = m_controlManager->GetCollection();
+
+        m_internalController->Initialize(m_controlManager, m_controlDefaults, m_setGuid, m_id);
+
+        THROW_IF_FAILED(m_controlDefaults->LockControlData(&pControl, &cbControl, &pData, &cbData));
+        {
+            THROW_IF_NULL_ALLOC(pControl);
+            THROW_IF_NULL_ALLOC(pData);
+            auto unlock = wil::scope_exit([&]()
                 {
                     // The Unlock call can fail if there's no existing configuration or the required flags/capabilities
                     // are otherwise wrong or unset.
                     THROW_IF_FAILED(m_controlDefaults->UnlockControlData());
-                }
-                catch (...)
-                {
-                    if (m_rangeInfo.has_value())
-                    {
-                        valueOut = m_rangeInfo->defaultValue;
-                    }
-                }
-            });
-
-            valueOut = pControl->Value;
+                });
+            m_internalController->SaveDefault((void*)pControl, cbControl, (void*)pData, cbData, value);
         }
-
-        return m_defaultValue = valueOut;
-    }
-
-    void DefaultController::DefaultValue(uint32_t const& value)
-    {
-        m_internalController->SaveDefault(m_controlDefaults, value);
-
-        auto strongManager = m_controlManager.get();
-        THROW_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), strongManager);
-        
-
-        THROW_IF_FAILED(strongManager->Save());
-        m_defaultValue = value;
+        THROW_IF_FAILED(m_controlManager->Save());
+        m_hasDefaultValueStored = true;
     }
 
 #pragma endregion
 
-    void DefaultControllerVidCapVideoProcAmp::Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t id)
+    void DefaultControllerVidCapVideoProcAmp::Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id)
     {
         auto collection = manager->GetCollection();
 
         THROW_IF_FAILED(collection->GetOrAddControl(
             MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART,
-            m_typeGuid,
+            setGuid,
             id,
             sizeof(KSPROPERTY_VIDEOPROCAMP_S),
             sizeof(KSPROPERTY_VIDEOPROCAMP_S),
-            &controlDefaults));
+            &defaults));
     }
 
-    void DefaultControllerVidCapVideoProcAmp::SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t value)
+    void DefaultControllerVidCapVideoProcAmp::SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value)
     {
-        KSPROPERTY_VIDEOPROCAMP_S* pControl = nullptr;
-        ULONG                       cbControl = 0;
-        KSPROPERTY_VIDEOPROCAMP_S* pData = nullptr;
-        ULONG                       cbData = 0;
+        THROW_HR_IF(E_UNEXPECTED, controlSize < sizeof(KSPROPERTY_VIDEOPROCAMP_S));
+        THROW_HR_IF(E_UNEXPECTED, dataSize < sizeof(KSPROPERTY_VIDEOPROCAMP_S));
+        KSPROPERTY_VIDEOPROCAMP_S* pVidCapControl = (KSPROPERTY_VIDEOPROCAMP_S*)pControl;
+        KSPROPERTY_VIDEOPROCAMP_S* pVidCapData = (KSPROPERTY_VIDEOPROCAMP_S*)pData;
 
-        THROW_IF_FAILED(controlDefaults->LockControlData((void**)&pControl, &cbControl, (void**)&pData, &cbData));
+        pVidCapControl->Flags = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL;
+        pVidCapControl->Property.Flags = KSPROPERTY_TYPE_SET;
 
-        pControl->Flags = KSPROPERTY_VIDEOPROCAMP_FLAGS_MANUAL;
-        pControl->Property.Flags = KSPROPERTY_TYPE_SET;
+        pVidCapControl->Value = value;
 
-        pControl->Value = value;
-
-        pData->Property.Set = pControl->Property.Set;
-        pData->Property.Id = pControl->Property.Id;
-        pData->Property.Flags = pControl->Property.Flags;
-        pData->Value = pControl->Value;
-        pData->Flags = pControl->Flags;
-
-        THROW_IF_FAILED(controlDefaults->UnlockControlData());
-        
+        pVidCapData->Property.Set = pVidCapControl->Property.Set;
+        pVidCapData->Property.Id = pVidCapControl->Property.Id;
+        pVidCapData->Property.Flags = pVidCapControl->Property.Flags;
+        pVidCapData->Value = pVidCapControl->Value;
+        pVidCapData->Flags = pVidCapControl->Flags;
     }
 
-    void DefaultControllerCameraControl::Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t id)
+    int32_t DefaultControllerVidCapVideoProcAmp::GetStoredDefaultValue(void* pControl, ULONG controlSize, void*, ULONG)
     {
-        auto collection = manager->GetCollection();
+        THROW_HR_IF(E_UNEXPECTED, controlSize < sizeof(KSPROPERTY_VIDEOPROCAMP_S));
+        KSPROPERTY_VIDEOPROCAMP_S* pVidCapControl = (KSPROPERTY_VIDEOPROCAMP_S*)pControl;
 
-        THROW_IF_FAILED(collection->GetOrAddControl(
-            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART,
-            m_typeGuid,
-            id,
-            sizeof(KSPROPERTY_CAMERACONTROL_S),
-            sizeof(KSPROPERTY_CAMERACONTROL_S),
-            &controlDefaults));
+        return pVidCapControl->Value;
     }
 
-    void DefaultControllerCameraControl::SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t value)
-    {
-        KSPROPERTY_CAMERACONTROL_S* pControl = nullptr;
-        ULONG                       cbControl = 0;
-        KSPROPERTY_CAMERACONTROL_S* pData = nullptr;
-        ULONG                       cbData = 0;
-
-        THROW_IF_FAILED(controlDefaults->LockControlData((void**)&pControl, &cbControl, (void**)&pData, &cbData));
-
-        pControl->Flags = KSPROPERTY_CAMERACONTROL_FLAGS_MANUAL;
-        pControl->Property.Flags = KSPROPERTY_TYPE_SET;
-
-        pControl->Value = value;
-
-        pData->Property.Set = pControl->Property.Set;
-        pData->Property.Id = pControl->Property.Id;
-        pData->Property.Flags = pControl->Property.Flags;
-        pData->Value = pControl->Value;
-        pData->Flags = pControl->Flags;
-
-        THROW_IF_FAILED(controlDefaults->UnlockControlData());
-    }
-
-
-    void DefaultControllerExtendedControl::Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t id)
+    void DefaultControllerExtendedControl::Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid, uint32_t id)
     {
         auto collection = manager->GetCollection();
 
         THROW_IF_FAILED(collection->GetOrAddExtendedControl(
-            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART, //
+            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART,
             id,
             KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
             sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE),
-            &controlDefaults));
+            &defaults));
     }
 
-    void DefaultControllerExtendedControl::SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t value)
+    void DefaultControllerExtendedControl::SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value)
     {
-        KSPROPERTY*                     ksProp = nullptr;
-        ULONG                           ksPropSize = 0;
-        KSCAMERA_EXTENDEDPROP_HEADER*   extPropHdr = nullptr;
-        ULONG                           dataSize = 0;
+        THROW_HR_IF(E_UNEXPECTED, controlSize < sizeof(KSPROPERTY));
+        THROW_HR_IF(E_UNEXPECTED, dataSize < sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
+        KSPROPERTY* pProperty = (KSPROPERTY*)pControl;
+        KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)pData;
 
-        THROW_IF_FAILED(controlDefaults->LockControlData((void**)&ksProp, &ksPropSize, (void**)&extPropHdr, &dataSize));
-
-        extPropHdr->Flags = value;
-
-        THROW_IF_FAILED(controlDefaults->UnlockControlData());
+        pProperty->Flags = KSPROPERTY_TYPE_SET;
+        pExtendedHeader->Flags = value;
     }
 
-    void DefaultControllerEVCompExtendedControl::Initialize(const winrt::com_ptr<DefaultControlManager>& manager, wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t id)
+    int32_t DefaultControllerExtendedControl::GetStoredDefaultValue(void*, ULONG, void* pData, ULONG dataSize)
+    {
+        THROW_HR_IF(E_UNEXPECTED, dataSize < sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
+        KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)pData;
+
+        return (int32_t)pExtendedHeader->Flags;
+    }
+
+    void DefaultControllerEVCompExtendedControl::Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid, uint32_t id)
     {
         auto collection = manager->GetCollection();
 
         THROW_IF_FAILED(collection->GetOrAddExtendedControl(
-            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART, //
+            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART,
             id,
             KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
             sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_EVCOMPENSATION),
-            &controlDefaults));
+            &defaults));
     }
 
-    void DefaultControllerEVCompExtendedControl::SaveDefault(const wil::com_ptr<IMFCameraControlDefaults>& controlDefaults, const uint32_t value)
+    void DefaultControllerEVCompExtendedControl::SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value)
     {
-        KSPROPERTY* ksProp = nullptr;
-        ULONG                           ksPropSize = 0;
-        KSCAMERA_EXTENDEDPROP_HEADER* extPropHdr = nullptr;
-        KSCAMERA_EXTENDEDPROP_EVCOMPENSATION* evCompExtPropPayload = nullptr;
-        ULONG                           dataSize = 0;
+        THROW_HR_IF(E_UNEXPECTED, controlSize < sizeof(KSPROPERTY));
+        THROW_HR_IF(E_UNEXPECTED, dataSize < (sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_EVCOMPENSATION)));
+        KSPROPERTY* pProperty = (KSPROPERTY*)pControl;
+        KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)pData;
+        KSCAMERA_EXTENDEDPROP_EVCOMPENSATION* evCompExtPropPayload = (KSCAMERA_EXTENDEDPROP_EVCOMPENSATION*)((PBYTE)pData + sizeof(KSCAMERA_EXTENDEDPROP_HEADER));;
 
-        THROW_IF_FAILED(controlDefaults->LockControlData((void**)&ksProp, &ksPropSize, (void**)&extPropHdr, &dataSize));
-        evCompExtPropPayload = (KSCAMERA_EXTENDEDPROP_EVCOMPENSATION*)((PBYTE)extPropHdr + sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
+        pProperty->Flags = KSPROPERTY_TYPE_SET;
+        pExtendedHeader->Flags = 0;
+        pExtendedHeader->PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;
+        pExtendedHeader->Size = (sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_EVCOMPENSATION));
+        
+        evCompExtPropPayload = (KSCAMERA_EXTENDEDPROP_EVCOMPENSATION*)((PBYTE)pExtendedHeader + sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
         evCompExtPropPayload->Value = value;
-
-        THROW_IF_FAILED(controlDefaults->UnlockControlData());
+        evCompExtPropPayload->Mode = 0;
     }
 
+    int32_t DefaultControllerEVCompExtendedControl::GetStoredDefaultValue(void*, ULONG, void* pData, ULONG dataSize)
+    {
+        THROW_HR_IF(E_UNEXPECTED, dataSize < (sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_EVCOMPENSATION)));
+        KSCAMERA_EXTENDEDPROP_EVCOMPENSATION* evCompExtPropPayload = (KSCAMERA_EXTENDEDPROP_EVCOMPENSATION*)((PBYTE)pData + sizeof(KSCAMERA_EXTENDEDPROP_HEADER));;
+
+        return evCompExtPropPayload->Value;
+    }
 }

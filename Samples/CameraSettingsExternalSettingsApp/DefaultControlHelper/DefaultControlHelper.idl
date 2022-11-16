@@ -4,17 +4,19 @@
 
 namespace DefaultControlHelper
 {
+    // each enum value correspond to a type of camera control also known as a "property set"
     enum DefaultControllerType
     {
-        VideoProcAmp,
-        CameraControl,
-        ExtendedCameraControl,
+        VideoProcAmp,// correlates with properties under the set PROPSETID_VIDCAP_VIDEOPROCAMP
+        CameraControl, // correlates with properties under the set PROPSETID_VIDCAP_CAMERACONTROL
+        ExtendedCameraControl, // correlates with properties under the set KSPROPERTYSETID_ExtendedCameraControl
     };
  
     
     runtimeclass DefaultController
     {
-        UInt32 DefaultValue;
+        Boolean HasDefaultValueStored();
+        Int32 DefaultValue;
     }
 
     [default_interface]
