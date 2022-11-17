@@ -13,9 +13,11 @@
         <StackPanel>
             <TextBlock x:Name="SelectedCameraTB"/>
             <MediaPlayerElement x:Name="UIMediaPlayerElement" AreTransportControlsEnabled="False"/>
+            <TextBox x:Name="UITextOutput" TextWrapping="Wrap"/>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
                 <TextBlock
                     x:Uid="DefaultContrast"
+                    Text="Contrast"
                     Visibility="{Binding ElementName=DefaultContrastSlider, Path=Visibility}"
                     VerticalAlignment="Center" />
                 <Slider 
@@ -35,6 +37,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
                 <TextBlock
                     x:Uid="DefaultBrightness"
+                    Text="Brightness"
                     Visibility="{Binding ElementName=DefaultBrightnessSlider, Path=Visibility}"
                     VerticalAlignment="Center" />
                 <Slider 
@@ -54,6 +57,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
                 <TextBlock
                     x:Uid="DefaultBlur"
+                    Text="Blur"
                     Visibility="{Binding ElementName=DefaultBlurToggle, Path=Visibility}"
                     VerticalAlignment="Center" />
                 <ToggleSwitch 
@@ -61,6 +65,26 @@
                     x:Uid="DefaultBlurToggle"
                     AutomationProperties.LabeledBy="{Binding ElementName=DefaultBlur}"
                     Toggled="DefaultBlurToggle_Toggled"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                <TextBlock
+                    x:Uid="DefaultEVComp"
+                    Text="EVCompensation"
+                    Visibility="{Binding ElementName=DefaultEVCompSlider, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                <Slider 
+                    x:Name="DefaultEVCompSlider"
+                    x:Uid="DefaultEVCompSlider"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultEVComp}"
+                    Minimum="0"
+                    Maximum="100"
+                    StepFrequency="1"
+                    ValueChanged="DefaultEVCompSlider_ValueChanged"
                     HorizontalAlignment="Center"
                     MaxWidth="300"
                     MinWidth="200"

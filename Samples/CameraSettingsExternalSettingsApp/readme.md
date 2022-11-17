@@ -20,7 +20,7 @@ e.g., `Get-AppxPackage -Name *ExternalCamera*`
 
 Adding this information will create a button to launch the application from the camera configuration page in the Settings (Settings -> Bluetooth & devices -> Cameras -> \<camera name\> ). If the app is not installed it will try to search it from the Store.
 
-**NOTE:** Disable/enable of the camera and restart of the machine might be needed that the new app association is properly configured.
+**NOTE:** Uninstall and reinstall of the camera device and restart of the machine might be needed to edit or remove properly the associated configuration app.
 
 ## Sample functionality
  The app will initialize the given camera, start preview, and show the following controls (if camera implements them) that will set current value and save it as the default value by using [IMFCameraConfigurationManager](https://docs.microsoft.com/windows/win32/api/mfidl/nn-mfidl-imfcameraconfigurationmanager) functionality.
