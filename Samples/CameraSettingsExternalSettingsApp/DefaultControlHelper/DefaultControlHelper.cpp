@@ -75,7 +75,7 @@ namespace winrt::DefaultControlHelper::implementation
         // check if there is an existing entry for this control to store a default value
         auto collection = m_controlManager.get()->GetCollection();
         auto count = collection->GetControlCount();
-        m_hasDefaultValueStored = false;
+        
         if (count > 0)
         {
             wil::com_ptr<IMFCameraControlDefaults> existingControlDefaults;

@@ -37,7 +37,7 @@ namespace winrt::DefaultControlHelper::implementation
 
     private:
 
-        bool m_hasDefaultValueStored;
+        bool m_hasDefaultValueStored = false;
         std::optional<MF_CAMERA_CONTROL_RANGE_INFO> m_rangeInfo;
         wil::com_ptr<IMFCameraControlDefaults> m_controlDefaults;
 
