@@ -293,7 +293,9 @@ namespace OutboundSettingsAppTest
         {
             try
             {
-                m_evCompController.DefaultValue = (int)e.NewValue;
+                // For KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION the floating point values need to be scaled
+                // to matching int range with the step size.
+                m_evCompController.DefaultValue = (int) Math.Round(e.NewValue / DefaultEVCompSlider.StepFrequency);
                 await m_mediaCapture.VideoDeviceController.ExposureCompensationControl.SetValueAsync((float)e.NewValue);
             }
             catch (Exception ex)
