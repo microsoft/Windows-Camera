@@ -12,6 +12,7 @@
 #include <windows.media.core.interop.h>
 #include <windows.foundation.h>
 #include <windows.Storage.streams.h>
+#include <EventToken.h>
 #include <winrt\base.h>
 #include <winrt\Windows.Media.Capture.h>
 #include <winrt\Windows.Media.Capture.Frames.h>
@@ -22,7 +23,7 @@
 #include <winrt\Windows.Media.MediaProperties.h>
 #include <winrt\Windows.Networking.Connectivity.h>
 #include <winrt\Windows.storage.streams.h>
-
+#include <winrt\windows.foundation.collections.h>
 #include "..\Common\inc\NetworkMediaStreamer.h"
 #include "..\Common\inc\RTPMediaStreamer.h"
 #include "..\Common\inc\RTSPServerControl.h"
@@ -330,12 +331,18 @@ int main()
             });
         for (int i = 0; i < (int)LoggerType::LOGGER_MAX; i++)
         {
-            EventRegistrationToken t1, t2;
+            ::EventRegistrationToken t1, t2;
             winrt::check_hresult(serverHandle->AddLogHandler((LoggerType)i, loggerdelegate.as<ABI::LogHandler>().get(), &t1));
-            serverHandleSecure ? winrt::check_hresult(serverHandleSecure->AddLogHandler((LoggerType)i, loggerdelegate.as<ABI::LogHandler>().get(), &t2)) : void(0);
+            if (serverHandleSecure)
+            {
+                winrt::check_hresult(serverHandleSecure->AddLogHandler((LoggerType)i, loggerdelegate.as<ABI::LogHandler>().get(), &t2));
+            }
         }
         winrt::check_hresult(serverHandle->StartServer());
-        serverHandleSecure ? winrt::check_hresult(serverHandleSecure->StartServer()) : void(0);
+        if (serverHandleSecure)
+        {
+            winrt::check_hresult(serverHandleSecure->StartServer());
+        }
 #ifdef USE_FR
         auto fsources = mc.FrameSources();
         MediaFrameSource selectedFs(nullptr);
