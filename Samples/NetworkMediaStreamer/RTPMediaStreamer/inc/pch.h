@@ -5,6 +5,7 @@
 #include <mferror.h>
 #include <ws2tcpip.h>
 #include <mfidl.h>
+#include<mutex>
 #include <windows.foundation.h>
 #include <windows.Storage.streams.h>
 #include <winrt\base.h>

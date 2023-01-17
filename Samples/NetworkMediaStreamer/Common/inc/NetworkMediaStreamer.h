@@ -25,22 +25,21 @@ namespace ABI
     template<> MIDL_INTERFACE("7E37DD5F-7749-46E4-856A-FE098BAA142D") IEventHandler<IBuffer*> : IEventHandler_impl<IBuffer*>{};
     typedef IEventHandler<IBuffer*> PacketHandler;
 }
+namespace winrt {
 
-namespace winrt 
-{
     typedef winrt::Windows::Foundation::EventHandler<winrt::Windows::Storage::Streams::IBuffer> PacketHandler;
-    template <> struct winrt::impl::guid_storage<PacketHandler>
-    {
-        static constexpr guid value{ __uuidof(ABI::PacketHandler) };
-    };
 }
+
+template <> struct winrt::impl::category<winrt::PacketHandler> { using type = winrt::impl::delegate_category; };
+template <> inline constexpr winrt::guid winrt::impl::guid_v<winrt::PacketHandler> {__uuidof(ABI::PacketHandler)};
+
 
 //EXTERN_C const IID IID_IVideoStreamer;
 MIDL_INTERFACE("022C6CB9-64D5-472F-8753-76382CC5F4DA")
 INetworkMediaStreamSink : public IMFStreamSink
 {
 public:
-    virtual STDMETHODIMP AddTransportHandler(ABI::PacketHandler * pPackethandler, LPCWSTR pProtocol = L"rtp", LPCWSTR pParam = L"") = 0;
+    virtual STDMETHODIMP AddTransportHandler (ABI::PacketHandler* pPackethandler, LPCWSTR pProtocol = L"rtp", LPCWSTR pParam = L"") = 0;
     virtual STDMETHODIMP RemoveTransportHandler(ABI::PacketHandler* pPacketHandler) = 0;
     virtual STDMETHODIMP AddNetworkClient(LPCWSTR pDestination, LPCWSTR pProtocol = L"rtp", LPCWSTR pParams = L"") = 0;
     virtual STDMETHODIMP RemoveNetworkClient(LPCWSTR pDestination) = 0;

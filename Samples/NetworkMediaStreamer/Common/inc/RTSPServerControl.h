@@ -28,9 +28,8 @@ enum class SessionStatus : int32_t
     SessionPaused,
     SessionEnded
 };
-
 template <> struct winrt::impl::category<SessionStatus> { using type = winrt::impl::enum_category; };
-template <> struct winrt::impl::name<SessionStatus> { static constexpr auto& value{ L"SessionStatus" }; };
+template <> inline constexpr winrt::guid winrt::impl::guid_v <SessionStatus> {0xD3266732, 0x337F, 0x48A7, { 0xB4,0x0B,0x4F,0xDC,0xA2,0xA1,0xC6,0x95 } };
 
 enum class LoggerType
 {
@@ -52,7 +51,7 @@ enum class AuthType
 MIDL_INTERFACE("BC710897-4727-4154-B085-52C5F5A4047C")
 IRTSPAuthProvider : public ::IUnknown
 {
-    virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING * pAuthSessionMessage) = 0;
+    virtual STDMETHODIMP GetNewAuthSessionMessage(HSTRING* pAuthSessionMessage) = 0;
     virtual STDMETHODIMP Authorize(LPCWSTR pAuthResp, LPCWSTR pAuthSesMsg, LPCWSTR pMethod) = 0;
 };
 
@@ -80,17 +79,7 @@ namespace winrt
 {
     typedef winrt::Windows::Foundation::TypedEventHandler<uintptr_t, SessionStatus> SessionStatusHandler;
 
-    template <> struct winrt::impl::guid_storage<SessionStatusHandler>
-    {
-        static constexpr guid value{ __uuidof(ABI::SessionStatusHandler) };
-    };
-
     typedef winrt::Windows::Foundation::TypedEventHandler <winrt::hresult, winrt::hstring> LogHandler;
-
-    template <> struct winrt::impl::guid_storage<LogHandler>
-    {
-        static constexpr guid value{ __uuidof(ABI::LogHandler) };
-    };
 
     typedef winrt::Windows::Foundation::Collections::PropertySet RTSPSuffixSinkMap;
 }

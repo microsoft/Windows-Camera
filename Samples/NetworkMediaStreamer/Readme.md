@@ -13,7 +13,10 @@ The NetworkMediaStreamer is a set of basic implementations of RTP streaming and 
 
 ![NetworkStreamer Block Diagram](docs/RTSPVideoStreamer.jpg)  
  In the above figure, the red arrows denote Media data flow and the black arrows denote command and control flow.
- 
+
+## Build Setup
+  The code has been built and tested with VS2022, SDK version 22000
+
  ## RTPSink
  The RTP streaming is implemented as a COM class which implements [IMFMediaSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfmediasink). This class encapsulates the Network media stream sink which does the actual packetization work and UDP streaming. The NetworkMediaStream sink can be controlled via two interfaces:
  1. [IMFStreamSink](https://docs.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfstreamsink)
