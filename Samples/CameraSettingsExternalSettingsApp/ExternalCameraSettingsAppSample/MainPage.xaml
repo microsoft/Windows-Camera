@@ -11,6 +11,7 @@
 
     <Grid>
         <StackPanel>
+            <ComboBox x:Name="UICameraList" IsEnabled="false" Visibility="Collapsed" SelectionChanged="UICameraList_SelectionChanged"/>
             <TextBlock x:Name="SelectedCameraTB"/>
             <MediaPlayerElement x:Name="UIMediaPlayerElement" AreTransportControlsEnabled="False"/>
             <TextBox x:Name="UITextOutput" TextWrapping="Wrap"/>
@@ -85,6 +86,24 @@
                     Maximum="100"
                     StepFrequency="1"
                     ValueChanged="DefaultEVCompSlider_ValueChanged"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                <TextBlock
+                    x:Uid="AutoFraming"
+                    Text="AutoFraming"
+                    Visibility="{Binding ElementName=AutoFramingToggle, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                <ToggleSwitch 
+                    x:Name="AutoFramingToggle"
+                    x:Uid="AutoFramingToggle"
+                    IsOn="False"
+                    AutomationProperties.LabeledBy="{Binding ElementName=AutoFraming}"
+                    Toggled="AutoFramingToggle_Toggled"
                     HorizontalAlignment="Center"
                     MaxWidth="300"
                     MinWidth="200"

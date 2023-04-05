@@ -252,6 +252,11 @@ namespace winrt::DefaultControlHelper::implementation
         KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)pData;
 
         pProperty->Flags = KSPROPERTY_TYPE_SET;
+
+        if (pProperty->Id == KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW)
+        {
+            pExtendedHeader->Capability = KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING | KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_MANUAL;
+        }
         pExtendedHeader->Flags = value;
     }
 

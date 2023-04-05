@@ -204,6 +204,11 @@ namespace winrt::CameraKsPropertyHelper::implementation
                 break;
             }
             
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW:
+            {
+                payload = make<BasicExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
+                break;
+            }
 
             default:
                 throw hresult_invalid_argument(L"unexpected extendedControlKind passed: " + to_hstring((int32_t)extendedControlKind));

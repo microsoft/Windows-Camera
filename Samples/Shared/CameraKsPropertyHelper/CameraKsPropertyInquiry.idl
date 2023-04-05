@@ -117,6 +117,13 @@ namespace CameraKsPropertyHelper
         KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS = 0x0000000000000004,
     };
 
+    // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW
+    enum DigitalWindowCapabilityKind
+    {
+        KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_MANUAL = 0x0000000000000000,
+        KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING = 0x0000000000000001
+    };
+
     interface IVidCapVideoProcAmpPropetyPayload
     {
         VidCapVideoProcAmpKind VidCapVideoProcAmpKind{ get; };

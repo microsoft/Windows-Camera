@@ -4,12 +4,15 @@
 
 using CameraKsPropertyHelper;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Devices.Enumeration;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
+using Windows.Media.Devices;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -23,6 +26,7 @@ namespace OutboundSettingsAppTest
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private List<DeviceInformation> m_cameraDeviceList;
         string cameraId = null;
         private MediaCapture m_mediaCapture = null;
         private MediaPlayer m_mediaPlayer = null;
@@ -32,6 +36,7 @@ namespace OutboundSettingsAppTest
         private DefaultControlHelper.DefaultController m_brightnessController = null;
         private DefaultControlHelper.DefaultController m_backgroundBlurController = null;
         private DefaultControlHelper.DefaultController m_evCompController = null;
+        private DefaultControlHelper.DefaultController m_autoFramingController = null;
 
         public MainPage()
         {
@@ -46,6 +51,19 @@ namespace OutboundSettingsAppTest
             if (launchArgs == null || launchArgs.Length == 0)
             {
                 SelectedCameraTB.Text = "No launch args";
+
+                var cameraList = await DeviceInformation.FindAllAsync(DeviceClass.VideoCapture);
+                m_cameraDeviceList = cameraList.ToList();
+                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                {
+
+                    // re-enable and refresh UI
+                    UICameraList.ItemsSource = m_cameraDeviceList.Select(x => x.Name);
+                    UICameraList.SelectedIndex = 0;
+                    UICameraList.IsEnabled = true;
+                    UICameraList.Visibility = Visibility.Visible;
+                });
+
             }
             else
             {
@@ -145,8 +163,17 @@ namespace OutboundSettingsAppTest
                     m_backgroundBlurController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
                 }
 
+                // DW w/ auto framing
+                bool isAutoFramingSupported = false;
+                getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW);
+                isAutoFramingSupported = ((getPayload.Capability & (ulong)(DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING)) == (ulong)DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING);
+                if (isAutoFramingSupported)
+                {
+                    m_autoFramingController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW);
+                }
+
                 // Updating UI elements
-                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, (Windows.UI.Core.DispatchedHandler)(() =>
                 {
                     try
                     {
@@ -236,16 +263,56 @@ namespace OutboundSettingsAppTest
                             DefaultBlurToggle.IsOn = m_backgroundBlurController.DefaultValue != 0;
                             DefaultBlurToggle.Toggled += DefaultBlurToggle_Toggled;
                         }
+
+                        if (m_autoFramingController != null)
+                        {
+                            AutoFramingToggle.Toggled -= AutoFramingToggle_Toggled;
+                            AutoFramingToggle.Visibility = Visibility.Visible;
+                            if (m_autoFramingController.HasDefaultValueStored())
+                            {
+                                AutoFramingToggle.IsOn = (m_autoFramingController.DefaultValue != 0);
+                            }
+                            else
+                            {
+                                var res = (getPayload.Flags & (ulong)(DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING));
+                                AutoFramingToggle.IsOn = (res != 0);
+                            }
+                            AutoFramingToggle.Toggled += AutoFramingToggle_Toggled;
+
+                        }
+
                     }
                     catch (Exception ex)
                     {
                         UITextOutput.Text = $"error: {ex.Message}";
                     }
-                });
+                }));
             }
             catch (Exception ex)
             {
                 UITextOutput.Text = $"error: {ex.Message}";
+            }
+        }
+
+        private void UninitMediaCapture()
+        {
+            if (m_controlManager != null)
+            {
+                m_controlManager = null;
+            }
+            if (m_mediaPlayer != null)
+            {
+                UIMediaPlayerElement.SetMediaPlayer(null);
+                m_mediaPlayer.Pause();
+                m_mediaPlayer.Source = null;
+                m_mediaPlayer.Dispose();
+                m_mediaPlayer = null;
+            }
+
+            if (m_mediaCapture != null)
+            {
+                m_mediaCapture.Dispose();
+                m_mediaCapture = null;
             }
         }
 
@@ -295,13 +362,35 @@ namespace OutboundSettingsAppTest
             {
                 // For KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION the floating point values need to be scaled
                 // to matching int range with the step size.
-                m_evCompController.DefaultValue = (int) Math.Round(e.NewValue / DefaultEVCompSlider.StepFrequency);
+                m_evCompController.DefaultValue = (int)Math.Round(e.NewValue / DefaultEVCompSlider.StepFrequency);
                 await m_mediaCapture.VideoDeviceController.ExposureCompensationControl.SetValueAsync((float)e.NewValue);
             }
             catch (Exception ex)
             {
                 UITextOutput.Text = $"error: {ex.Message}";
             }
+        }
+
+        private void AutoFramingToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                int flags = (int)((AutoFramingToggle.IsOn == true) ? DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING : DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_MANUAL);
+                m_autoFramingController.DefaultValue = flags;
+                PropertyInquiry.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW, (uint)flags);
+            }
+            catch (Exception ex)
+            {
+                UITextOutput.Text = $"error: {ex.Message}";
+            }
+        }
+
+        private async void UICameraList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UninitMediaCapture();
+
+            cameraId = m_cameraDeviceList[UICameraList.SelectedIndex].Id;
+            await InitializeAsync();
         }
     }
 }
