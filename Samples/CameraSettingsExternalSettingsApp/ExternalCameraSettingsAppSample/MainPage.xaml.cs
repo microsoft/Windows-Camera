@@ -35,6 +35,7 @@ namespace OutboundSettingsAppTest
         private DefaultControlHelper.DefaultController m_contrastController = null;
         private DefaultControlHelper.DefaultController m_brightnessController = null;
         private DefaultControlHelper.DefaultController m_backgroundBlurController = null;
+        private bool m_blurDefault = false;
         private DefaultControlHelper.DefaultController m_evCompController = null;
         private DefaultControlHelper.DefaultController m_autoFramingController = null;
 
@@ -137,19 +138,46 @@ namespace OutboundSettingsAppTest
                 // Contrast
                 if (m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Supported)
                 {
-                    m_contrastController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp, (uint)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST);
+                    m_contrastController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp, (uint)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST, 0 /*flags*/);
                 }
 
                 // Brightness
                 if (m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Supported)
                 {
-                    m_brightnessController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp, (uint)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS);
+                    m_brightnessController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.VideoProcAmp, (uint)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS, 0 /*flags*/);
                 }
 
                 // EVComp
                 if (m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Supported)
                 {
-                    m_evCompController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION);
+                    var evStep = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Step;
+                    var flagtmp = (uint)((1 / evStep) + 0.5f);
+
+                    uint flag = 0;
+
+                    // See ksmedia.h for KSCAMERA_EXTENDEDPROP_EVCOMP_SIXTHSTEP and other step flags
+                    switch (flagtmp)
+                    {
+                        case 6:
+                            flag = 0x1;
+                            break;
+                        case 4:
+                            flag = 0x2;
+                            break;
+                        case 3:
+                            flag = 0x4;
+                            break;
+                        case 2:
+                            flag = 0x8;
+                            break;
+                        case 1:
+                            flag = 0x10;
+                            break;
+                        default:
+                            flag = 0x0;
+                            break;
+                    }
+                    m_evCompController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION, flag);
                 }
 
                 // Blur
@@ -160,16 +188,21 @@ namespace OutboundSettingsAppTest
                 isBlurControlSupported = (getPayload != null);
                 if (isBlurControlSupported && (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR & ~getPayload.Capability) == 0))
                 {
-                    m_backgroundBlurController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
+                    m_backgroundBlurController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION, 0 /*flags*/);
+                    // if the flag value is set to BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    m_blurDefault = (getPayload.Flags % 2 == 1);
                 }
 
                 // DW w/ auto framing
                 bool isAutoFramingSupported = false;
                 getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW);
-                isAutoFramingSupported = ((getPayload.Capability & (ulong)(DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING)) == (ulong)DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING);
+                if (getPayload != null)
+                {
+                    isAutoFramingSupported = ((getPayload.Capability & (ulong)(DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING)) == (ulong)DigitalWindowCapabilityKind.KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING);
+                }
                 if (isAutoFramingSupported)
                 {
-                    m_autoFramingController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW);
+                    m_autoFramingController = m_controlManager.CreateController(DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW, 0 /*flags*/);
                 }
 
                 // Updating UI elements
@@ -257,10 +290,9 @@ namespace OutboundSettingsAppTest
                             }
                             else
                             {
-                                // if the flag value is set to BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
-                                DefaultBlurToggle.IsOn = (getPayload.Flags % 2 == 1); ;
+                                DefaultBlurToggle.IsOn = m_blurDefault;
                             }
-                            DefaultBlurToggle.IsOn = m_backgroundBlurController.DefaultValue != 0;
+
                             DefaultBlurToggle.Toggled += DefaultBlurToggle_Toggled;
                         }
 

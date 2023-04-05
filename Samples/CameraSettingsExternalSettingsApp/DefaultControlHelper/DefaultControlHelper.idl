@@ -31,6 +31,6 @@ namespace DefaultControlHelper
         //      VideoProcAmp https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/propsetid-vidcap-videoprocamp
         //      CameraControl https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/propsetid-vidcap-cameracontrol
         //      ExtendedCameraControls https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol
-        DefaultController CreateController(DefaultControllerType type, UInt32 controlId);
+        DefaultController CreateController(DefaultControllerType type, UInt32 controlId, UInt32 flags);
     }
 }

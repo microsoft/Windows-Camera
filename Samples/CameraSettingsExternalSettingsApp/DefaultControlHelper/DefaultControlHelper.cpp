@@ -22,9 +22,9 @@ namespace winrt::DefaultControlHelper::implementation
         THROW_IF_FAILED(m_configManager->LoadDefaults(attributes.get(), &m_controlDefaultsCollection));
     }
 
-    winrt::DefaultControlHelper::DefaultController DefaultControlManager::CreateController(DefaultControllerType type, uint32_t id)
+    winrt::DefaultControlHelper::DefaultController DefaultControlManager::CreateController(DefaultControllerType type, uint32_t id, uint32_t flags)
     {
-        return winrt::make<DefaultController>(type, id, get_strong());
+        return winrt::make<DefaultController>(type, id, flags, get_strong());
     }
 
     HRESULT DefaultControlManager::Save()
@@ -36,7 +36,7 @@ namespace winrt::DefaultControlHelper::implementation
 
 #pragma region DefaultController
 
-    DefaultController::DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, const uint32_t id, winrt::com_ptr<DefaultControlManager> manager)
+    DefaultController::DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, const uint32_t id, const uint32_t flags, winrt::com_ptr<DefaultControlManager> manager)
     {
         m_id = id;
         m_controlManager = manager;
@@ -59,7 +59,7 @@ namespace winrt::DefaultControlHelper::implementation
             switch (id)
             {
                 case KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION:
-                    m_internalController = std::make_unique<DefaultControllerEVCompExtendedControl>();
+                    m_internalController = std::make_unique<DefaultControllerEVCompExtendedControl>(flags);
                     break;
 
                 default: 
@@ -268,6 +268,12 @@ namespace winrt::DefaultControlHelper::implementation
         return (int32_t)pExtendedHeader->Flags;
     }
 
+    DefaultControllerEVCompExtendedControl::DefaultControllerEVCompExtendedControl(const uint32_t flags)
+        : m_flags(flags)
+    {
+
+    }
+
     void DefaultControllerEVCompExtendedControl::Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid, uint32_t id)
     {
         auto collection = manager->GetCollection();
@@ -289,7 +295,7 @@ namespace winrt::DefaultControlHelper::implementation
         KSCAMERA_EXTENDEDPROP_EVCOMPENSATION* evCompExtPropPayload = (KSCAMERA_EXTENDEDPROP_EVCOMPENSATION*)((PBYTE)pData + sizeof(KSCAMERA_EXTENDEDPROP_HEADER));;
 
         pProperty->Flags = KSPROPERTY_TYPE_SET;
-        pExtendedHeader->Flags = 0;
+        pExtendedHeader->Flags = m_flags;
         pExtendedHeader->PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE;
         pExtendedHeader->Size = (sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_EVCOMPENSATION));
         

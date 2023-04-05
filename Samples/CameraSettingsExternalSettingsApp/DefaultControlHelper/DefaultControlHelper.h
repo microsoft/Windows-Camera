@@ -16,7 +16,7 @@ namespace winrt::DefaultControlHelper::implementation
     {
         DefaultControlManager(winrt::hstring cameraSymbolicLink);
 
-        winrt::DefaultControlHelper::DefaultController CreateController(DefaultControllerType type, const uint32_t id);
+        winrt::DefaultControlHelper::DefaultController CreateController(DefaultControllerType type, const uint32_t id, const uint32_t flags);
 
         wil::com_ptr_t<IMFCameraControlDefaultsCollection> GetCollection() { return m_controlDefaultsCollection; }
 
@@ -30,7 +30,7 @@ namespace winrt::DefaultControlHelper::implementation
 
     struct DefaultController : DefaultControllerT<DefaultController>
     {
-        DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, uint32_t id, winrt::com_ptr<DefaultControlManager> manager);
+        DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, uint32_t id, uint32_t flags, winrt::com_ptr<DefaultControlManager> manager);
         bool HasDefaultValueStored() { return m_hasDefaultValueStored; }
         int32_t DefaultValue();
         void DefaultValue(int32_t const& value);
@@ -83,12 +83,17 @@ namespace winrt::DefaultControlHelper::implementation
     class DefaultControllerEVCompExtendedControl : public IDefaultControllerInternal
     {
     public:
+        DefaultControllerEVCompExtendedControl(const uint32_t flags);
+
         virtual void SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value) override;
         virtual int32_t GetStoredDefaultValue(void* control, ULONG controlSize, void* data, ULONG dataSize) override;
 
         virtual void Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id) override;
 
         virtual ~DefaultControllerEVCompExtendedControl() = default;
+
+    private:
+        uint32_t m_flags = 0;
     };
 }
 
