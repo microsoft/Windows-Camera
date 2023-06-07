@@ -4,6 +4,8 @@
 //
 #include <Windows.h>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <conio.h>
 #include <Mferror.h>
 #include <winrt\base.h>
@@ -45,7 +47,7 @@ class CameraHelper
     //
     IVector<MediaFrameSourceInfo> GetFilteredSourceGroupList()
     {
-        auto filteredSourceInfos = single_threaded_vector<MediaFrameSourceInfo>();
+        std::vector<MediaFrameSourceInfo> filteredSourceInfos;
         m_SourceGroups = MediaFrameSourceGroup::FindAllAsync().get();
         auto sourceGroupIter = m_SourceGroups.First();
         while (sourceGroupIter.HasCurrent())
@@ -60,13 +62,21 @@ class CameraHelper
                     || sourceInfoIter.Current().MediaStreamType() == MediaStreamType::VideoRecord)
                     && sourceInfoIter.Current().SourceKind() == MediaFrameSourceKind::Color)
                 {
-                    filteredSourceInfos.Append(sourceInfoIter.Current());
+                    // avoid redundantly listing the source group and one of its source
+                    if (std::find_if(filteredSourceInfos.begin(), filteredSourceInfos.end(), [&sourceInfoIter](MediaFrameSourceInfo& cachedInfo)
+                        {
+                            return cachedInfo.Id() == sourceInfoIter.Current().Id();
+                        }) == filteredSourceInfos.end())
+                    {
+                        filteredSourceInfos.push_back(sourceInfoIter.Current());
+                    }
                 }
                 sourceInfoIter.MoveNext();
             }
             sourceGroupIter.MoveNext();
         }
-        return filteredSourceInfos;
+        
+        return winrt::single_threaded_vector(std::move(filteredSourceInfos));
     }
 
     //
@@ -121,20 +131,21 @@ class CameraHelper
     //
     // Prints information of all available Mediatypes for the selected source and returns user selected index of the MediaType to use
     //
-    int GetMediaTypeSelection(MediaFrameSourceInfo selectedSource)
+    int GetMediaTypeSelection(MediaFrameSource selectedSource)
     {
-        auto mediaDescriptionIter = selectedSource.VideoProfileMediaDescription().First();
+        auto mediaDescriptionIter = selectedSource.SupportedFormats().First();
         int idx = 0;
 
         while (mediaDescriptionIter.HasCurrent())
         {
-
             auto format = mediaDescriptionIter.Current();
-            int frameRateInt = (int)format.FrameRate();
-            int frameRateDec = ((int)(format.FrameRate() * 100) % 100);
+            float frameRate = (float)format.FrameRate().Numerator() / format.FrameRate().Denominator();
+            std::wstringstream frameRateStream;
+            frameRateStream << std::fixed << std::setprecision(2) << frameRate;
+            
             idx++;
             auto formatStr = std::to_wstring(idx) + L". " + std::wstring(format.Subtype().c_str()) + L": " +
-                std::to_wstring(format.Width()) + L"x" + std::to_wstring(format.Height()) + L" @ " + std::to_wstring(frameRateInt) + L"." + std::to_wstring(frameRateDec) + L" fps";
+                std::to_wstring(format.VideoFormat().Width()) + L"x" + std::to_wstring(format.VideoFormat().Height()) + L" @ " + frameRateStream.str() + L" fps";
             std::wcout << formatStr << std::endl;
             mediaDescriptionIter.MoveNext();
         }
@@ -166,7 +177,7 @@ class CameraHelper
             while (frameSourceIter.HasCurrent())
             {
                 auto frameSource = frameSourceIter.Current().Value();
-                if (frameSource.Info().MediaStreamType() == streamTypelookup)
+                if (frameSource.Info().MediaStreamType() == streamTypelookup && frameSource.Info().SourceKind() == MediaFrameSourceKind::Color)
                 {
                     previewframeSource = frameSource;
                     break;
@@ -231,13 +242,12 @@ public:
 
         settings.StreamingCaptureMode(StreamingCaptureMode::Video);
 
-        // Set format on the medicapture frame source
-        auto formatIdx = GetMediaTypeSelection(selectedSrc);
-
+        // Set format on the mediacapture frame source
         mediaCapture.InitializeAsync(settings).get();
-        auto frameSourceIter = mediaCapture.FrameSources().First();
-
         auto frameSource = mediaCapture.FrameSources().Lookup(selectedSrc.Id());
+        std::wcout << (int)selectedSrc.SourceKind();
+        
+        auto formatIdx = GetMediaTypeSelection(frameSource);
         frameSource.SetFormatAsync(frameSource.SupportedFormats().GetAt(formatIdx)).get();
 
         if (mediaCapture.VideoDeviceController().ExposureControl().Supported())
@@ -345,7 +355,7 @@ void TakePhotosAndProcess(MediaCapture mediaCapture, uint32_t photoIndex)
 //
 int wmain()
 {
-    std::cout << "Windows Media Capture in Win32 desktop Console app!";
+    std::cout << "-- Windows Media Capture in Win32 desktop Console app --" << std::endl;
     try
     {
         CameraHelper cameraHelper;
