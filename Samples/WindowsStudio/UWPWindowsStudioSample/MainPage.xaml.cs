@@ -2,21 +2,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Capture;
 using Windows.Media.Playback;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.UI.Core;
@@ -24,9 +16,6 @@ using Windows.Media.Devices;
 using Windows.Media.MediaProperties;
 using Windows.Media.Core;
 using System.Diagnostics;
-using Windows.Graphics.Imaging;
-
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
 namespace UWPWindowsStudioSample
 {
@@ -38,11 +27,60 @@ namespace UWPWindowsStudioSample
         // Camera related
         private MediaCapture m_mediaCapture;
         private MediaPlayer m_mediaPlayer;
-        private List<MediaFrameSourceGroup> m_mediaFrameSourceGroupList;
-        private MediaFrameSourceGroup m_selectedMediaFrameSourceGroup;
         private MediaFrameSource m_selectedMediaFrameSource;
         private MediaFrameFormat m_selectedFormat;
+
+        // this DevPropKey signifies if the system is capable of exposing a Windows Studio camera
         private const string DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable = "{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 4";
+
+        readonly Dictionary<string, ulong> m_possibleBackgroundSegmentationFlagValues = new Dictionary<string, ulong>()
+        {
+            {
+                "off",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF
+            },
+            {
+                "blur",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+            },
+            {
+                "mask metadata",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+            },
+            {
+                "shallow focus blur",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    + (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+            },
+            {
+                "blur and mask metadata",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    + (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+            },
+            {
+                "shallow focus blur and mask metadata",
+                (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
+                    + (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
+                    + (ulong)KsHelper.BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
+            }
+        };
+
+        readonly Dictionary<string, ulong> m_possibleEyeGazeCorrectionFlagValues = new Dictionary<string, ulong>()
+        {
+            {
+                "off",
+                (ulong)KsHelper.EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
+            },
+            {
+                "on",
+                (ulong)KsHelper.EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+            },
+            {
+                "enhanced",
+                (ulong)KsHelper.EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON
+                    + (ulong)KsHelper.EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE
+            }
+        };
 
         public MainPage()
         {
@@ -53,8 +91,18 @@ namespace UWPWindowsStudioSample
         {
             try
             {
-                // Initialized MediaCapture and start streaming
-                await InitializeMediaCaptureAsync();
+                // Attempt to find a Windows Studio camera then initialize a MediaCapture instance
+                // for it and start streaming
+                await InitializeWindowsStudioMediaCaptureAsync();
+
+                // wait a couple of seconds to let any default control values to be set upon start.
+                // To avoid this step, it would be wise to implement support in the app
+                // for an IMFCameraControlMonitor (see the ControlMonitorApp sample in this repo).
+                // We skip this step in the spirit of keeping this sample all written in C# without
+                // any other components to depend on such as in the aforementioned sample.
+                await Task.Delay(5000);
+
+                // Refresh UI element associated with Windows Studio effects
                 RefreshUI();
             }
             catch (Exception ex)
@@ -63,76 +111,38 @@ namespace UWPWindowsStudioSample
             }
         }
 
-        private void RefreshUI()
-        {
-            var bytePayload = KsHelper.ToBytes(new KspNode(new KsProperty(
-                KsHelper.KSPROPERTYSETID_ExtendedCameraControl,
-                (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
-                (uint)KsProperty.KsPropertyKind.KSPROPERTY_TYPE_GET), 15));
-
-            string propString = $"{KsHelper.KSPROPERTYSETID_ExtendedCameraControl} {(uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION}";
-            var resultPayload = m_mediaCapture.VideoDeviceController.GetDevicePropertyById(
-                propString, 
-                null);
-            if(resultPayload != null) 
-            {
-                if (resultPayload.Status == VideoDeviceControllerGetDevicePropertyStatus.Success)
-                {
-                    byte[] byteResultPayload = (byte[])resultPayload.Value;
-                    KsBasicCameraExtendedPropPayload payload = KsHelper.FromBytes<KsBasicCameraExtendedPropPayload>(byteResultPayload);
-                    var currentFlag = payload.header.Flags;
-                    NotifyUser($"current flag value for KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION: {currentFlag}", NotifyType.StatusMessage);
-                }
-            }
-        }
-
         /// <summary>
-        /// Initialize MediaCapture
+        /// Initialize a MediaCapture instance for a Windows Studio camera if available on the system
         /// </summary>
         /// <returns></returns>
-        private async Task InitializeMediaCaptureAsync()
+        private async Task InitializeWindowsStudioMediaCaptureAsync()
         {
             // Retrieve the list of cameras available on the system with the additional properties
             // that specifies if the system is compatible with Windows Studio
             DeviceInformationCollection deviceInfoCollection = await DeviceInformation.FindAllAsync(
-                MediaDevice.GetVideoCaptureSelector(), 
-                new List<string>() { DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable } );
+                MediaDevice.GetVideoCaptureSelector(),
+                new List<string>() { DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable });
 
             // if there are no camera devices returned, it means we don't support Windows Studio on this system
-            if(deviceInfoCollection.Count == 0)
+            if (deviceInfoCollection.Count == 0)
             {
                 throw new InvalidOperationException("Windows Studio not supported");
             }
 
             // Windows Studio is currently only supported on front facing cameras.
-            // Look at the panel information to identify which camera to use
+            // Look at the panel information to identify which camera is front facing
             DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
-            if(selectedDeviceInfo == null)
+            if (selectedDeviceInfo == null)
             {
                 throw new InvalidOperationException("Could not find a front facing camera");
             }
 
-            // Find the source associated with the device we identified earlier that streams in color.
-            // (It may be redundant to check for SourceKind as Windows Studio only works on cameras exposing a color stream)
-            var allGroups = await MediaFrameSourceGroup.FindAllAsync();
-
-            m_selectedMediaFrameSourceGroup = allGroups.FirstOrDefault(group => group.SourceInfos.Any(
-                sourceInfo => sourceInfo.DeviceInformation.Id == selectedDeviceInfo.Id
-                              && sourceInfo.SourceKind == MediaFrameSourceKind.Color
-                              && (sourceInfo.MediaStreamType == MediaStreamType.VideoPreview
-                                  || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord)));
-            
-            if(m_selectedMediaFrameSourceGroup == null) 
-            {
-                throw new Exception($"Unexpectedly could not find a MediaFrameSourceGroup associated with the device id {selectedDeviceInfo.Id}");
-            }
-
-            // Initialize MediaCapture
+            // Initialize MediaCapture with the Windows Studio camera device id
             m_mediaCapture = new MediaCapture();
             await m_mediaCapture.InitializeAsync(
                 new MediaCaptureInitializationSettings()
                 {
-                    SourceGroup = m_selectedMediaFrameSourceGroup,
+                    VideoDeviceId = selectedDeviceInfo.Id,
                     MemoryPreference = MediaCaptureMemoryPreference.Cpu,
                     StreamingCaptureMode = StreamingCaptureMode.Video,
                     SharingMode = MediaCaptureSharingMode.ExclusiveControl
@@ -178,7 +188,7 @@ namespace UWPWindowsStudioSample
                 throw new Exception($"Could not find a valid frame source format to stream with");
             }
             await m_selectedMediaFrameSource.SetFormatAsync(m_selectedFormat);
-            
+
             // Connect the camera to the UI element for previewing the camera
             m_mediaPlayer = new MediaPlayer();
             m_mediaPlayer.RealTimePlayback = true;
@@ -195,9 +205,115 @@ namespace UWPWindowsStudioSample
                 NotifyType.StatusMessage);
         }
 
-        private void UIPreviewElement_SizeChanged(object sender, SizeChangedEventArgs e)
+        private void RefreshUI()
         {
+            // get the current value for eye gaze correction and update UI accordingly
+            {
+                // send a GET call for the eye gaze DDI and retrieve the result payload
+                byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
+                    m_mediaCapture.VideoDeviceController, 
+                    KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
 
+                // reinterpret the byte array as an extended property payload
+                KsHelper.KsBasicCameraExtendedPropPayload payload = KsHelper.FromBytes<KsHelper.KsBasicCameraExtendedPropPayload>(byteResultPayload);
+                
+                // refresh the list of values displayed for this control
+                UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
+                
+                var eyeGazeCorrectionCapabilities = m_possibleEyeGazeCorrectionFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
+                UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities.Select(x => x.Key);
+
+                // reflect in UI what is the current value
+                var currentFlag = payload.header.Flags;
+                var currentIndexToSelect = eyeGazeCorrectionCapabilities.FindIndex(x => x.Value == currentFlag);
+                UIEyeGazeCorrectionModes.SelectedIndex = currentIndexToSelect;
+
+                UIEyeGazeCorrectionModes.IsEnabled = true;
+                UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
+            }
+
+            // get the current value for background segmentation and update UI accordingly
+            {
+                // send a GET call for the eye gaze DDI and retrieve the result payload
+                byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
+                    m_mediaCapture.VideoDeviceController,
+                    KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
+
+                // reinterpret the byte array as an extended property payload
+                KsHelper.KsBackgroundCameraExtendedPropPayload payload = KsHelper.FromBytes(byteResultPayload);
+
+                // refresh the list of values displayed for this control
+                UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
+
+                var backgroundSegmentationCapabilities = m_possibleBackgroundSegmentationFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
+                UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities.Select(x => x.Key);
+
+                // reflect in UI what is the current value
+                var currentFlag = payload.header.Flags;
+                var currentIndexToSelect = backgroundSegmentationCapabilities.FindIndex(x => x.Value == currentFlag);
+                UIBackgroundSegmentationModes.SelectedIndex = currentIndexToSelect;
+
+                UIBackgroundSegmentationModes.IsEnabled = true;
+                UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
+            }
+
+            // get the current state of Automatic Framing and update UI accordingly
+            {
+                // check if automatic framing is supported, in theory it should always be supported by Windows Studio
+                if (m_mediaCapture.VideoDeviceController.DigitalWindowControl.SupportedModes.Contains(DigitalWindowMode.Auto))
+                {
+                    // refresh the UI for this control
+                    UIAutomaticFramingSwitch.Toggled -= UIAutomaticFramingSwitch_Toggled;
+                    UIAutomaticFramingSwitch.IsOn = (m_mediaCapture.VideoDeviceController.DigitalWindowControl.CurrentMode == DigitalWindowMode.Auto);
+                    UIAutomaticFramingSwitch.IsEnabled = true;
+                    UIAutomaticFramingSwitch.Toggled += UIAutomaticFramingSwitch_Toggled;
+                }
+            }
+        }
+
+        private void UIEyeGazeCorrectionModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectedIndex = UIEyeGazeCorrectionModes.SelectedIndex;
+            if(selectedIndex < 0)
+            {
+                return;
+            }
+
+            // find the flags value associated with the current mode selected
+            string selection = UIEyeGazeCorrectionModes.SelectedItem.ToString();
+            ulong flagToSet = m_possibleEyeGazeCorrectionFlagValues.FirstOrDefault(x => x.Key == selection).Value;
+            
+            // set the flags value for the corresponding extended control
+            KsHelper.SetExtendedControlFlags(
+                m_mediaCapture.VideoDeviceController,
+                KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
+                flagToSet);
+        }
+
+        private void UIBackgroundSegmentationModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var selectedIndex = UIBackgroundSegmentationModes.SelectedIndex;
+            if (selectedIndex < 0)
+            {
+                return;
+            }
+
+            // find the flags value associated with the current mode selected
+            string selection = UIBackgroundSegmentationModes.SelectedItem.ToString();
+            ulong flagToSet = m_possibleBackgroundSegmentationFlagValues.FirstOrDefault(x => x.Key == selection).Value;
+
+            // set the flags value for the corresponding extended control
+            KsHelper.SetExtendedControlFlags(
+                m_mediaCapture.VideoDeviceController,
+                KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION,
+                flagToSet);
+        }
+
+        private void UIAutomaticFramingSwitch_Toggled(object sender, RoutedEventArgs e)
+        {
+            // set automatic framing On or Off given following the toggle switch state
+            DigitalWindowMode modeToSet = UIAutomaticFramingSwitch.IsOn ? DigitalWindowMode.Auto : DigitalWindowMode.Off;
+            m_mediaCapture.VideoDeviceController.DigitalWindowControl.Configure(modeToSet);
         }
 
         #region DebugMessageHelpers
@@ -226,12 +342,6 @@ namespace UWPWindowsStudioSample
                 var task = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateStatus(strMessage, type));
                 task.AsTask().Wait();
             }
-        }
-
-        private void DebugOutput(string message,
-            [System.Runtime.CompilerServices.CallerMemberName] string memberName = "")
-        {
-            Debug.WriteLine($"{memberName} : {message}");
         }
 
         /// <summary>

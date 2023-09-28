@@ -18,14 +18,38 @@
                 TextWrapping="Wrap"
                 Text="nothing to report"/>
             </Border>
-            
+
+            <ContentControl x:Name="UIBackgroundSegmentationPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Background Segmentation"  Foreground="Black"/>
+                    <ComboBox Name="UIBackgroundSegmentationModes" IsEnabled="false" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
+                </StackPanel>
+            </ContentControl>
+            <ContentControl x:Name="UIEyeGazeCorrectionPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Eye Gaze Correction" Foreground="Black"/>
+                    <ComboBox Name="UIEyeGazeCorrectionModes" IsEnabled="false" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
+                </StackPanel>
+            </ContentControl>
+            <ContentControl x:Name="UIAutomaticFramingPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Automatic Framing" Foreground="Black"/>
+                    <ToggleSwitch Name="UIAutomaticFramingSwitch" 
+                                  IsEnabled="false" 
+                                  Toggled="UIAutomaticFramingSwitch_Toggled" 
+                                  OnContent="On" 
+                                  OffContent="Off" 
+                                  Foreground="Black"
+                                  Background="LightGray"/>
+                </StackPanel>
+            </ContentControl>
+
             <!--Camera preview-->
             <MediaPlayerElement Name="UIPreviewElement"
                                 Stretch="Uniform"
                                 AreTransportControlsEnabled="False"
                                 Canvas.ZIndex="-1"
-                                Grid.Row="1" 
-                                SizeChanged="UIPreviewElement_SizeChanged"/>
+                                Grid.Row="1" />
         </StackPanel>
     </Grid>
 </Page>
