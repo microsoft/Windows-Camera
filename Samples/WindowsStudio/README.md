@@ -1,4 +1,6 @@
-# C# UWP WinRT sample application for a Windows Studio camera
+# C# UWP WinRT sample application for using a Windows Studio camera and its set of effects
+
+>**This sample will only run fully on a system equipped with a [Windows Studio](https://blogs.windows.com/windowsexperience/2022/09/20/available-today-the-windows-11-2022-update/) camera, which in itself requires a NPU and the related Windows Studio driver package installed or pulled-in via Windows Update by the device manufacturer.**
 
 This folder contains a single C# .csproj sample project named **UWPWindowsStudioSample** which checks if a Windows Studio camera is available on the system and then gets and sets extended camera controls associated with Windows Studio effects such as Background Blur, Eye Gaze Correction and Automatic Framing:
 1. Looks for a Windows Studio camera on the system 
