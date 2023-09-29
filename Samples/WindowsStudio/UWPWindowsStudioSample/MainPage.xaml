@@ -1,0 +1,56 @@
+﻿<!--Copyright (c) Microsoft Corporation.  All rights reserved.-->
+<Page
+    x:Class="UWPWindowsStudioSample.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:UWPWindowsStudioSample"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    Loaded="Page_Loaded">
+
+    <Grid>
+        <StackPanel Orientation="vertical" Background="White" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <Border Name="UIStatusBorder">
+
+                <TextBlock Name="UIStatusBlock"
+                FontWeight="Bold"
+                TextWrapping="Wrap"
+                Text="nothing to report"/>
+            </Border>
+
+            <ContentControl x:Name="UIBackgroundSegmentationPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Background Segmentation"  Foreground="Black"/>
+                    <ComboBox Name="UIBackgroundSegmentationModes" IsEnabled="false" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
+                </StackPanel>
+            </ContentControl>
+            <ContentControl x:Name="UIEyeGazeCorrectionPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Eye Gaze Correction" Foreground="Black"/>
+                    <ComboBox Name="UIEyeGazeCorrectionModes" IsEnabled="false" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
+                </StackPanel>
+            </ContentControl>
+            <ContentControl x:Name="UIAutomaticFramingPanel" Background="White">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Automatic Framing" Foreground="Black"/>
+                    <ToggleSwitch Name="UIAutomaticFramingSwitch" 
+                                  IsEnabled="false" 
+                                  Toggled="UIAutomaticFramingSwitch_Toggled" 
+                                  OnContent="On" 
+                                  OffContent="Off" 
+                                  Foreground="Black"
+                                  Background="LightGray"/>
+                </StackPanel>
+            </ContentControl>
+
+            <!--Camera preview-->
+            <MediaPlayerElement Name="UIPreviewElement"
+                                Stretch="Uniform"
+                                AreTransportControlsEnabled="False"
+                                Canvas.ZIndex="-1"
+                                Grid.Row="1" />
+        </StackPanel>
+    </Grid>
+</Page>

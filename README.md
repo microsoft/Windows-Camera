@@ -98,3 +98,8 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
   <td><a href="Samples/ControlMonitorApp">Sample of Control Monitoring app that listens changes to various camera controls</a></td>
  </tr>
 </table>
+<table>
+ <tr>
+  <td><a href="Samples/WindowsStudio">Sample of a single C# project for a UWP app that looks for a Windows Studio camera and interacts with its effects via generic KS Camera Extended Properties APIs</a></td>
+ </tr>
+</table>
