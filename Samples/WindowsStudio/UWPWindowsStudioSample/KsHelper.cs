@@ -21,6 +21,7 @@ namespace UWPWindowsStudioSample
         {
             KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION = 40,
             KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION = 41,
+            KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW = 43
         };
 
         public enum BackgroundSegmentationCapabilityKind : uint
@@ -184,7 +185,7 @@ namespace UWPWindowsStudioSample
             }
         }
 
-        // A clunky method to marshal a structure into a byte[]
+        // A method to marshal a structure into a byte[]
         public static byte[] ToBytes<T>(T item)
         {
             var size = Marshal.SizeOf<T>();
@@ -196,7 +197,7 @@ namespace UWPWindowsStudioSample
             return bytes;
         }
 
-        // A clunky method to marshal a byte[] into a structure
+        // A method to marshal a byte[] into a structure
         public static T FromBytes<T>(byte[] bytes, int startIndex = 0)
         {
             var size = Marshal.SizeOf<T>();
@@ -207,6 +208,8 @@ namespace UWPWindowsStudioSample
             return item;
         }
 
+        // Specialization of the above generic method to deserialize properly a variably sized payload
+        // for background segmentation
         public static KsBackgroundCameraExtendedPropPayload FromBytes(byte[] bytes, int startIndex = 0)
         {
             KsBackgroundCameraExtendedPropPayload payload = new KsBackgroundCameraExtendedPropPayload();

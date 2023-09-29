@@ -50,20 +50,23 @@ This folder contains a single C# .csproj sample project named **UWPWindowsStudio
         // set the flags value for the corresponding extended control
         KsHelper.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION, flagToSet); 
         ```
+
+The .sln solution file is also pulling a dependency on the existing WinRT Component named ["*ControlMonitorHelper*"](..\ControlMonitorApp\README.md) that wraps and projects to WinRT the [`IMFCameraControlMonitor`](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfcameracontrolmonitor) native APIs so that we can refresh the app UI whenever an external application such as Windows Settings changes concurrently the current value of one of the DDI that drives Windows Studio effects.
+
 ## Requirements
 	
 This sample is built using Visual Studio 2019 and requires [Windows SDK version 22621](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) at the very least.
 
 ## Using the samples
 
-The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio 2017.
+The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio 2019.
 
    [Download the samples ZIP](../../archive/master.zip)
 
    **Notes:** 
    * Before you unzip the archive, right-click it, select **Properties**, and then select **Unblock**.
    * Be sure to unzip the entire archive, and not just individual samples. The samples all depend on the SharedContent folder in the archive.   
-   * In Visual Studio 2017, the platform target defaults to ARM, so be sure to change that to x64 or x86 if you want to test on a non-ARM device. 
+   * In Visual Studio 2019, the platform target defaults to ARM, so be sure to change that to x64 if you want to test on a non-ARM device. 
 
 
 **Reminder:** If you unzip individual samples, they will not build due to references to other portions of the ZIP file that were not unzipped. You must unzip the entire archive if you intend to build the samples.

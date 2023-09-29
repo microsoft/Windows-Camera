@@ -16,6 +16,7 @@ using Windows.Media.Devices;
 using Windows.Media.MediaProperties;
 using Windows.Media.Core;
 using System.Diagnostics;
+using ControlMonitorHelper;
 
 namespace UWPWindowsStudioSample
 {
@@ -29,6 +30,7 @@ namespace UWPWindowsStudioSample
         private MediaPlayer m_mediaPlayer;
         private MediaFrameSource m_selectedMediaFrameSource;
         private MediaFrameFormat m_selectedFormat;
+        private ControlMonitorHelper.ControlMonitorManager m_controlManager = null;
 
         // this DevPropKey signifies if the system is capable of exposing a Windows Studio camera
         private const string DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable = "{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 4";
@@ -95,15 +97,10 @@ namespace UWPWindowsStudioSample
                 // for it and start streaming
                 await InitializeWindowsStudioMediaCaptureAsync();
 
-                // wait a couple of seconds to let any default control values to be set upon start.
-                // To avoid this step, it would be wise to implement support in the app
-                // for an IMFCameraControlMonitor (see the ControlMonitorApp sample in this repo).
-                // We skip this step in the spirit of keeping this sample all written in C# without
-                // any other components to depend on such as in the aforementioned sample.
-                await Task.Delay(5000);
-
                 // Refresh UI element associated with Windows Studio effects
-                RefreshUI();
+                RefreshEyeGazeUI();
+                RefreshBackgroundSegmentationUI();
+                RefreshAutomaticFramingUI();
             }
             catch (Exception ex)
             {
@@ -203,78 +200,141 @@ namespace UWPWindowsStudioSample
                 $"@{m_selectedMediaFrameSource.CurrentFormat.FrameRate.Numerator}/{m_selectedMediaFrameSource.CurrentFormat.FrameRate.Denominator}" +
                 $"with subtype = {m_selectedMediaFrameSource.CurrentFormat.Subtype}",
                 NotifyType.StatusMessage);
+
+            // create a CameraControlMonitor to be alerted when a control value is changed from outside our app
+            // while we are using it (i.e. via the Windows Settings)
+            m_controlManager = ControlMonitorHelper.ControlMonitorManager.CreateCameraControlMonitor(
+                m_mediaCapture.MediaCaptureSettings.VideoDeviceId,
+                new ControlMonitorHelper.ControlData[]
+                {
+                    new ControlMonitorHelper.ControlData
+                    {
+                        controlKind = ControlMonitorHelper.ControlKind.ExtendedControlKind,
+                        controlId = (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
+                    },
+                    new ControlMonitorHelper.ControlData
+                    {
+                        controlKind = ControlMonitorHelper.ControlKind.ExtendedControlKind,
+                        controlId = (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
+                    },
+                    new ControlMonitorHelper.ControlData
+                    {
+                        controlKind = ControlMonitorHelper.ControlKind.ExtendedControlKind,
+                        controlId = (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW
+                    },
+
+                });
+            m_controlManager.CameraControlChanged += CameraControlMonitor_ControlChanged;
         }
 
-        private void RefreshUI()
+
+        /// <summary>
+        /// Callback when a monitored camera control changes so that we can refresh the UI accordingly
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="control"></param>
+        /// <exception cref="Exception"></exception>
+        private async void CameraControlMonitor_ControlChanged(object sender, ControlData control)
         {
-            // get the current value for eye gaze correction and update UI accordingly
+            Debug.WriteLine($"{(KsHelper.ExtendedControlKind)((uint)control.controlId)} changed externally");
+            if(control.controlKind == ControlKind.ExtendedControlKind)
             {
-                // send a GET call for the eye gaze DDI and retrieve the result payload
-                byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
-                    m_mediaCapture.VideoDeviceController, 
-                    KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
-
-                // reinterpret the byte array as an extended property payload
-                KsHelper.KsBasicCameraExtendedPropPayload payload = KsHelper.FromBytes<KsHelper.KsBasicCameraExtendedPropPayload>(byteResultPayload);
-                
-                // refresh the list of values displayed for this control
-                UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
-                
-                var eyeGazeCorrectionCapabilities = m_possibleEyeGazeCorrectionFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
-                UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities.Select(x => x.Key);
-
-                // reflect in UI what is the current value
-                var currentFlag = payload.header.Flags;
-                var currentIndexToSelect = eyeGazeCorrectionCapabilities.FindIndex(x => x.Value == currentFlag);
-                UIEyeGazeCorrectionModes.SelectedIndex = currentIndexToSelect;
-
-                UIEyeGazeCorrectionModes.IsEnabled = true;
-                UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
-            }
-
-            // get the current value for background segmentation and update UI accordingly
-            {
-                // send a GET call for the eye gaze DDI and retrieve the result payload
-                byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
-                    m_mediaCapture.VideoDeviceController,
-                    KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
-
-                // reinterpret the byte array as an extended property payload
-                KsHelper.KsBackgroundCameraExtendedPropPayload payload = KsHelper.FromBytes(byteResultPayload);
-
-                // refresh the list of values displayed for this control
-                UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
-
-                var backgroundSegmentationCapabilities = m_possibleBackgroundSegmentationFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
-                UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities.Select(x => x.Key);
-
-                // reflect in UI what is the current value
-                var currentFlag = payload.header.Flags;
-                var currentIndexToSelect = backgroundSegmentationCapabilities.FindIndex(x => x.Value == currentFlag);
-                UIBackgroundSegmentationModes.SelectedIndex = currentIndexToSelect;
-
-                UIBackgroundSegmentationModes.IsEnabled = true;
-                UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
-            }
-
-            // get the current state of Automatic Framing and update UI accordingly
-            {
-                // check if automatic framing is supported, in theory it should always be supported by Windows Studio
-                if (m_mediaCapture.VideoDeviceController.DigitalWindowControl.SupportedModes.Contains(DigitalWindowMode.Auto))
+                switch(control.controlId)
                 {
-                    // refresh the UI for this control
-                    UIAutomaticFramingSwitch.Toggled -= UIAutomaticFramingSwitch_Toggled;
-                    UIAutomaticFramingSwitch.IsOn = (m_mediaCapture.VideoDeviceController.DigitalWindowControl.CurrentMode == DigitalWindowMode.Auto);
-                    UIAutomaticFramingSwitch.IsEnabled = true;
-                    UIAutomaticFramingSwitch.Toggled += UIAutomaticFramingSwitch_Toggled;
+                    case (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION:
+                        await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => RefreshEyeGazeUI());
+                        break;
+
+                    case (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION:
+                        await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => RefreshBackgroundSegmentationUI());
+                        break;
+
+                    case (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW:
+                        await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () => RefreshAutomaticFramingUI());
+                        break;
+
+                    default:
+                        throw new Exception("unhandled control change, implement or allow through at your convenience");
                 }
+            }
+        }
+
+        /// <summary>
+        /// get the current value for eye gaze correction and update UI accordingly
+        /// </summary>
+        private void RefreshEyeGazeUI()
+        {
+            // send a GET call for the eye gaze DDI and retrieve the result payload
+            byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
+                m_mediaCapture.VideoDeviceController,
+                KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
+
+            // reinterpret the byte array as an extended property payload
+            KsHelper.KsBasicCameraExtendedPropPayload payload = KsHelper.FromBytes<KsHelper.KsBasicCameraExtendedPropPayload>(byteResultPayload);
+
+            // refresh the list of values displayed for this control
+            UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
+
+            var eyeGazeCorrectionCapabilities = m_possibleEyeGazeCorrectionFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
+            UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities.Select(x => x.Key);
+
+            // reflect in UI what is the current value
+            var currentFlag = payload.header.Flags;
+            var currentIndexToSelect = eyeGazeCorrectionCapabilities.FindIndex(x => x.Value == currentFlag);
+            UIEyeGazeCorrectionModes.SelectedIndex = currentIndexToSelect;
+
+            UIEyeGazeCorrectionModes.IsEnabled = true;
+            UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
+        }
+
+        /// <summary>
+        /// get the current value for background segmentation and update UI accordingly
+        /// </summary>
+        private void RefreshBackgroundSegmentationUI()
+        {
+            // send a GET call for the eye gaze DDI and retrieve the result payload
+            byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
+                m_mediaCapture.VideoDeviceController,
+                KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
+
+            // reinterpret the byte array as an extended property payload
+            KsHelper.KsBackgroundCameraExtendedPropPayload payload = KsHelper.FromBytes(byteResultPayload);
+
+            // refresh the list of values displayed for this control
+            UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
+
+            var backgroundSegmentationCapabilities = m_possibleBackgroundSegmentationFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
+            UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities.Select(x => x.Key);
+
+            // reflect in UI what is the current value
+            var currentFlag = payload.header.Flags;
+            var currentIndexToSelect = backgroundSegmentationCapabilities.FindIndex(x => x.Value == currentFlag);
+            UIBackgroundSegmentationModes.SelectedIndex = currentIndexToSelect;
+
+            UIBackgroundSegmentationModes.IsEnabled = true;
+            UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
+        }
+
+        /// <summary>
+        /// get the current state of Automatic Framing and update UI accordingly
+        /// </summary>
+        private void RefreshAutomaticFramingUI()
+        {
+            // check if automatic framing is supported, in theory it should always be supported by Windows Studio
+            if (m_mediaCapture.VideoDeviceController.DigitalWindowControl.SupportedModes.Contains(DigitalWindowMode.Auto))
+            {
+                // refresh the UI for this control
+                UIAutomaticFramingSwitch.Toggled -= UIAutomaticFramingSwitch_Toggled;
+                UIAutomaticFramingSwitch.IsOn = (m_mediaCapture.VideoDeviceController.DigitalWindowControl.CurrentMode == DigitalWindowMode.Auto);
+                UIAutomaticFramingSwitch.IsEnabled = true;
+                UIAutomaticFramingSwitch.Toggled += UIAutomaticFramingSwitch_Toggled;
             }
         }
 
         private void UIEyeGazeCorrectionModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var selectedIndex = UIEyeGazeCorrectionModes.SelectedIndex;
-            if(selectedIndex < 0)
+            if (selectedIndex < 0)
             {
                 return;
             }
@@ -282,7 +342,7 @@ namespace UWPWindowsStudioSample
             // find the flags value associated with the current mode selected
             string selection = UIEyeGazeCorrectionModes.SelectedItem.ToString();
             ulong flagToSet = m_possibleEyeGazeCorrectionFlagValues.FirstOrDefault(x => x.Key == selection).Value;
-            
+
             // set the flags value for the corresponding extended control
             KsHelper.SetExtendedControlFlags(
                 m_mediaCapture.VideoDeviceController,
