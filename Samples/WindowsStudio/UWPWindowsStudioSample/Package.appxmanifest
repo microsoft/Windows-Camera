@@ -8,14 +8,14 @@
 
   <Identity
     Name="9443c048-c657-4714-b62c-7bb96b5e5339"
-    Publisher="CN=lobourre"
+    Publisher="CN=Contoso"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="9443c048-c657-4714-b62c-7bb96b5e5339" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>UWPWindowsStudioSample</DisplayName>
-    <PublisherDisplayName>lobourre</PublisherDisplayName>
+    <PublisherDisplayName>Contoso</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
