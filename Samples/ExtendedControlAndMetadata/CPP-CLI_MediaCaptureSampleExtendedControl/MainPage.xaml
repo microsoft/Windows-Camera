@@ -15,7 +15,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid x:Name="LayoutRoot" Background="White" HorizontalAlignment="Left" VerticalAlignment="Top">
+    <Grid x:Name="LayoutRoot" Background="Blue" HorizontalAlignment="Left" VerticalAlignment="Top">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
