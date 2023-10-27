@@ -11,6 +11,8 @@
 #include "FaceDetectionMetadata.h"
 #include "DigitalWindowMetadata.h"
 #include "VidCapVideoProcAmpPropetyPayload.h"
+#include "VidProcExtendedPropertyPayload.h"
+#include "FieldOfView2ConfigCapsPropertyPayload.h"
 
 namespace winrt::CameraKsPropertyHelper::implementation
 {
@@ -173,7 +175,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
     /// <param name="controller"></param>
     /// <param name="extendedControlKind"></param>
     /// <returns></returns>
-    winrt::CameraKsPropertyHelper::IExtendedPropertyPayload PropertyInquiry::GetExtendedControl(winrt::Windows::Media::Devices::VideoDeviceController const& controller, winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind)
+    winrt::CameraKsPropertyHelper::IExtendedPropertyHeader PropertyInquiry::GetExtendedControl(winrt::Windows::Media::Devices::VideoDeviceController const& controller, winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind)
     {
         auto propertyValueResult = GetExtendedCameraControlPayload(controller, static_cast<int>(extendedControlKind));
         if (propertyValueResult == nullptr)
@@ -181,7 +183,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
             return nullptr;
         }
 
-        IExtendedPropertyPayload payload = nullptr;
+        IExtendedPropertyHeader payload = nullptr;
 
         switch (extendedControlKind)
         {
@@ -198,12 +200,24 @@ namespace winrt::CameraKsPropertyHelper::implementation
                 // else fallthrough, BackgroundSegmentation control not implementing mask metadata may return a basic property payload per first draft of the DDI spec
             }  
 
-            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION:
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION: // fallthrough
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2:
             {
                 payload = make<BasicExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
                 break;
             }
             
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE:
+            {
+                payload = make<VidProcExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
+                break;
+            }
+
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS:
+            {
+                payload = make<FieldOfView2ConfigCapsPropertyPayload>(propertyValueResult);
+                break;
+            }
 
             default:
                 throw hresult_invalid_argument(L"unexpected extendedControlKind passed: " + to_hstring((int32_t)extendedControlKind));
@@ -249,6 +263,84 @@ namespace winrt::CameraKsPropertyHelper::implementation
         if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
         {
             throw hresult_invalid_argument(L"Could not set device property flags " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)setResult));
+        }
+    }
+
+    /// <summary>
+    /// Send a SET command of a supported extended control onto the specified VideoDeviceController with the specified flags value
+    /// </summary>
+    /// <param name="controller"></param>
+    /// <param name="extendedControlKind"></param>
+    /// <param name="flags"></param>
+    /// <param name="value"></param>
+    void PropertyInquiry::SetExtendedControlFlagsAndValue(
+        Windows::Media::Devices::VideoDeviceController const& controller,
+        winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind,
+        uint64_t flags,
+        uint64_t value)
+    {
+        int controlId = static_cast<int>(extendedControlKind);
+
+        KSPROPERTY prop = 
+        {
+            KSPROPERTYSETID_ExtendedCameraControl, // Set
+            (ULONG)controlId /* Id = KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
+            0x00000002 /* Flags = KSPROPERTY_TYPE_SET */
+        };
+        uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
+        array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
+        array_view<uint8_t const> serializedHeader;
+        Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus setResult;
+
+        switch (extendedControlKind)
+        {
+        case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE:
+        {
+            KsVidProcCameraExtendedPropPayload payload;
+            payload.header = {
+                1,          // Version
+                0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
+                sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING), // Size
+                0,                                                                                     // Result
+                flags,                                                                                 // Flags
+                0                                                                                      // Capability
+            };
+            payload.vidProcSetting.VideoProc.Value.ul = (ULONG)value;
+            uint8_t* pPayload = reinterpret_cast<uint8_t*>(&payload);
+            serializedHeader = array_view<uint8_t const>(pPayload, payload.header.Size);
+            setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+            break;
+        }
+        case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2:
+        {
+            KsBasicCameraExtendedPropPayload payload;
+            payload.header = {
+                1,          // Version
+                0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
+                sizeof(KsBasicCameraExtendedPropPayload), // Size
+                0, // Result
+                0, // Flags
+                0  // Capability
+            };
+            payload.value.Value.ul = (ULONG)value;
+            uint8_t* pPayload = reinterpret_cast<uint8_t*>(&payload);
+            serializedHeader = array_view<uint8_t const>(pPayload, payload.header.Size);
+            setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+            break;
+        }
+        default:
+        {
+            throw hresult_invalid_argument(L"Unsupported extendedControlKind, use SetExtendedControlFlags() or implement new handler");
+        }
+        }
+
+        if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
+        {
+            throw hresult_invalid_argument(
+                L"Could not set extended device property flags=" + winrt::to_hstring(flags) + L" and value=" +
+                winrt::to_hstring(value) + L" for controlId=" +
+                winrt::to_hstring(controlId) +
+                L" with status: " + winrt::to_hstring((int)setResult));
         }
     }
 

@@ -13,10 +13,13 @@ While most camera controls are wrapped in their own APIs and accessed using the 
 
 ## Available samples
 
-- **[EyeGazeAndBackgroundSegmentation](./EyeGazeAndBackgroundSegmentation)**: sample containing a C# app and a C++/WinRT component showing how to
+- **[WinRT_ExtendedControlAndMetadataSample](./WinRT_ExtendedControlAndMetadataSample)**: sample containing a C# app and a C++/WinRT component showing how to
   - use ```GetDevicePropertyByExtendedId()``` and ```SetDevicePropertyByExtendedId()``` to set new extended camera controls that don't have dedicated APIs:
     - *KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION*
     - *KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION*
-
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE*  
   - access and extract [frame capture metadata](https://docs.microsoft.com/en-us/windows-hardware/drivers/stream/mf-capture-metadata) (in this case *KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK*) using ```MediaFrameReference::Properties()```
-- **[MediaCaptureSampleExtendedControl](./MediaCaptureSampleExtendedControl/)**: C++/CLI sample for using ```GetDeviceProperty()``` and ```SetDeviceProperty()``` to set common extended camera controls
+
+- **[CPP-CLI_MediaCaptureSampleExtendedControl](./CPP-CLI_MediaCaptureSampleExtendedControl/)**: C++/CLI sample for using ```GetDeviceProperty()``` and ```SetDeviceProperty()``` to set common extended camera controls

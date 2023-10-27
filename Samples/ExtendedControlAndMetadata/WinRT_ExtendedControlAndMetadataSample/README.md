@@ -1,9 +1,17 @@
 # WinRT sample application getting and setting extended camera controls as well as extracting frame metadata
 
 This folder contains sample projects for
-- **EyeGazeAndBackgroundSegmentation**: a C# UWP application to preview camera and to interact with its extended controls
-- **CameraKsPropertyHelper**: a C++/Winrt runtime component to interact with a [VideoDeviceController](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller?view=winrt-20348) to get and set extended camera controls via serialized/deserialized byte buffers. While this sample covers EyeGazeCorrection and BackgroundSegmentation, it can be extended to cover other controls using the same methodology. 
-This project also contains a helper method to extract and deserialize frame metadata from a byte buffer. Similarly to how it demonstrates how to extract ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` capture metadata, it can be extended to extract other types of metadata using the same methodology.  
+- **ExtendedControlAndMetadataSampleApp**: a C# UWP application to preview camera and to interact with its extended controls
+- **CameraKsPropertyHelper**: a C++/Winrt runtime component to interact with a [VideoDeviceController](https://docs.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller?view=winrt-20348) to get and set extended camera controls via serialized/deserialized byte buffers. While this sample covers the following DDIs:
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS*
+    - *KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE*  
+
+  it can be extended to cover other controls using the same methodology. 
+
+  This project also contains a helper method to extract and deserialize frame metadata from a byte buffer. Similarly to how it demonstrates how to extract ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` capture metadata, it can be extended to extract other types of metadata using the same methodology.  
 
 ## Requirements
 	
@@ -275,6 +283,56 @@ struct KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
 See example depiction of a background segmentation mask in regard to the ```KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK``` metadata structure:
 
 ![example](example_BACKGROUNDSEGMENTATIONMASK.jpg)
+
+## Framerate Throttling extended control
+The framerate throttling DDI [```KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE```](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ne-ksmedia-ksproperty_cameracontrol_extended_property) **is set to be introduced in the next release of Windows starting with preview build 25967. However for convenience it is defined in this sample as to be usable without a dependency on such preview SDK.** 
+If supported by the driver, it accomodates a request from an app to dynamically lower or raise the framerate at the source for such reasons as to conserve power and resources instead of simply dropping frames and therefore wasting the resources spent into producing them.
+Programmatically it is simply an ON/OFF toggle that you specify by using the flag values in the ```KSCAMERA_EXTENDEDPROP_HEADER```:
+```
+KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_OFF = 0x0000000000000000,
+KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON = 0x0000000000000001
+```
+alongside a ```KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING``` to define the min/max/step and value that derives the desired target framerate in units of percentrage applied to the current framerate. For example if a driver reported the following structure, it would mean it could throttle the framerate from 5% to 100% of the set MediaType framerate with increments of 5% and that the current framerate throttle value being applied is of 80%, meaning that if the camera is initialized with a MediaType prescribing 30fps, it would actually be streaming at 24fps.
+```cpp
+KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING frameThrottlingVidProcReturnedByDriver =
+{
+    0, // Mode
+    5, // Min
+    100, // Max
+    80, // Value
+    0 //Reserved;
+};
+```
+
+## Field Of View 2 extended control
+The field of view2 DDIs **are set to be introduced in the next release of Windows starting with preview build 25967. However for convenience they are defined in this sample as to be usable without a dependency on such preview SDK**. It is a combo of 2 DDIs to advertise and adjust the available diagonal field of view of a camera in units of planar angle degree. These values correspond to the diagonal FoV at sensor native aspect ratio (MediaTypes leveraged often represent a crop of this area):
+
+![example](example_FIELDOFVIEW2.jpg)
+
+1. [```KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS```](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ne-ksmedia-ksproperty_cameracontrol_extended_property): Defines the set of discrete field of view values that can used as well as the default value prescribed by the implementer. This DDI is only used to retrieve the capabilities via a GET call and cannot be used to SET any value. The retrieved payload is composed of a ```KSCAMERA_EXTENDEDPROP_HEADER``` followed by a particular structure ```KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS``` that defines default field of view values that:
+```cpp
+struct KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS
+{
+    WORD DefaultDiagonalFieldOfViewInDegrees; // The default FoV value for the driver/device
+    WORD DiscreteFoVStopsCount;               // Count of use FoV entries in DiscreteFoVStops array
+    WORD DiscreteFoVStops[360];               // Descending list of FoV Stops in degrees
+    ULONG Reserved;
+};
+```
+
+2. [```KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2```](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksmedia/ne-ksmedia-ksproperty_cameracontrol_extended_property): Used to SET or GET the current field of view value given what the driver supports via the ```KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS``` DDI.
+Programmatically it is simply a ```KSCAMERA_EXTENDEDPROP_HEADER``` without use for its Capability and Flags field foillowed by a ```KSCAMERA_EXTENDEDPROP_VALUE``` containing the field of view value as a ULONG.
+
+> The operation of this DDI may interfere with other DDIs if supported and used simultaneously by the camera driver such as:
+> 1. ```KSPROPERTY_CAMERACONTROL_ZOOM``` or ```KSPROPERTY_CAMERACONTROL_EXTENDED_ZOOM```: If a driver/device chooses to support both this new FoV control and the old KSPROPERTY_CAMERACONTROL_ZOOM or the KSPROPERTY_CAMERACONTROL_EXTENDED_ZOOM, the zoom control must work within the new FoV selection. Meaning that the Zoom is relative to FoV. 
+> 2. ```KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW``` and ```KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS```: If a driver/device chooses to support both this new FoV Zoom control and the Digital Window controls, the following requirements must be followed:
+>    - The supported Digital Window area must cover at least the widest FoV setting, i.e., by using the Digital Window one can create a digital crop that would match to any of the supported FoV settings.
+>    - The KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS must report the same capabilities regardless of the FoV control state.
+>    - The current Digital Window must reflect the current FoV setting and vice versa - the last control wins.
+>      - When a manual Digital Window (DW) is set, the FoV should be internally changed to the smallest available FoV setting that encompasses the selected window area. This will mean that the origin coordinates of the DW can cause change in the FoV even if the DW window size stays same.
+For example, if the DW origin coordinates are in the top left corner with 0.4 window size, the FoV setting will advertise the widest available FoV (in this example 120°) as otherwise it does not encompass that area. But if a second DW with the same window size is done as center crop, the reflected FoV is likely something narrower (75° in our example), see Figure 2,
+>    - When KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING	is supported and set, the driver/device must internally change the FoV to the widest setting. I.e., GET operation for KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2 will return widest FoV setting when KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_AUTOFACEFRAMING is enabled. However, any successful SET operation for KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2 will change the Digital Window back to KSCAMERA_EXTENDEDPROP_DIGITALWINDOW_MANUAL mode - as last control wins.
+
 
 ## Using the samples
 

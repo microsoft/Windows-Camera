@@ -136,7 +136,7 @@ namespace OutboundSettingsAppTest
 
                 // Blur
                 bool isBlurControlSupported = false;
-                IExtendedPropertyPayload getPayload = null;
+                IExtendedPropertyHeader getPayload = null;
 
                 getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
                 isBlurControlSupported = (getPayload != null);
