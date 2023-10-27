@@ -98,6 +98,10 @@ namespace CameraKsPropertyHelper
         KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION,               // 41
         KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS,             // 42
         KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW,                        // 43
+        // defined with Windows SDK preview 25967 and above
+        KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE,                   // 44 
+        KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS,              // 45
+        KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2,                         // 46
     };
 
     // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
@@ -132,16 +136,53 @@ namespace CameraKsPropertyHelper
     }
 
     // Accessors to parts of KSCAMERA_EXTENDEDPROP_HEADER
-    interface IExtendedPropertyPayload
+    interface IExtendedPropertyHeader
     {
-        ExtendedControlKind ExtendedControlKind{ get; };
         UInt64 Capability{ get; };
         UInt64 Flags{ get; };
         UInt32 Size{ get; };
-    }
+    };
+
+    // Accessors to complementary parts of IExtendedPropertyHeader
+    interface IExtendedPropertyPayload
+    {
+        ExtendedControlKind ExtendedControlKind{ get; };
+    };
+
+    // a struct useful to represent a ratio such as framerate
+    struct Ratio 
+    {
+        UInt32 LowPart;
+        UInt32 HighPart;
+    };
+
+    // Accessors to complementary parts of KSCAMERA_EXTENDEDPROP_VALUE
+    interface IExtendedPropValue
+    {
+        Double dbl { get; };
+        UInt64 ull { get; };
+        UInt32 ul { get; };
+        Ratio ratio { get; };
+        Int32 l { get; };
+        Int64 ll { get; };
+    };
 
     // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and a KSCAMERA_EXTENDEDPROP_VALUE
-    runtimeclass BasicExtendedPropertyPayload : [default] IExtendedPropertyPayload
+    runtimeclass BasicExtendedPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload, IExtendedPropValue
+    {
+    }
+
+    // Accessors to parts of KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING
+    interface IVidProcExtendedPropetyPayload
+    {
+        Int32 Min{ get; };
+        Int32 Max{ get; };
+        Int32 Step{ get; };
+        UInt32 Value{ get; };
+    };
+
+    // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and a KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING
+    runtimeclass VidProcExtendedPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload, IVidProcExtendedPropetyPayload
     {
     }
 
@@ -167,11 +208,18 @@ namespace CameraKsPropertyHelper
     }
 
     // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER and one or more KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS
-    runtimeclass BackgroundSegmentationPropertyPayload : [default] IExtendedPropertyPayload
+    runtimeclass BackgroundSegmentationPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload
     {
         Windows.Foundation.Collections.IVectorView<BackgroundSegmentationConfigCaps> ConfigCaps { get; };
     }
 
+    // Projected representation of KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS returned by KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS DDI
+    runtimeclass FieldOfView2ConfigCapsPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload
+    {
+        Int32 DefaultDiagonalFieldOfViewInDegrees { get; };
+        Int32 DiscreteFoVStopsCount { get; };
+        Windows.Foundation.Collections.IVectorView<Int32> DiscreteFoVStops { get; };
+    }
 
     // refer to KSCAMERA_MetadataId
     enum FrameMetadataKind
@@ -222,14 +270,26 @@ namespace CameraKsPropertyHelper
         Windows.Foundation.Collections.IVectorView<FaceDetectionMetadataEntry> Entries { get; };
     }
 
+    // refer to flags and capabilities of KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE
+    enum FramerateThrottleCapabilityKind
+    {
+        KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_OFF = 0x0000000000000000,
+        KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON = 0x0000000000000001
+    };
+
     // Helper methods to set/get extended properties and extract frame metadata
     runtimeclass PropertyInquiry
     {
         static IVidCapVideoProcAmpPropetyPayload GetVidCapVideoProcAmp(Windows.Media.Devices.VideoDeviceController controller, VidCapVideoProcAmpKind vidCapVideoProcAmpKind);
         static void SetVidCapVideoProcAmpValue(Windows.Media.Devices.VideoDeviceController controller, VidCapVideoProcAmpKind vidCapVideoProcAmpKind, Double value);
 
-        static IExtendedPropertyPayload GetExtendedControl(Windows.Media.Devices.VideoDeviceController controller, ExtendedControlKind extendedControlKind);
+        static IExtendedPropertyHeader GetExtendedControl(Windows.Media.Devices.VideoDeviceController controller, ExtendedControlKind extendedControlKind);
         static void SetExtendedControlFlags(Windows.Media.Devices.VideoDeviceController controller, ExtendedControlKind extendedControlKind, UInt64 flags);
+        static void SetExtendedControlFlagsAndValue(
+            Windows.Media.Devices.VideoDeviceController controller,
+            ExtendedControlKind extendedControlKind,
+            UInt64 flags,
+            UInt64 value);
 
         static IMetadataPayload ExtractFrameMetadata(Windows.Media.Capture.Frames.MediaFrameReference frame, FrameMetadataKind metadataKind);
     }

@@ -136,10 +136,12 @@
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
     <ClInclude Include="DigitalWindowMetadata.h" />
     <ClInclude Include="FaceDetectionMetadata.h" />
+    <ClInclude Include="FieldOfView2ConfigCapsPropertyPayload.h" />
     <ClInclude Include="KSHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PropertyInquiry.h" />
     <ClInclude Include="VidCapVideoProcAmpPropetyPayload.h" />
+    <ClInclude Include="VidProcExtendedPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackgroundSegmentationConfigCaps.cpp" />

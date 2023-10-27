@@ -37,6 +37,17 @@ namespace winrt::CameraKsPropertyHelper::implementation
         KSPROPERTY_BOUNDS_LONG      Bounds;
     };
 
+    // The struct below is defined in ksmedia.h with Windows SDK preview 25967 and above.
+    // Redefined here for convenience until release SDK comes out so that you can compile against 
+    // SDK 22621
+    struct KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS
+    {
+        WORD DefaultDiagonalFieldOfViewInDegrees; // The default FoV value for the driver/device
+        WORD DiscreteFoVStopsCount;               // Count of use FoV entries in DiscreteFoVStops array
+        WORD DiscreteFoVStops[360];               // Descending list of FoV Stops in degrees
+        ULONG Reserved;
+    };
+
     //
     // end of ksmedia.h redefinitions
 #pragma endregion KsMediaRedefinition
@@ -99,12 +110,26 @@ namespace winrt::CameraKsPropertyHelper::implementation
         KSCAMERA_EXTENDEDPROP_VALUE value;
     };
 
+    // wrapper for a camera extended property payload that contains a header and a KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING
+    struct KsVidProcCameraExtendedPropPayload
+    {
+        KSCAMERA_EXTENDEDPROP_HEADER header;
+        KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING vidProcSetting;
+    };
+
     // wrapper for a payload returned when the driver supports the KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION 
     // camera extended property with the KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK capability
     struct KsBackgroundSegmentationPropPayload
     {
         KSCAMERA_EXTENDEDPROP_HEADER header;
         KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS* pConfigCaps;
+    };
+
+    // wrapper for a payload returned when the driver supports the KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS 
+    struct KsFieldOfView2ConfigCapsPropPayload
+    {
+        KSCAMERA_EXTENDEDPROP_HEADER header;
+        KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS configCaps;
     };
 
     template <typename InternalPayloadType>

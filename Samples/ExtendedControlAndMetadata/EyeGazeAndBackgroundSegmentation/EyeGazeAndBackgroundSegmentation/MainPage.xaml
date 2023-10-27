@@ -34,20 +34,34 @@
                 <TextBlock x:Name="UIControlCapabilityText" Text="Capabilities"  Foreground="White"/>
             </Border>
 
-            <ContentControl x:Name="UIBackgroundSegmentationPanel">
-                <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
-                    <TextBlock Text="BackgroundSegmentation" />
-                    <ComboBox Name="UIBackgroundSegmentationModes" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
-                    <ToggleButton Content="Show mask" x:Name="UIShowBackgroundImage" Checked="UIShowBackgroundImage_Checked" Unchecked="UIShowBackgroundImage_Checked"/>
-                </StackPanel>
-            </ContentControl>
-            <ContentControl x:Name="UIEyeGazeCorrectionPanel">
-                <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
-                    <TextBlock Text="EyeGazeCorrection" />
-                    <ComboBox Name="UIEyeGazeCorrectionModes" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
-                </StackPanel>
-            </ContentControl>
-
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <ContentControl x:Name="UIBackgroundSegmentationPanel">
+                    <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
+                        <TextBlock Text="Background Segmentation" />
+                        <ComboBox Name="UIBackgroundSegmentationModes" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged"/>
+                        <ToggleButton Content="Show mask" x:Name="UIShowBackgroundImage" Checked="UIShowBackgroundImage_Checked" Unchecked="UIShowBackgroundImage_Checked"/>
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl x:Name="UIEyeGazeCorrectionPanel" Margin="5,0,0,0">
+                    <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
+                        <TextBlock Text="Eye Gaze Correction" />
+                        <ComboBox Name="UIEyeGazeCorrectionModes" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"/>
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl x:Name="UIFramerateThrottlingPanel" Margin="5,0,0,0">
+                    <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
+                        <TextBlock Text="Framerate Throttling" />
+                        <ToggleSwitch Name="UIFramerateThrottlingModes" Toggled="UIFramerateThrottlingModes_Toggled"/>
+                        <Slider Name="UIFramerateThrottlingValue" ValueChanged="UIFramerateThrottlingValue_ValueChanged"/>
+                    </StackPanel>
+                </ContentControl>
+                <ContentControl x:Name="UIFieldOfView2Panel" Margin="5,0,0,0">
+                    <StackPanel Background ="{StaticResource TranslucentBlackBrush}">
+                        <TextBlock Text="Field Of View 2" />
+                        <ComboBox Name="UIFieldOfView2Modes" SelectionChanged="UIFieldOfView2Modes_SelectionChanged"/>
+                    </StackPanel>
+                </ContentControl>
+            </StackPanel>
             <Grid>
             <!--Camera preview-->
                 <MediaPlayerElement Name="UIPreviewElement"

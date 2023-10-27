@@ -19,10 +19,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
             return
             {
-                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.left),
-                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.top),
-                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.right - m_payload->MaskCoverageBoundingBox.left),
-                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.bottom - m_payload->MaskCoverageBoundingBox.top)
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.left), // X
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.top), // Y
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.right - m_payload->MaskCoverageBoundingBox.left + 1),// Width
+                static_cast<uint32_t>(m_payload->MaskCoverageBoundingBox.bottom - m_payload->MaskCoverageBoundingBox.top + 1) // Height
             };
         }
         Windows::Foundation::Size MaskResolution()
@@ -37,10 +37,10 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
             return
             {
-                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.left),
-                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.top),
-                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.right - m_payload->ForegroundBoundingBox.left),
-                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.bottom - m_payload->ForegroundBoundingBox.top)
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.left), // X
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.top), // Y
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.right - m_payload->ForegroundBoundingBox.left + 1), // Width
+                static_cast<uint32_t>(m_payload->ForegroundBoundingBox.bottom - m_payload->ForegroundBoundingBox.top + 1) // Height
             };
         }
 

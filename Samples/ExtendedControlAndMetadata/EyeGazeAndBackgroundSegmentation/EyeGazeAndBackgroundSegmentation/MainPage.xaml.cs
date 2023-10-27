@@ -13,7 +13,6 @@ using Windows.Graphics.Imaging;
 using Windows.Media.Capture;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Core;
-using Windows.Media.Effects;
 using Windows.Media.MediaProperties;
 using Windows.Media.Playback;
 using Windows.UI.Core;
@@ -50,15 +49,15 @@ namespace EyeGazeAndBackgroundSegmentation
         private SoftwareBitmapSource m_backgroundMaskImageSource = new SoftwareBitmapSource();
         private bool m_isShowingBackgroundMask;
         private BoundingBoxRenderer m_bboxRenderer = null;
-        
-        readonly Dictionary<string,ulong> m_possibleBackgroundSegmentationFlagValues = new Dictionary<string, ulong>()
+
+        private readonly Dictionary<string, ulong> m_possibleBackgroundSegmentationFlagValues = new Dictionary<string, ulong>()
         {
-            { 
-                "off", 
+            {
+                "off",
                 (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_OFF
             },
             {
-                "blur", 
+                "blur",
                 (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
             },
             {
@@ -71,11 +70,11 @@ namespace EyeGazeAndBackgroundSegmentation
                     + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_SHALLOWFOCUS
             },
             {
-                "blur and mask metadata", 
-                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR 
+                "blur and mask metadata",
+                (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
                     + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
             },
-            { 
+            {
                 "shallow focus blur and mask metadata",
                 (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_BLUR
                     + (ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK
@@ -83,9 +82,9 @@ namespace EyeGazeAndBackgroundSegmentation
             }
         };
 
-        readonly Dictionary<string, ulong> m_possibleEyeGazeCorrectionFlagValues = new Dictionary<string, ulong>()
+        private readonly Dictionary<string, ulong> m_possibleEyeGazeCorrectionFlagValues = new Dictionary<string, ulong>()
         {
-            { 
+            {
                 "off",
                 (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF
             },
@@ -99,6 +98,8 @@ namespace EyeGazeAndBackgroundSegmentation
                     + (ulong)EyeGazeCorrectionCapabilityKind.KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE
             }
         };
+
+        private List<int> m_discreteFov2Stops = null;
 
         /// <summary>
         /// Constructor
@@ -170,16 +171,16 @@ namespace EyeGazeAndBackgroundSegmentation
 
             // Find the sources and de-duplicate from source groups not containing VideoCapture devices
             var allGroups = await MediaFrameSourceGroup.FindAllAsync();
-            var colorVideoGroupList = allGroups.Where(group => 
+            var colorVideoGroupList = allGroups.Where(group =>
                                                       group.SourceInfos.Any(sourceInfo => sourceInfo.SourceKind == MediaFrameSourceKind.Color
                                                                                                        && (sourceInfo.MediaStreamType == MediaStreamType.VideoPreview
                                                                                                            || sourceInfo.MediaStreamType == MediaStreamType.VideoRecord)));
-            var validColorVideoGroupList = colorVideoGroupList.Where(group => 
+            var validColorVideoGroupList = colorVideoGroupList.Where(group =>
                                                                      group.SourceInfos.All(sourceInfo =>
                                                                                            deviceInfoCollection.Any((deviceInfo) =>
                                                                                                                      sourceInfo.DeviceInformation == null || deviceInfo.Id == sourceInfo.DeviceInformation.Id)));
 
-            if(validColorVideoGroupList.Count() > 0)
+            if (validColorVideoGroupList.Count() > 0)
             {
                 m_mediaFrameSourceGroupList = validColorVideoGroupList.ToList();
             }
@@ -364,7 +365,7 @@ namespace EyeGazeAndBackgroundSegmentation
 
                 m_bboxRenderer.ResizeContent(e);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 NotifyUser(ex.Message, NotifyType.ErrorMessage);
                 DebugOutput(ex.ToString());
@@ -434,115 +435,8 @@ namespace EyeGazeAndBackgroundSegmentation
 
                 if (await StartPreviewAsync())
                 {
-                    // Debug output to see if any of the controls are supported
-                    string statusText = "control support:";
-                    Dictionary<ExtendedControlKind, IExtendedPropertyPayload> controlGetPayload = new Dictionary<ExtendedControlKind, IExtendedPropertyPayload>();
-
-                    // The set of extended properties we will be trying to use in this sample
-                    List<ExtendedControlKind> controlsToTry = new List<ExtendedControlKind>
-                    {
-                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
-                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
-                    };
-
-                    foreach (ExtendedControlKind controlId in controlsToTry)
-                    {
-                        controlGetPayload[controlId] = PropertyInquiry.GetExtendedControl(m_selectedMediaFrameSource.Controller.VideoDeviceController, controlId);
-                        var controlQueryResult = controlGetPayload[controlId];
-                        bool isSupported = controlQueryResult != null;
-                        statusText += $"\n{controlId} : {isSupported}";
-                        if (isSupported)
-                        {
-                            statusText += $"| Capability: {controlQueryResult.Capability} | Flags: {controlQueryResult.Flags} | Size: {controlQueryResult.Size}";
-
-                            // If KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK is a supported capability,
-                            // then we expect to retrieve a set of configurations in which the driver can provide a segmentation mask and execute blur
-                            if (controlId == ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION 
-                                && ((int)controlQueryResult.Capability & (int)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
-                            {
-                                BackgroundSegmentationPropertyPayload bsPayload = (controlQueryResult as BackgroundSegmentationPropertyPayload);
-                                for (int i = 0; i < bsPayload.ConfigCaps.Count; i++)
-                                {
-                                    BackgroundSegmentationConfigCaps cap = bsPayload.ConfigCaps[i];
-                                    string subTypeSupported = cap.SubType == Guid.Empty ? "Any stream subtype" : cap.SubType.ToString();
-                                    statusText += $"\nMASK supported for stream capability that correlates with: subtype = {subTypeSupported}\n " +
-                                        $"| res:{cap.Resolution.Width}x{cap.Resolution.Height} | mask res:{cap.MaskResolution.Width}x{cap.MaskResolution.Height} | mask res:{cap.MaxFrameRateNumerator}/{cap.MaxFrameRateDenominator}fps";
-                                }
-                            }
-                        }
-                    }
-
-                    try
-                    {
-                        // display debug output
-                        UIControlCapabilityText.Text = statusText;
-
-                        // populate and re-enable parts of the UI
-                        UIPreviewElement_SizeChanged(null, null);
-                        UICmbCamera.IsEnabled = true;
-
-                        // if background segmentation is supported, enable its toggle
-                        UIBackgroundSegmentationPanel.IsEnabled = (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null);
-                        if (UIBackgroundSegmentationPanel.IsEnabled)
-                        {
-                            var backgroundSegmentationCapabilities = new List<string>();
-                            int currentFlagValueIndex = 0;
-                            foreach (var capability in m_possibleBackgroundSegmentationFlagValues)
-                            {
-                                // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
-                                if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability) == capability.Value)
-                                {
-                                    backgroundSegmentationCapabilities.Add(capability.Key);
-
-                                    // if the current value for this control corresponds to this potential flag value, select it
-                                    if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags == capability.Value)
-                                    {
-                                        currentFlagValueIndex = backgroundSegmentationCapabilities.Count - 1;
-                                    }
-                                }
-                            }
-
-                            UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
-                            UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities;
-                            UIBackgroundSegmentationModes.SelectedIndex = currentFlagValueIndex;
-                            UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
-
-                            m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags) != 0);
-                            UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
-                            UIShowBackgroundImage.IsChecked = false;
-                        }
-
-                        // if eye gaze correction is supported, enable its toggle
-                        UIEyeGazeCorrectionPanel.IsEnabled = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
-                        if (UIEyeGazeCorrectionPanel.IsEnabled)
-                        {
-                            var eyeGazeCorrectionCapabilities = new List<string>();
-                            int currentFlagValueIndex = 0;
-                            foreach (var capability in m_possibleEyeGazeCorrectionFlagValues)
-                            {
-                                // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
-                                if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Capability) == capability.Value)
-                                {
-                                    eyeGazeCorrectionCapabilities.Add(capability.Key);
-
-                                    // if the current value for this control corresponds to this potential flag value, select it
-                                    if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags == capability.Value)
-                                    {
-                                        currentFlagValueIndex = eyeGazeCorrectionCapabilities.Count - 1;
-                                    }
-                                }
-                            }
-                            UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
-                            UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities;
-                            UIEyeGazeCorrectionModes.SelectedIndex = currentFlagValueIndex;
-                            UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        NotifyUser(ex.Message, NotifyType.ErrorMessage);
-                        DebugOutput(ex.ToString());
-                    }
+                    // Query the DDIs we cover in this sample and refresh the UI for each of them relative to how they are supported (or not)
+                    QueryDDIsAndRefreshUI();
                 }
                 else
                 {
@@ -556,10 +450,193 @@ namespace EyeGazeAndBackgroundSegmentation
             }
         }
 
+        /// <summary>
+        /// Query a set of DDIs and refresh their related UI
+        /// </summary>
+        private void QueryDDIsAndRefreshUI()
+        {
+            // Debug output to see if any of the controls are supported
+            string statusText = "control support:";
+            Dictionary<ExtendedControlKind, IExtendedPropertyHeader> controlGetPayload = new Dictionary<ExtendedControlKind, IExtendedPropertyHeader>();
+
+            // The set of extended properties we will be trying to use in this sample
+            List<ExtendedControlKind> controlsToTry = new List<ExtendedControlKind>
+                    {
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2
+                    };
+
+            // 1. for each of the above DDIs, we retrieve the payload returned in response to a GET call
+            foreach (ExtendedControlKind controlId in controlsToTry)
+            {
+                controlGetPayload[controlId] = PropertyInquiry.GetExtendedControl(m_selectedMediaFrameSource.Controller.VideoDeviceController, controlId);
+                var controlQueryResult = controlGetPayload[controlId];
+                bool isSupported = controlQueryResult != null;
+                statusText += $"\n{controlId} : {isSupported}";
+                if (isSupported)
+                {
+                    statusText += $"| Capability: {controlQueryResult.Capability} | Flags: {controlQueryResult.Flags} | Size: {controlQueryResult.Size}";
+
+                    // If KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK is a supported capability,
+                    // then we expect to retrieve a set of configurations in which the driver can provide a segmentation mask and execute blur
+                    if (controlId == ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
+                        && ((int)controlQueryResult.Capability & (int)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK) != 0)
+                    {
+                        BackgroundSegmentationPropertyPayload bsPayload = (controlQueryResult as BackgroundSegmentationPropertyPayload);
+                        for (int i = 0; i < bsPayload.ConfigCaps.Count; i++)
+                        {
+                            BackgroundSegmentationConfigCaps cap = bsPayload.ConfigCaps[i];
+                            string subTypeSupported = cap.SubType == Guid.Empty ? "Any stream subtype" : cap.SubType.ToString();
+                            statusText += $"\nMASK supported for stream capability that correlates with: subtype = {subTypeSupported}\n " +
+                                $"| res:{cap.Resolution.Width}x{cap.Resolution.Height} | mask res:{cap.MaskResolution.Width}x{cap.MaskResolution.Height} | mask res:{cap.MaxFrameRateNumerator}/{cap.MaxFrameRateDenominator}fps";
+                        }
+                    }
+                }
+            }
+
+            // 2. for each of the above DDIs, we parse their GET payload then refresh the UI to reflect how the control is supported
+            try
+            {
+                // display debug output
+                UIControlCapabilityText.Text = statusText;
+
+                // populate and re-enable parts of the UI
+                UIPreviewElement_SizeChanged(null, null);
+                UICmbCamera.IsEnabled = true;
+
+                // 2.1 KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION
+                {
+                    // if background segmentation is supported, enable UI elements
+                    UIBackgroundSegmentationPanel.IsEnabled = (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION] != null);
+                    if (UIBackgroundSegmentationPanel.IsEnabled)
+                    {
+                        var backgroundSegmentationCapabilities = new List<string>();
+                        int currentFlagValueIndex = 0;
+                        foreach (var capability in m_possibleBackgroundSegmentationFlagValues)
+                        {
+                            // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
+                            if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Capability) == capability.Value)
+                            {
+                                backgroundSegmentationCapabilities.Add(capability.Key);
+
+                                // if the current value for this control corresponds to this potential flag value, select it
+                                if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags == capability.Value)
+                                {
+                                    currentFlagValueIndex = backgroundSegmentationCapabilities.Count - 1;
+                                }
+                            }
+                        }
+
+                        UIBackgroundSegmentationModes.SelectionChanged -= UIBackgroundSegmentationModes_SelectionChanged;
+                        UIBackgroundSegmentationModes.ItemsSource = backgroundSegmentationCapabilities;
+                        UIBackgroundSegmentationModes.SelectedIndex = currentFlagValueIndex;
+                        UIBackgroundSegmentationModes.SelectionChanged += UIBackgroundSegmentationModes_SelectionChanged;
+
+                        m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION].Flags) != 0);
+                        UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
+                        UIShowBackgroundImage.IsChecked = false;
+                    }
+                }
+
+                // 2.2 KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION
+                {
+                    // if eye gaze correction is supported, enable UI elements
+                    UIEyeGazeCorrectionPanel.IsEnabled = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION] != null;
+                    if (UIEyeGazeCorrectionPanel.IsEnabled)
+                    {
+                        var eyeGazeCorrectionCapabilities = new List<string>();
+                        int currentFlagValueIndex = 0;
+
+                        foreach (var capability in m_possibleEyeGazeCorrectionFlagValues)
+                        {
+                            // if the driver supports this set of potential flag values in its capability, add it as a choice in the UI
+                            if ((capability.Value & (ulong)controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Capability) == capability.Value)
+                            {
+                                eyeGazeCorrectionCapabilities.Add(capability.Key);
+
+                                // if the current value for this control corresponds to this potential flag value, select it
+                                if (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION].Flags == capability.Value)
+                                {
+                                    currentFlagValueIndex = eyeGazeCorrectionCapabilities.Count - 1;
+                                }
+                            }
+                        }
+                        UIEyeGazeCorrectionModes.SelectionChanged -= UIEyeGazeCorrectionModes_SelectionChanged;
+                        UIEyeGazeCorrectionModes.ItemsSource = eyeGazeCorrectionCapabilities;
+                        UIEyeGazeCorrectionModes.SelectedIndex = currentFlagValueIndex;
+                        UIEyeGazeCorrectionModes.SelectionChanged += UIEyeGazeCorrectionModes_SelectionChanged;
+                    }
+                }
+
+                // 2.3 KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE
+                {
+                    // if framerate throttling is supported, enable UI elements
+                    UIFramerateThrottlingPanel.IsEnabled = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE] != null;
+                    if (UIFramerateThrottlingPanel.IsEnabled)
+                    {
+                        bool currentFlagValueIndex = false;
+                        VidProcExtendedPropertyPayload framerateThrottlingPayload = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE]
+                            as VidProcExtendedPropertyPayload;
+
+                        // if the driver supports KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE
+                        if (framerateThrottlingPayload.Capability == (ulong)FramerateThrottleCapabilityKind.KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON)
+                        {
+                            // check if the current control value is ON or OFF
+                            currentFlagValueIndex = (framerateThrottlingPayload.Flags == (ulong)FramerateThrottleCapabilityKind.KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON);
+                        }
+
+                        // refresh UI toggle to reflect the current value
+                        UIFramerateThrottlingModes.Toggled -= UIFramerateThrottlingModes_Toggled;
+                        UIFramerateThrottlingValue.ValueChanged -= UIFramerateThrottlingValue_ValueChanged;
+                        UIFramerateThrottlingModes.IsOn = currentFlagValueIndex;
+                        UIFramerateThrottlingValue.Minimum = framerateThrottlingPayload.Min;
+                        UIFramerateThrottlingValue.Maximum = framerateThrottlingPayload.Max;
+                        UIFramerateThrottlingValue.StepFrequency = framerateThrottlingPayload.Step;
+                        UIFramerateThrottlingValue.Value = framerateThrottlingPayload.Value;
+                        UIFramerateThrottlingModes.Toggled += UIFramerateThrottlingModes_Toggled;
+                        UIFramerateThrottlingValue.ValueChanged += UIFramerateThrottlingValue_ValueChanged;
+                    }
+                }
+
+                // 2.4 KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2 and KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS
+                {
+                    // if FieldOfView2 and FieldOfView2_ConfigCaps are supported, enable UI elements to set the field of view
+                    UIFieldOfView2Panel.IsEnabled =
+                        (controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2] != null
+                        && controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS] != null);
+                    if (UIFieldOfView2Panel.IsEnabled)
+                    {
+                        bool currentFlagValueIndex = false;
+                        FieldOfView2ConfigCapsPropertyPayload fov2ConfigCapsPayload = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS]
+                            as FieldOfView2ConfigCapsPropertyPayload;
+                        m_discreteFov2Stops = fov2ConfigCapsPayload.DiscreteFoVStops.ToList();
+
+                        // retrieve the current field of view value
+                        var fov2Payload = controlGetPayload[ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS]
+                            as BasicExtendedPropertyPayload;
+
+                        // refresh UI toggle to reflect the current value and possible other values
+                        UIFieldOfView2Modes.SelectionChanged -= UIFieldOfView2Modes_SelectionChanged;
+                        UIFieldOfView2Modes.ItemsSource = m_discreteFov2Stops;
+                        UIFieldOfView2Modes.SelectedIndex = m_discreteFov2Stops.FindIndex(c => c == fov2Payload.l);
+                        UIFieldOfView2Modes.SelectionChanged += UIFieldOfView2Modes_SelectionChanged;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
+            }
+        }
+
         private void UIShowBackgroundImage_Checked(object sender, RoutedEventArgs e)
         {
             DebugOutput("show background image checked");
-            
+
             if (UIShowBackgroundImage.IsChecked == true)
             {
                 m_isShowingBackgroundMask = true;
@@ -621,6 +698,86 @@ namespace EyeGazeAndBackgroundSegmentation
                     m_isBackgroundSegmentationMaskModeOn = (((ulong)BackgroundSegmentationCapabilityKind.KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_MASK & flagValueToSet) != 0);
                     UIShowBackgroundImage.IsEnabled = m_isBackgroundSegmentationMaskModeOn;
                     UIShowBackgroundImage.IsChecked = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
+            }
+        }
+
+        private void UIFramerateThrottlingModes_Toggled(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ulong flagValueToSet = (ulong)(UIFramerateThrottlingModes.IsOn ? 1 : 0);
+
+                // set KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE ON or OFF
+                PropertyInquiry.SetExtendedControlFlags(
+                    m_selectedMediaFrameSource.Controller.VideoDeviceController,
+                    ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE,
+                    flagValueToSet);
+
+                // if we turned the control ON..
+                if (UIFramerateThrottlingModes.IsOn)
+                {
+                    // retrieve the current framerate throttling value
+                    VidProcExtendedPropertyPayload framerateThrottlingPayload = PropertyInquiry.GetExtendedControl(
+                        m_selectedMediaFrameSource.Controller.VideoDeviceController,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE)
+                        as VidProcExtendedPropertyPayload;
+
+                    // refresh UI to reflect the current framerate throttling value
+                    UIFramerateThrottlingValue.ValueChanged -= UIFramerateThrottlingValue_ValueChanged;
+                    UIFramerateThrottlingValue.Value = framerateThrottlingPayload.Value;
+                    UIFramerateThrottlingValue.ValueChanged += UIFramerateThrottlingValue_ValueChanged;
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
+            }
+        }
+
+        private void UIFramerateThrottlingValue_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+        {
+            try
+            {
+                // if we turned the control ON..
+                if (UIFramerateThrottlingModes.IsOn)
+                {
+                    // set desired framerate throttling value
+                    ulong flagValueToSet = (ulong)(UIFramerateThrottlingModes.IsOn ?
+                        FramerateThrottleCapabilityKind.KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON :
+                        FramerateThrottleCapabilityKind.KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_OFF);
+                    PropertyInquiry.SetExtendedControlFlagsAndValue(
+                        m_selectedMediaFrameSource.Controller.VideoDeviceController,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE,
+                        flagValueToSet,
+                        (ulong)UIFramerateThrottlingValue.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                NotifyUser(ex.Message, NotifyType.ErrorMessage);
+                DebugOutput(ex.ToString());
+            }
+        }
+
+        private void UIFieldOfView2Modes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (UIFieldOfView2Modes.SelectedIndex >= 0)
+                {
+                    // set desired field of view value
+                    PropertyInquiry.SetExtendedControlFlagsAndValue(
+                        m_selectedMediaFrameSource.Controller.VideoDeviceController,
+                        ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2,
+                        0,
+                        (ulong)m_discreteFov2Stops[UIFieldOfView2Modes.SelectedIndex]);
                 }
             }
             catch (Exception ex)
@@ -695,6 +852,7 @@ namespace EyeGazeAndBackgroundSegmentation
                 (double)bounds.Width / imageWidth,
                 (double)bounds.Height / imageHeight);
         }
+
 
         #endregion DebugMessageHelpers
     }

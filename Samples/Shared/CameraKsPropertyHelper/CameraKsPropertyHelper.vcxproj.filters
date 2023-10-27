@@ -30,6 +30,8 @@
     <ClInclude Include="VidCapVideoProcAmpPropetyPayload.h" />
     <ClInclude Include="FaceDetectionMetadata.h" />
     <ClInclude Include="DigitalWindowMetadata.h" />
+    <ClInclude Include="VidProcExtendedPropertyPayload.h" />
+    <ClInclude Include="FieldOfView2ConfigCapsPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="CameraKsPropertyInquiry.idl" />

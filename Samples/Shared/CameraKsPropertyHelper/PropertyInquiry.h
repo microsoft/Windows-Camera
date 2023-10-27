@@ -18,13 +18,18 @@ namespace winrt::CameraKsPropertyHelper::implementation
             winrt::CameraKsPropertyHelper::VidCapVideoProcAmpKind const& vidCapVideoProcAmpKind,
             double value);
         
-        static winrt::CameraKsPropertyHelper::IExtendedPropertyPayload GetExtendedControl(
+        static winrt::CameraKsPropertyHelper::IExtendedPropertyHeader GetExtendedControl(
             winrt::Windows::Media::Devices::VideoDeviceController const& controller,
             winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind);
         static void SetExtendedControlFlags(
             winrt::Windows::Media::Devices::VideoDeviceController const& controller,
             winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind,
             uint64_t flags);
+        static void SetExtendedControlFlagsAndValue(
+            winrt::Windows::Media::Devices::VideoDeviceController const& controller,
+            winrt::CameraKsPropertyHelper::ExtendedControlKind const& extendedControlKind,
+            uint64_t flags,
+            uint64_t value);
 
         static winrt::CameraKsPropertyHelper::IMetadataPayload ExtractFrameMetadata(
             winrt::Windows::Media::Capture::Frames::MediaFrameReference const& frame,
