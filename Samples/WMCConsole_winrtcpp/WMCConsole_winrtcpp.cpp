@@ -75,6 +75,11 @@ class CameraHelper
             }
             sourceGroupIter.MoveNext();
         }
+
+        if (filteredSourceInfos.empty())
+        {
+            throw_hresult(MF_E_NOT_AVAILABLE);
+        }
         
         return winrt::single_threaded_vector(std::move(filteredSourceInfos));
     }
@@ -117,7 +122,7 @@ class CameraHelper
                 panelLocation = L"\\" + panelTypes[enclosureLocation.Panel()];
             }
 
-            std::wcout << idx << L":" << currSource.SourceGroup().DisplayName().c_str() << "-->" << currSource.DeviceInformation().Name().c_str() << panelLocation.c_str() << ":" << streamTypes[currSource.MediaStreamType()].c_str() << std::endl;
+            std::wcout << idx << L":" << currSource.SourceGroup().DisplayName().c_str() << "-->" << currSource.DeviceInformation().Name().c_str() << panelLocation.c_str() << ":" << streamTypes[currSource.MediaStreamType()].c_str() << ":profile=" << currSource.ProfileId().c_str() << std::endl;
             source.MoveNext();
         }
         do
@@ -219,7 +224,6 @@ public:
         }
 
         auto selectedSGidx = GetSGSelection(filteredGroups);
-
         auto selectedSrc = filteredGroups.GetAt(selectedSGidx);
 
         if (selectedSrc == nullptr)
@@ -244,8 +248,51 @@ public:
 
         // Set format on the mediacapture frame source
         mediaCapture.InitializeAsync(settings).get();
-        auto frameSource = mediaCapture.FrameSources().Lookup(selectedSrc.Id());
-        std::wcout << (int)selectedSrc.SourceKind();
+
+        std::wcout << L"Selected source, available mediatypes: " << selectedSrc.Id().c_str() << L":" << std::endl;
+        
+        auto idx = 0;
+
+        for (auto&& mediaDesc : selectedSrc.VideoProfileMediaDescription())
+        {
+            std::wstringstream frameRateStream;
+            frameRateStream << std::fixed << std::setprecision(2) << mediaDesc.FrameRate();
+
+            auto formatStr = std::to_wstring(idx++) + L". " + std::wstring(mediaDesc.Subtype().c_str()) + L": " +
+                std::to_wstring(mediaDesc.Width()) + L"x" + std::to_wstring(mediaDesc.Height()) + L" @ " + frameRateStream.str() + L" fps";
+
+            std::wcout << formatStr << std::endl;
+        }
+        
+
+        std::wcout << L"MediaCapture instance avalaible sources and mediatypes: "<< std::endl;
+        for (auto&& frameSource : mediaCapture.FrameSources())
+        {
+            std::wcout << frameSource.Key().c_str() << L":" << std::endl;
+            idx = 0;
+            for (auto&& format : frameSource.Value().SupportedFormats())
+            {
+                auto fps = ((float)format.FrameRate().Numerator()) / format.FrameRate().Denominator();
+                std::wstringstream frameRateStream;
+                frameRateStream << std::fixed << std::setprecision(2) << fps;
+
+                auto formatStr = std::to_wstring(idx++) + L". " + std::wstring(format.Subtype().c_str()) + L": " +
+                    std::to_wstring(format.VideoFormat().Width()) + L"x" + std::to_wstring(format.VideoFormat().Height()) + L" @ " + frameRateStream.str() + L" fps";
+                std::wcout << formatStr << std::endl;
+            }
+        }
+
+        auto frameSource = mediaCapture.FrameSources().TryLookup(selectedSrc.Id());
+        if (frameSource)
+        {
+            std::cout << "selected framesource present at initialized MediaCapture" << std::endl;
+        }
+        else
+        {
+            std::cout << "pre-selected framesource not present at initialized MediaCapture, selecting first available" << std::endl;
+            frameSource = mediaCapture.FrameSources().First().Current().Value();
+            std::wcout << frameSource.Info().Id().c_str() << std::endl;
+        }
         
         auto formatIdx = GetMediaTypeSelection(frameSource);
         frameSource.SetFormatAsync(frameSource.SupportedFormats().GetAt(formatIdx)).get();
