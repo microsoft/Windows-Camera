@@ -5,7 +5,7 @@ VisualStudioVersion = 17.3.32811.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControlMonitorAppSample", "CameraControlMonitorAppSample\CameraControlMonitorAppSample.csproj", "{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlMonitorHelper_WinRT", "ControlMonitorHelper\ControlMonitorHelper.vcxproj", "{3AC253A5-A383-49D8-ACC0-102C1E46E42F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlMonitorHelperWinRT", "ControlMonitorHelper\ControlMonitorHelperWinRT.vcxproj", "{3AC253A5-A383-49D8-ACC0-102C1E46E42F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CameraKsPropertyHelper", "..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj", "{3E174357-0294-40F1-BA11-7330617DDBB5}"
 EndProject

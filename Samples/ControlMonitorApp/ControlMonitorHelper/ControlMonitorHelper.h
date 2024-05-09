@@ -5,12 +5,26 @@
 #pragma once
 #include "ControlMonitorManager.g.h"
 
-namespace winrt::ControlMonitorHelper::implementation
+namespace winrt::ControlMonitorHelperWinRT::implementation
 {
+    inline winrt::hstring FormatString(LPCWSTR szFormat, ...)
+    {
+        WCHAR szBuffer[MAX_PATH] = { 0 };
+        va_list pArgs;
+        va_start(pArgs, szFormat);
+        StringCbVPrintf(szBuffer, sizeof(szBuffer), szFormat, pArgs);
+        va_end(pArgs);
+
+        return winrt::hstring(szBuffer);
+    };
+
+    // Windows Studio Effects custom KsProperties live under this property set
+    static GUID KSPROPERTYSETID_WindowsStudioEffects = { 0x1666d655, 0x21a6, 0x4982, 0x97, 0x28, 0x52, 0xc3, 0x9e, 0x86, 0x9f, 0x90 };
+
     struct ControlMonitorManager : ControlMonitorManagerT<ControlMonitorManager>
     {
-        static winrt::ControlMonitorHelper::ControlMonitorManager CreateCameraControlMonitor(winrt::hstring symlink, array_view<winrt::ControlMonitorHelper::ControlData const> controls);
-        ControlMonitorManager(winrt::hstring cameraSymbolicLink, array_view<winrt::ControlMonitorHelper::ControlData const> controls);
+        static winrt::ControlMonitorHelperWinRT::ControlMonitorManager CreateCameraControlMonitor(winrt::hstring symlink, array_view<winrt::ControlMonitorHelperWinRT::ControlData const> controls);
+        ControlMonitorManager(winrt::hstring cameraSymbolicLink, array_view<winrt::ControlMonitorHelperWinRT::ControlData const> controls);
         virtual ~ControlMonitorManager() noexcept;
         void Stop();
         void Start();
@@ -43,7 +57,7 @@ namespace winrt::ControlMonitorHelper::implementation
     };
 }
 
-namespace winrt::ControlMonitorHelper::factory_implementation
+namespace winrt::ControlMonitorHelperWinRT::factory_implementation
 {
     struct ControlMonitorManager : ControlMonitorManagerT<ControlMonitorManager, implementation::ControlMonitorManager>
     {

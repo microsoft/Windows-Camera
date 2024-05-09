@@ -4,13 +4,15 @@
 
 //import "CameraKsPropertyInquiry.idl"
 
-namespace ControlMonitorHelper
+namespace ControlMonitorHelperWinRT
 {
     enum ControlKind
     {
         VidCapCameraControlKind,
         VidCapVideoProcAmpKind,
         ExtendedControlKind,
+        WindowsStudioEffectsKind,
+        All
     };
 
     struct ControlData

@@ -6,6 +6,8 @@
 
 namespace winrt::CameraKsPropertyHelper::implementation
 {
+    static GUID KSPROPERTYSETID_WindowsStudioCameraControl = 
+    { 0x1666d655, 0x21a6, 0x4982, 0x97, 0x28, 0x52, 0xc3, 0x9e, 0x86, 0x9f, 0x90 };
 
     // Redefining structs normally available in ksmedia.h but not available due to WINAPI_PARTITION_APP
     //
@@ -132,6 +134,13 @@ namespace winrt::CameraKsPropertyHelper::implementation
         KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS configCaps;
     };
 
+    // wrapper for a payload returned when the driver supports KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED 
+    struct KsWindowsStudioSupportedPropPayload
+    {
+        KSCAMERA_EXTENDEDPROP_HEADER header;
+        KSPROPERTY* pSupportedControls;
+    };
+
     template <typename InternalPayloadType>
     class PropertyValuePayloadHolder
     {
@@ -148,6 +157,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
         uint64_t Capability() { return m_payload->header.Capability; }
         uint64_t Flags() { return m_payload->header.Flags; };
         uint32_t Size() { return m_payload->header.Size; };
+        InternalPayloadType* Payload() { return m_payload; }
 
     protected:
         InternalPayloadType* m_payload;

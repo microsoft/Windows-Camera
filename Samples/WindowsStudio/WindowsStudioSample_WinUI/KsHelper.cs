@@ -1,10 +1,27 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Foundation;
+using Windows.Graphics.Imaging;
+using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
+using Windows.Media.MediaProperties;
+using Windows.Storage.Streams;
+using WinRT;
 
-namespace UWPWindowsStudioSample
+[ComImport]
+[System.Runtime.InteropServices.Guid("5b0d3235-4dba-4d44-865e-8f1d0e4fd04d")]
+[InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+unsafe interface IMemoryBufferByteAccess
+{
+    void GetBuffer(out byte* buffer, out uint capacity);
+}
+
+namespace WindowsStudioSample_WinUI
 {
     class KsHelper
     {
@@ -39,6 +56,35 @@ namespace UWPWindowsStudioSample
             KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE = 2,
         };
 
+        // --> Windows Studio Effects custom KsProperties
+        public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 
+            Guid.Parse("1666d655-21A6-4982-9728-52c39E869F90");
+
+        // Custom KsProperties exposed in version 2
+        public enum KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS : uint
+        {
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED = 0,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT = 1,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER = 2,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION = 3,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION = 4
+        };
+
+        public enum StageLightCapabilityKind : uint
+        {
+            KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_OFF = 0,
+            KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_ON = 1
+        };
+
+        public enum CreativeFilterCapabilityKind : uint
+        {
+            KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_OFF = 0,
+            KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED = 1,
+            KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ANIMATED = 2,
+            KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_WATERCOLOR = 4
+        };
+        // <-- Windows Studio Effects custom KsProperties
+
         [StructLayout(LayoutKind.Sequential)]
         public struct KsProperty
         {
@@ -69,14 +115,14 @@ namespace UWPWindowsStudioSample
             public uint PinId;
             public uint Size;
             public uint Result;
-            public UInt64 Flags;
-            public UInt64 Capability;
+            public ulong Flags;
+            public ulong Capability;
         };
 
         [StructLayout(LayoutKind.Sequential)]
         public struct KSCAMERA_EXTENDEDPROP_VALUE
         {
-            public UInt64 Value;
+            public ulong Value;
         };
 
         // wrapper for a basic camera extended property payload
@@ -106,6 +152,52 @@ namespace UWPWindowsStudioSample
             public KSCAMERA_EXTENDEDPROP_HEADER header;
             public KSCAMERA_EXTENDEDPROP_BACKGROUNDSEGMENTATION_CONFIGCAPS[] value;
         };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KSCAMERA_METADATA_ITEMHEADER
+        {
+            public uint MetadataId;
+            public uint Size;         // Size of this header + metadata payload following
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT
+        {
+            public int left;
+            public int top;
+            public int right;
+            public int bottom;
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SIZE
+        {
+            public int cx;
+            public int cy;
+        };
+
+        // wrapper for a background segmentation mask metadata
+
+        // MFSampleExtension_CaptureMetadata
+        public static readonly Guid MFSampleExtension_CaptureMetadata = new Guid(
+            0x2EBE23A8, 0xFAF5, 0x444A, 0xA6, 0xA2, 0xEB, 0x81, 0x08, 0x80, 0xAB, 0x5D);
+        
+        // MF_CAPTURE_METADATA_FRAME_BACKGROUND_MASK
+        public static readonly Guid MF_CAPTURE_METADATA_FRAME_BACKGROUND_MASK = new Guid(
+            0x3f14dd3, 
+            0x75dd, 
+            0x433a, 
+            new byte[]{ 0xa8, 0xe2, 0x1e, 0x3f, 0x5f, 0x2a, 0x50, 0xa0 }); 
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK
+        {
+            public KSCAMERA_METADATA_ITEMHEADER Header;
+            public RECT MaskCoverageBoundingBox;
+            public SIZE MaskResolution;
+            public RECT ForegroundBoundingBox;
+            //public byte[] MaskData;
+        };
         #endregion KsMedia
         //
         // end of redefinition of constant values and structures defined ksmedia.h 
@@ -114,47 +206,61 @@ namespace UWPWindowsStudioSample
         /// Helper method to send a GET call for a camera extended control DDI and retrieve the resulting payload
         /// </summary>
         /// <param name="controller"></param>
-        /// <param name="controlKind"></param>
+        /// <param name="propertySet"></param>
+        /// <param name="controlId"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static byte[] GetExtendedControlPayload(VideoDeviceController controller, KsHelper.ExtendedControlKind controlKind)
+        public static byte[] GetExtendedControlPayload(
+            VideoDeviceController controller,
+            Guid propertySet,
+            uint controlId)
         {
             // create a KsProperty for the specified extended control
             var ksProp = new KsProperty(
-               KsHelper.KSPROPERTYSETID_ExtendedCameraControl,
-               (uint)controlKind,
+               propertySet,
+               controlId,
                (uint)KsProperty.KsPropertyKind.KSPROPERTY_TYPE_GET);
             var bytePayload = KsHelper.ToBytes(ksProp);
 
             // send a GET command with the KsProperty and retrieve the result
-            var resultPayload = controller.GetDevicePropertyByExtendedId(bytePayload, null);
+            VideoDeviceControllerGetDevicePropertyResult resultPayload = controller.GetDevicePropertyByExtendedId(bytePayload, null);
             if (resultPayload == null)
             {
-                throw new Exception($"Unexpectedly could not GET payload for control={controlKind}, null payload");
+                throw new Exception($"Unexpectedly could not GET payload for propertySet={propertySet} and control={controlId}, null payload");
             }
             if (resultPayload.Status != VideoDeviceControllerGetDevicePropertyStatus.Success)
             {
-                throw new Exception($"Unexpectedly could not GET payload for control={controlKind}, status={resultPayload.Status}");
+                throw new Exception($"Unexpectedly could not GET payload for propertySet={propertySet} and control={controlId}, status={resultPayload.Status}");
             }
-            return (byte[])resultPayload.Value;
+            Object resultPayloadValue = resultPayload.Value;
+            if (resultPayloadValue != null)
+            {
+                return (byte[])resultPayload.Value;
+            }
+            else
+            {
+                throw new Exception($"null value");
+            }
         }
 
         /// <summary>
         /// Helper method to send a SET call for a camera extended control DDI with the specified flags value
         /// </summary>
         /// <param name="controller"></param>
-        /// <param name="controlKind"></param>
+        /// <param name="propertySet"></param>
+        /// <param name="controlId"></param>
         /// <param name="flags"></param>
         /// <exception cref="Exception"></exception>
         public static void SetExtendedControlFlags(
-            VideoDeviceController controller, 
-            KsHelper.ExtendedControlKind controlKind,
+            VideoDeviceController controller,
+            Guid propertySet,
+            uint controlId,
             ulong flags)
         {
             // create a KsProperty for the specified extended control
             var ksProp = new KsProperty(
-               KsHelper.KSPROPERTYSETID_ExtendedCameraControl,
-               (uint)controlKind,
+            propertySet,
+               controlId,
                (uint)KsProperty.KsPropertyKind.KSPROPERTY_TYPE_SET);
             var byteKsProp = KsHelper.ToBytes(ksProp);
 
@@ -181,7 +287,7 @@ namespace UWPWindowsStudioSample
             
             if (resultStatus != VideoDeviceControllerSetDevicePropertyStatus.Success)
             {
-                throw new Exception($"Unexpectedly could not SET flags={flags} for control={controlKind}, status={resultStatus}");
+                throw new Exception($"Unexpectedly could not SET flags={flags} for propertySet={propertySet} and control={controlId}, status={resultStatus}");
             }
         }
 
@@ -198,9 +304,12 @@ namespace UWPWindowsStudioSample
         }
 
         // A method to marshal a byte[] into a structure
-        public static T FromBytes<T>(byte[] bytes, int startIndex = 0)
+        public static T FromBytes<T>(byte[] bytes, int size = -1, int startIndex = 0)
         {
-            var size = Marshal.SizeOf<T>();
+            if (size == -1)
+            {
+                size = Marshal.SizeOf<T>();
+            }
             var intPtr = Marshal.AllocHGlobal(size);
             Marshal.Copy(bytes, startIndex, intPtr, size);
             var item = Marshal.PtrToStructure<T>(intPtr);
@@ -237,6 +346,41 @@ namespace UWPWindowsStudioSample
             }
 
             return payload;
+        }
+
+        public static SoftwareBitmap ExtractBackgroundSegmentationMaskMetadataAsBitmap(MediaFrameReference frame)
+        {
+            SoftwareBitmap maskSoftwareBitmap = null;
+            if (frame.Properties.TryGetValue(MFSampleExtension_CaptureMetadata, out var captureMetadata))
+            {
+                if (captureMetadata is IReadOnlyDictionary<Guid, object> captureMetadataLookUp)
+                {
+                    if (captureMetadataLookUp.TryGetValue(MF_CAPTURE_METADATA_FRAME_BACKGROUND_MASK, out var backgroundSegmentationMask))
+                    {
+                        byte[] payloadBytes = (byte[])backgroundSegmentationMask;
+                        //KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK payload = Marshal.PtrToStructure<KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK>((IntPtr)backgroundSegmentationMask);
+                        KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK payload = FromBytes<KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK>(payloadBytes);
+                        //byte[] maskFrame = FromBytes<byte[]>(payloadBytes, payload.MaskResolution.cx * payload.MaskResolution.cy, Marshal.SizeOf(payload));
+                        maskSoftwareBitmap = new SoftwareBitmap(BitmapPixelFormat.Gray8, payload.MaskResolution.cx, payload.MaskResolution.cy);
+                        using var buffer = maskSoftwareBitmap.LockBuffer(BitmapBufferAccessMode.Write);
+                        using var reference = buffer.CreateReference();
+                        if (reference == null)
+                        {
+                            throw new Exception("Cannot access pixel buffer of mask frame");
+                        }
+
+                        unsafe
+                        {
+                            byte* gray8Data;
+                            uint gray8Size;
+                            reference.As<IMemoryBufferByteAccess>().GetBuffer(out gray8Data, out gray8Size);
+                            Marshal.Copy(payloadBytes, Marshal.SizeOf(payload), (IntPtr)gray8Data, (int)gray8Size);
+                        }
+                    }
+                }
+            }
+            return maskSoftwareBitmap;
+
         }
     }
 }

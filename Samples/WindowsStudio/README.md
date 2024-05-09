@@ -1,24 +1,102 @@
-# C# UWP WinRT sample application for using a Windows Studio camera and its set of effects
+# C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects
 
 >**This sample will only run fully on a system equipped with a [Windows Studio](https://blogs.windows.com/windowsexperience/2022/09/20/available-today-the-windows-11-2022-update/) camera, which in itself requires a NPU and the related Windows Studio driver package installed or pulled-in via Windows Update by the device manufacturer.**
 
-This folder contains a single C# .csproj sample project named **UWPWindowsStudioSample** which checks if a Windows Studio camera is available on the system and then gets and sets extended camera controls associated with Windows Studio effects such as Background Blur, Eye Gaze Correction and Automatic Framing:
+This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system and then gets and sets extended camera controls associated with Windows Studio Effects such as the following 3 introduced in version 1 of Windows Studio Effects: 
+- Background Blur (Standard Blur, Portrait Blur and Segmentation Mask Metadata)
+- Eye Gaze Correction (Standard and Teleprompter)
+- Automatic Framing
+
+as well as the newer effects in version 2 such as 
+- Portrait Light 
+- Creative Filters (Animated, Watercolor and Illustrated)
+
 1. Looks for a Windows Studio camera on the system 
-    1. checks if the system exposes the related Windows Studio dev prop key
+    
+    1. Checks if the system exposes the related Windows Studio dev prop key.
         ```csharp
         private const string DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable = "{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 4";
         //...
         DeviceInformationCollection deviceInfoCollection = await DeviceInformation.FindAllAsync(MediaDevice.GetVideoCaptureSelector(), new List<string>() { DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable });
         ```
-    2. Searches for a front facing camera by checking the panel enclosure location of the camera devices
+    
+    2. Searches for a front facing camera by checking the panel enclosure location of the camera devices.
         ```csharp
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
+    
+2. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set.
+    ```csharp
+    // New Windows Studio Effects custom KsProperties live under this property set
+    public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 
+        Guid.Parse("1666d655-21A6-4982-9728-52c39E869F90");
 
-2. Proceeds to then stream from this camera and interact with Windows Studio effects via Extended Property DDI using [`VideoDeviceController.GetDevicePropertyByExtendedId()`](https://learn.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid) and [`VideoDeviceController.SetDevicePropertyByExtendedId()`](https://learn.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.setdevicepropertybyextendedid) :
+    // Custom KsProperties exposed in version 2
+    public enum KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS : uint
+    {
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED = 0,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT = 1,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER = 2,
+    };
+
+    // ...
+    // in InitializeCameraAndUI()
+    // query support for new effects in v2
+    byte[] byteResultPayload = GetExtendedControlPayload(
+                                m_mediaCapture.VideoDeviceController,
+                                KSPROPERTYSETID_WindowsStudioEffects,
+                                (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED);
+
+    // reinterpret the byte array as an extended property payload
+    KSCAMERA_EXTENDEDPROP_HEADER payloadHeader = FromBytes<KSCAMERA_EXTENDEDPROP_HEADER>(byteResultPayload);
+    int sizeofHeader = Marshal.SizeOf<KSCAMERA_EXTENDEDPROP_HEADER>();
+    int sizeofKsProperty = Marshal.SizeOf<KsProperty>(); ;
+    int supportedControls = ((int)payloadHeader.Size - sizeofHeader) / sizeofKsProperty;
+
+    for (int i = 0; i < supportedControls; i++)
+    {
+        KsProperty payloadKsProperty = FromBytes<KsProperty>(byteResultPayload, sizeofHeader + i * sizeofKsProperty);
+
+        if (new Guid(payloadKsProperty.Set) == KSPROPERTYSETID_WindowsStudioEffects)
+        {
+            // if we support StageLight (also known as PortraitLight)
+            if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT)
+            {
+                RefreshStageLightUI();
+            }
+            // if we support CreativeFilter
+            else if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)
+            {
+                RefreshCreativeFilterUI();
+            }
+        }
+    }
+    // ...
+    ```
+
+3. Expose a button that launches the Windows Settings page for the camera where the user can also toggle effects concurrently while the sample app is running.
+    ```csharp
+    // launch Windows Settings page for the camera identified by the specified Id
+    var uri = new Uri($"ms-settings:camera?cameraId={Uri.EscapeDataString(m_mediaCapture.MediaCaptureSettings.VideoDeviceId)}");
+    var fireAndForget = Windows.System.Launcher.LaunchUriAsync(uri);
+
+    // launch the Windows Studio quick setting panel using URI if it is supported
+    var uri = new Uri($"ms-controlcenter:studioeffects");
+    var supportStatus = await Windows.System.Launcher.QueryUriSupportAsync(uri, Windows.System.LaunchQuerySupportType.Uri);
+    if (supportStatus == Windows.System.LaunchQuerySupportStatus.Available)
+    {
+        var fireAndForget = Windows.System.Launcher.LaunchUriAsync(uri);
+    }
+    ```
+
+
+4. Proceeds to then stream from this camera and interact with Windows Studio effects via Extended Property DDI using [`VideoDeviceController.GetDevicePropertyByExtendedId()`](https://learn.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.getdevicepropertybyextendedid) and [`VideoDeviceController.SetDevicePropertyByExtendedId()`](https://learn.microsoft.com/en-us/uwp/api/windows.media.devices.videodevicecontroller.setdevicepropertybyextendedid) :
     1. Send a GET command and deserialize the retrieved payload, see implementation and usage of 
         ```csharp 
-        byte[] KsHelper.GetExtendedControlPayload(VideoDeviceController controller, KsHelper.ExtendedControlKind controlKind) 
+        byte[] KsHelper.GetExtendedControlPayload(
+            VideoDeviceController controller,
+            Guid propertySet,
+            uint controlId)
         ```
         and 
         ```csharp 
@@ -28,7 +106,9 @@ This folder contains a single C# .csproj sample project named **UWPWindowsStudio
         ```csharp 
         // send a GET call for the eye gaze DDI and retrieve the result payload
         byte[] byteResultPayload = KsHelper.GetExtendedControlPayload(
-        m_mediaCapture.VideoDeviceController, KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
+          m_mediaCapture.VideoDeviceController,
+          KsHelper.KSPROPERTYSETID_ExtendedCameraControl,
+          (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION);
 
         // reinterpret the byte array as an extended property payload
         KsHelper.KsBasicCameraExtendedPropPayload payload = KsHelper.FromBytes<KsHelper.KsBasicCameraExtendedPropPayload>(byteResultPayload); 
@@ -37,9 +117,10 @@ This folder contains a single C# .csproj sample project named **UWPWindowsStudio
         2. Send a SET command using a serialized payload containing flags value to toggle effects, see implementation and usage of 
         ```csharp 
         void KsHelper.SetExtendedControlFlags(
-            VideoDeviceController controller, 
-            KsHelper.ExtendedControlKind controlKind,
-            ulong flags) 
+            VideoDeviceController controller,
+            Guid propertySet,
+            uint controlId,
+            ulong flags)
         ```
         and 
         ```csharp 
@@ -48,25 +129,29 @@ This folder contains a single C# .csproj sample project named **UWPWindowsStudio
         such as in this example:
         ```csharp 
         // set the flags value for the corresponding extended control
-        KsHelper.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION, flagToSet); 
+        KsHelper.SetExtendedControlFlags(
+          m_mediaCapture.VideoDeviceController,
+          KsHelper.KSPROPERTYSETID_ExtendedCameraControl,
+          (uint)KsHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
+          flagToSet);
         ```
 
-The .sln solution file is also pulling a dependency on the existing WinRT Component named ["*ControlMonitorHelper*"](..\ControlMonitorApp\README.md) that wraps and projects to WinRT the [`IMFCameraControlMonitor`](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfcameracontrolmonitor) native APIs so that we can refresh the app UI whenever an external application such as Windows Settings changes concurrently the current value of one of the DDI that drives Windows Studio effects.
+The .sln solution file is also pulling a dependency on the existing WinRT Component named ["*ControlMonitorHelperWinRT*"](..\ControlMonitorApp\README.md) that wraps and projects to WinRT the [`IMFCameraControlMonitor`](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfcameracontrolmonitor) native APIs so that we can refresh the app UI whenever an external application such as Windows Settings changes concurrently the current value of one of the DDI that drives Windows Studio effects.
 
 ## Requirements
 	
-This sample is built using Visual Studio 2019 and requires [Windows SDK version 22621](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) at the very least.
+This sample is built using Visual Studio 2022 and requires [Windows SDK version 22621](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) at the very least.
 
 ## Using the samples
 
-The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio 2019.
+The easiest way to use these samples without using Git is to download the zip file containing the current version (using the following link or by clicking the "Download ZIP" button on the repo page). You can then unzip the entire archive and use the samples in Visual Studio 2022.
 
    [Download the samples ZIP](../../archive/master.zip)
 
    **Notes:** 
    * Before you unzip the archive, right-click it, select **Properties**, and then select **Unblock**.
    * Be sure to unzip the entire archive, and not just individual samples. The samples all depend on the SharedContent folder in the archive.   
-   * In Visual Studio 2019, the platform target defaults to ARM, so be sure to change that to x64 if you want to test on a non-ARM device. 
+   * In Visual Studio 2022, the platform target defaults to ARM64, so be sure to change that to x64 if you want to test on a non-ARM64 device. 
 
 
 **Reminder:** If you unzip individual samples, they will not build due to references to other portions of the ZIP file that were not unzipped. You must unzip the entire archive if you intend to build the samples.

@@ -32,6 +32,8 @@
     <ClInclude Include="DigitalWindowMetadata.h" />
     <ClInclude Include="VidProcExtendedPropertyPayload.h" />
     <ClInclude Include="FieldOfView2ConfigCapsPropertyPayload.h" />
+    <ClInclude Include="WindowsStudioSupportedPropertyPayload.h" />
+    <ClInclude Include="BasicWindowsStudioPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="CameraKsPropertyInquiry.idl" />
