@@ -65,7 +65,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
 
         KSPROPERTY prop = 
         {
-            KSPROPERTYSETID_WindowsStudioCameraControl, // Set
+            KSPROPERTYSETID_WindowsCameraEffect, // Set
             (ULONG)controlId, // Id
             0x00000001 /* KSPROPERTY_TYPE_GET */ // Flags
         };
@@ -529,7 +529,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
 
         KSPROPERTY prop = 
         {
-            KSPROPERTYSETID_WindowsStudioCameraControl, // Set
+            KSPROPERTYSETID_WindowsCameraEffect, // Set
             (ULONG)controlId /* KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_* */, // Id
             0x00000002 /* KSPROPERTY_TYPE_SET */ // Flags
         };

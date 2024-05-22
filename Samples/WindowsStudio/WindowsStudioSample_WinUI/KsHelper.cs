@@ -57,7 +57,7 @@ namespace WindowsStudioSample_WinUI
         };
 
         // --> Windows Studio Effects custom KsProperties
-        public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 
+        public static readonly Guid KSPROPERTYSETID_WindowsCameraEffect = 
             Guid.Parse("1666d655-21A6-4982-9728-52c39E869F90");
 
         // Custom KsProperties exposed in version 2

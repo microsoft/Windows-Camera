@@ -194,7 +194,7 @@ public sealed partial class MainWindow : Window
             {
                 byte[] byteResultPayload = GetExtendedControlPayload(
                     m_mediaCapture.VideoDeviceController,
-                    KSPROPERTYSETID_WindowsStudioEffects,
+                    KSPROPERTYSETID_WindowsCameraEffect,
                     (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED);
 
                 // reinterpret the byte array as an extended property payload
@@ -207,7 +207,7 @@ public sealed partial class MainWindow : Window
                 {
                     KsProperty payloadKsProperty = FromBytes<KsProperty>(byteResultPayload, sizeofHeader + i * sizeofKsProperty);
 
-                    if (new Guid(payloadKsProperty.Set) == KSPROPERTYSETID_WindowsStudioEffects)
+                    if (new Guid(payloadKsProperty.Set) == KSPROPERTYSETID_WindowsCameraEffect)
                     {
                         if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT)
                         {
@@ -571,7 +571,7 @@ public sealed partial class MainWindow : Window
         // send a GET call for the StageLight DDI and retrieve the result payload
         byte[] byteResultPayload = GetExtendedControlPayload(
             m_mediaCapture.VideoDeviceController,
-            KSPROPERTYSETID_WindowsStudioEffects,
+            KSPROPERTYSETID_WindowsCameraEffect,
             (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT);
 
         // reinterpret the byte array as an extended property payload
@@ -592,7 +592,7 @@ public sealed partial class MainWindow : Window
         // send a GET call for the CreativeFilter DDI and retrieve the result payload
         byte[] byteResultPayload = GetExtendedControlPayload(
             m_mediaCapture.VideoDeviceController,
-            KSPROPERTYSETID_WindowsStudioEffects,
+            KSPROPERTYSETID_WindowsCameraEffect,
             (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER);
 
         // reinterpret the byte array as an extended property payload
@@ -669,7 +669,7 @@ public sealed partial class MainWindow : Window
         // set the flags value for the corresponding extended control
         SetExtendedControlFlags(
             m_mediaCapture.VideoDeviceController,
-            KSPROPERTYSETID_WindowsStudioEffects,
+            KSPROPERTYSETID_WindowsCameraEffect,
             (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT,
             flagToSet);
     }
@@ -689,7 +689,7 @@ public sealed partial class MainWindow : Window
         // set the flags value for the corresponding extended control
         SetExtendedControlFlags(
             m_mediaCapture.VideoDeviceController,
-            KSPROPERTYSETID_WindowsStudioEffects,
+            KSPROPERTYSETID_WindowsCameraEffect,
             (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER,
             flagToSet);
     }

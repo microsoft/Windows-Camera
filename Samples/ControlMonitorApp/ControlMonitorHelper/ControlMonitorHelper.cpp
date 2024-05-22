@@ -44,7 +44,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
                 guid = KSPROPERTYSETID_ExtendedCameraControl;
                 break;
             case ControlKind::WindowsStudioEffectsKind:
-                guid = KSPROPERTYSETID_WindowsStudioEffects;
+                guid = KSPROPERTYSETID_WindowsCameraEffect;
                 break;
             default:
                 throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
@@ -86,7 +86,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
                         guid = KSPROPERTYSETID_ExtendedCameraControl;
                         break;
                     case ControlKind::WindowsStudioEffectsKind:
-                        guid = KSPROPERTYSETID_WindowsStudioEffects;
+                        guid = KSPROPERTYSETID_WindowsCameraEffect;
                         break;
                     default:
                         throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
@@ -144,7 +144,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
             control.controlId = id;
             m_cameraControlChangedEvt(*m_pParent, control);
         }
-        else if (controlSet == KSPROPERTYSETID_WindowsStudioEffects)
+        else if (controlSet == KSPROPERTYSETID_WindowsCameraEffect)
         {
             ControlData control;
             control.controlKind = ControlKind::WindowsStudioEffectsKind;
