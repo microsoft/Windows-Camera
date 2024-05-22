@@ -358,9 +358,7 @@ namespace WindowsStudioSample_WinUI
                     if (captureMetadataLookUp.TryGetValue(MF_CAPTURE_METADATA_FRAME_BACKGROUND_MASK, out var backgroundSegmentationMask))
                     {
                         byte[] payloadBytes = (byte[])backgroundSegmentationMask;
-                        //KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK payload = Marshal.PtrToStructure<KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK>((IntPtr)backgroundSegmentationMask);
                         KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK payload = FromBytes<KSCAMERA_METADATA_BACKGROUNDSEGMENTATIONMASK>(payloadBytes);
-                        //byte[] maskFrame = FromBytes<byte[]>(payloadBytes, payload.MaskResolution.cx * payload.MaskResolution.cy, Marshal.SizeOf(payload));
                         maskSoftwareBitmap = new SoftwareBitmap(BitmapPixelFormat.Gray8, payload.MaskResolution.cx, payload.MaskResolution.cy);
                         using var buffer = maskSoftwareBitmap.LockBuffer(BitmapBufferAccessMode.Write);
                         using var reference = buffer.CreateReference();

@@ -1,6 +1,6 @@
 # C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects
 
->**This sample will only run fully on a system equipped with a [Windows Studio](https://blogs.windows.com/windowsexperience/2022/09/20/available-today-the-windows-11-2022-update/) camera, which in itself requires a NPU and the related Windows Studio driver package installed or pulled-in via Windows Update by the device manufacturer.**
+>**This sample will only run fully on a system equipped with a [Windows Studio Effects](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires a NPU and the related Windows Studio Effects driver package installed or pulled-in via Windows Update by the device manufacturer.**
 
 This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system and then gets and sets extended camera controls associated with Windows Studio Effects such as the following 3 introduced in version 1 of Windows Studio Effects: 
 - Background Blur (Standard Blur, Portrait Blur and Segmentation Mask Metadata)
