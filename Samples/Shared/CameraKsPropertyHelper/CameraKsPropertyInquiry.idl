@@ -277,6 +277,71 @@ namespace CameraKsPropertyHelper
         KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON = 0x0000000000000001
     };
 
+    //
+    // ----> Windows Studio definitions
+    //
+    // refer to KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PROPERTY
+    enum WindowsStudioControlKind
+    {
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED = 0,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT = 1,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER = 2,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION = 3,
+        KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION = 4
+    };
+
+    enum WindowsStudioStageLightCapabilityKind
+    {
+        KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_OFF = 0x0000000000000000,
+        KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_ON = 0x0000000000000001,
+    };
+
+    enum WindowsStudioCreativeFilterCapabilityKind
+    {
+        KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_OFF = 0x0000000000000000,
+        KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED = 0x0000000000000001,
+        KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ANIMATED = 0x0000000000000002,
+        KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_WATERCOLOR = 0x0000000000000004,
+    };
+
+    enum WindowsStudioSetNotificationCapabilityKind
+    {
+        KSCAMERA_WINDOWSSTUDIO_SETNOTIFICATION_NONE = 0x0000000000000000,
+        KSCAMERA_WINDOWSSTUDIO_SETNOTIFICATION_DIGITALWINDOW = 0x0000000000000001,
+    };
+
+    enum WindowsStudioPerformanceMitigationCapabilityKind
+    {
+        KSCAMERA_WINDOWSSTUDIO_PERFORMANCEMITIGATION_NONE = 0x0000000000000000,
+        KSCAMERA_WINDOWSSTUDIO_PERFORMANCEMITIGATION_EYEGAZECORRECTION_STARE = 0x0000000000000001,
+    };
+
+    // Accessors to complementary parts of IExtendedPropertyHeader exclusive to Windows Studio controls
+    interface IWindowsStudioPropertyPayload
+    {
+        WindowsStudioControlKind WindowsStudioControlKind{ get; };
+    };
+
+    runtimeclass BasicWindowsStudioPropertyPayload : [default] IExtendedPropertyHeader, IWindowsStudioPropertyPayload
+    {
+
+    }
+
+    struct KsProperty
+    {
+        Guid controlSet;
+        UInt32 controlId;
+        UInt32 controlFlags;
+    };
+
+    runtimeclass WindowsStudioSupportedPropertyPayload : [default] IExtendedPropertyHeader, IWindowsStudioPropertyPayload
+    {
+        Windows.Foundation.Collections.IVectorView<KsProperty> SupportedControls{ get; };
+    }
+    //
+    // <--- End of Windows Studio definitions
+    //
+
     // Helper methods to set/get extended properties and extract frame metadata
     runtimeclass PropertyInquiry
     {
@@ -292,5 +357,8 @@ namespace CameraKsPropertyHelper
             UInt64 value);
 
         static IMetadataPayload ExtractFrameMetadata(Windows.Media.Capture.Frames.MediaFrameReference frame, FrameMetadataKind metadataKind);
+
+        static IWindowsStudioPropertyPayload GetWindowsStudioControl(Windows.Media.Devices.VideoDeviceController controller, WindowsStudioControlKind windowsStudioControlKind);
+        static void SetWindowsStudioControlFlags(Windows.Media.Devices.VideoDeviceController controller, WindowsStudioControlKind extendedControlKind, UInt64 flags);
     }
 }

@@ -34,6 +34,15 @@ namespace winrt::CameraKsPropertyHelper::implementation
         static winrt::CameraKsPropertyHelper::IMetadataPayload ExtractFrameMetadata(
             winrt::Windows::Media::Capture::Frames::MediaFrameReference const& frame,
             winrt::CameraKsPropertyHelper::FrameMetadataKind const& metadataKind);
+
+        static winrt::CameraKsPropertyHelper::IWindowsStudioPropertyPayload GetWindowsStudioControl(
+            winrt::Windows::Media::Devices::VideoDeviceController const& controller,
+            winrt::CameraKsPropertyHelper::WindowsStudioControlKind const& windowsStudioControlKind);
+
+        static void SetWindowsStudioControlFlags(
+            winrt::Windows::Media::Devices::VideoDeviceController const& controller,
+            winrt::CameraKsPropertyHelper::WindowsStudioControlKind const& windowsStudioControlKind,
+            uint64_t flags);
     };
 }
 namespace winrt::CameraKsPropertyHelper::factory_implementation

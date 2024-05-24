@@ -134,6 +134,7 @@
     <ClInclude Include="BackgroundSegmentationMaskMetadata.h" />
     <ClInclude Include="BackgroundSegmentationPropertyPayload.h" />
     <ClInclude Include="BasicExtendedPropertyPayload.h" />
+    <ClInclude Include="BasicWindowsStudioPropertyPayload.h" />
     <ClInclude Include="DigitalWindowMetadata.h" />
     <ClInclude Include="FaceDetectionMetadata.h" />
     <ClInclude Include="FieldOfView2ConfigCapsPropertyPayload.h" />
@@ -142,6 +143,7 @@
     <ClInclude Include="PropertyInquiry.h" />
     <ClInclude Include="VidCapVideoProcAmpPropetyPayload.h" />
     <ClInclude Include="VidProcExtendedPropertyPayload.h" />
+    <ClInclude Include="WindowsStudioSupportedPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackgroundSegmentationConfigCaps.cpp" />

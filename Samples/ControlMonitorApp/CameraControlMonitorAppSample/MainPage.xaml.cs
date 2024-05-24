@@ -16,6 +16,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Navigation;
+using ControlMonitorHelperWinRT;
 
 namespace OutboundSettingsAppTest
 {
@@ -30,7 +31,7 @@ namespace OutboundSettingsAppTest
 
         private bool m_useEVComp = false;
 
-        private ControlMonitorHelper.ControlMonitorManager m_controlManager = null;
+        private ControlMonitorManager m_controlManager = null;
         public MainPage()
         {
             this.InitializeComponent();
@@ -100,30 +101,30 @@ namespace OutboundSettingsAppTest
             UIMediaPlayerElement.SetMediaPlayer(m_mediaPlayer);
 
             // Creating a controls data for listening changes on these controls.
-            var controlContrast = new ControlMonitorHelper.ControlData()
+            var controlContrast = new ControlData()
             {
-                controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind,
+                controlKind = ControlKind.VidCapVideoProcAmpKind,
                 controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST
             };
 
-            ControlMonitorHelper.ControlData controlBrightness;
+            ControlData controlBrightness;
             // If the device supports ExposureCompensationControl we opt use that one instead of Brightness
             // to follow similar logic as the Windows Camera Settings has.
             m_useEVComp = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Supported;
             if (m_useEVComp)
             {
-                controlBrightness.controlKind = ControlMonitorHelper.ControlKind.ExtendedControlKind;
+                controlBrightness.controlKind = ControlKind.ExtendedControlKind;
                 controlBrightness.controlId = (UInt32)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION;
             }
             else
             {
-                controlBrightness.controlKind = ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind;
+                controlBrightness.controlKind = ControlKind.VidCapVideoProcAmpKind;
                 controlBrightness.controlId = (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS;
             }
 
-            ControlMonitorHelper.ControlData[] controls = { controlContrast, controlBrightness };
+            ControlData[] controls = { controlContrast, controlBrightness };
 
-            m_controlManager = ControlMonitorHelper.ControlMonitorManager.CreateCameraControlMonitor(m_mediaCapture.MediaCaptureSettings.VideoDeviceId, controls);
+            m_controlManager = ControlMonitorManager.CreateCameraControlMonitor(m_mediaCapture.MediaCaptureSettings.VideoDeviceId, controls);
             m_controlManager.CameraControlChanged += CameraControlMonitor_VidCapCameraControlChanged;
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
@@ -192,12 +193,12 @@ namespace OutboundSettingsAppTest
                 m_mediaCapture = null;
             }
         }
-        private async void CameraControlMonitor_VidCapCameraControlChanged(object sender, ControlMonitorHelper.ControlData control)
+        private async void CameraControlMonitor_VidCapCameraControlChanged(object sender, ControlData control)
         {
             try
             {
 
-                if (control.controlKind == ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST)
+                if (control.controlKind == ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_CONTRAST)
                 {
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
@@ -213,7 +214,7 @@ namespace OutboundSettingsAppTest
 
                     });
                 }
-                else if(control.controlKind == ControlMonitorHelper.ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS)
+                else if(control.controlKind == ControlKind.VidCapVideoProcAmpKind && control.controlId == (UInt32)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS)
                 {
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {
@@ -229,7 +230,7 @@ namespace OutboundSettingsAppTest
 
                     });
                 }
-                else if(control.controlKind == ControlMonitorHelper.ControlKind.ExtendedControlKind && control.controlId == (UInt32)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION)
+                else if(control.controlKind == ControlKind.ExtendedControlKind && control.controlId == (UInt32)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION)
                 {
                     await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                     {

@@ -13,6 +13,9 @@
 #include "VidCapVideoProcAmpPropetyPayload.h"
 #include "VidProcExtendedPropertyPayload.h"
 #include "FieldOfView2ConfigCapsPropertyPayload.h"
+#include "WindowsStudioSupportedPropertyPayload.h"
+#include "BasicWindowsStudioPropertyPayload.h"
+using namespace winrt::Windows::Media::Devices;
 
 namespace winrt::CameraKsPropertyHelper::implementation
 {
@@ -41,6 +44,45 @@ namespace winrt::CameraKsPropertyHelper::implementation
         if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
         {
             throw hresult_invalid_argument(L"Could not retrieve device property " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)getResult.Status()));
+        }
+        auto getResultValue = getResult.Value();
+        propertyValueResult = getResultValue.as<Windows::Foundation::IPropertyValue>();
+
+        return propertyValueResult;
+    }
+
+    /// <summary>
+    /// Get the data payload of a Windows Studio camera control and do something with it
+    /// </summary>
+    /// <param name="controller"></param>
+    /// <param name="controlId"></param>
+    /// <returns></returns>
+    Windows::Foundation::IPropertyValue GetWindowsStudioCameraControlPayload(
+        Windows::Media::Devices::VideoDeviceController const& controller,
+        int controlId)
+    {
+        Windows::Foundation::IPropertyValue propertyValueResult = nullptr;
+
+        KSPROPERTY prop = 
+        {
+            KSPROPERTYSETID_WindowsCameraEffect, // Set
+            (ULONG)controlId, // Id
+            0x00000001 /* KSPROPERTY_TYPE_GET */ // Flags
+        };
+        uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
+
+        uint32_t maxSize = 256;
+        Windows::Foundation::IReference<uint32_t> maxSizeRef(maxSize);
+
+        array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
+        auto getResult = controller.GetDevicePropertyByExtendedId(serializedProp, maxSizeRef);
+        if (getResult.Status() == Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::NotSupported)
+        {
+            return propertyValueResult;
+        }
+        if (getResult.Status() != Windows::Media::Devices::VideoDeviceControllerGetDevicePropertyStatus::Success)
+        {
+            throw hresult_invalid_argument(L"Could not retrieve Windows Studio device property " + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)getResult.Status()));
         }
         auto getResultValue = getResult.Value();
         propertyValueResult = getResultValue.as<Windows::Foundation::IPropertyValue>();
@@ -238,27 +280,47 @@ namespace winrt::CameraKsPropertyHelper::implementation
         uint64_t flags)
     {
         uint32_t controlId = static_cast<uint32_t>(extendedControlKind);
-        
+
         KSPROPERTY prop{
             KSPROPERTYSETID_ExtendedCameraControl,
             controlId /* KSPROPERTY_CAMERACONTROL_EXTENDED_* */,
             KSPROPERTY_TYPE_SET };
         uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
         array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
+        array_view<uint8_t const> serializedHeader;
+        VideoDeviceControllerSetDevicePropertyStatus setResult;
 
-        KSCAMERA_EXTENDEDPROP_HEADER header =
+        if (extendedControlKind == ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE)
         {
-            1, // Version
-            KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
-            sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE), // Size
-            0, // Result
-            flags, // Flags
-            0 // Capability                
-        };
-        uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
-        array_view<uint8_t const> serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
+            // retrieve the GET payload and modify the part we want to send a SET with
+            // if we are here we assume user has check for support first
+            auto  getPayload =
+                GetExtendedCameraControlPayload(
+                    controller,
+                    static_cast<int>(extendedControlKind));
+            auto pVidProcGetPayload = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload).Payload();
 
-        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+            pVidProcGetPayload->header.Flags = flags;
+
+            uint8_t* pPayload = reinterpret_cast<uint8_t*>(pVidProcGetPayload);
+            serializedHeader = array_view<uint8_t const>(pPayload, pVidProcGetPayload->header.Size);            
+            setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+        }
+        else
+        {
+            KSCAMERA_EXTENDEDPROP_HEADER header =
+            {
+                1, // Version
+                KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
+                sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE), // Size
+                0, // Result
+                flags, // Flags
+                0 // Capability                
+            };
+            uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
+            serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
+            setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+        }
 
         if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
         {
@@ -296,18 +358,18 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
         case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE:
         {
-            KsVidProcCameraExtendedPropPayload payload;
-            payload.header = {
-                1,          // Version
-                0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
-                sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VIDEOPROCSETTING), // Size
-                0,                                                                                     // Result
-                flags,                                                                                 // Flags
-                0                                                                                      // Capability
-            };
-            payload.vidProcSetting.VideoProc.Value.ul = (ULONG)value;
-            uint8_t* pPayload = reinterpret_cast<uint8_t*>(&payload);
-            serializedHeader = array_view<uint8_t const>(pPayload, payload.header.Size);
+            // retrieve the GET payload and modify the part we want to send a SET with
+            // if we are here we assume user has check for support first
+            auto  getPayload =
+                GetExtendedCameraControlPayload(
+                    controller,
+                    static_cast<int>(extendedControlKind));
+            auto pVidProcGetPayload = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload).Payload();
+
+            pVidProcGetPayload->header.Flags = flags;
+            pVidProcGetPayload->vidProcSetting.VideoProc.Value.ul = (ULONG)value;
+            uint8_t* pPayload = reinterpret_cast<uint8_t*>(pVidProcGetPayload);
+            serializedHeader = array_view<uint8_t const>(pPayload, pVidProcGetPayload->header.Size);
             setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
             break;
         }
@@ -416,5 +478,81 @@ namespace winrt::CameraKsPropertyHelper::implementation
         }
         // else there is no frame metadata present
         return result;
+    }
+
+    winrt::CameraKsPropertyHelper::IWindowsStudioPropertyPayload
+        PropertyInquiry::GetWindowsStudioControl(
+            winrt::Windows::Media::Devices::VideoDeviceController const& controller,
+            winrt::CameraKsPropertyHelper::WindowsStudioControlKind const& windowsStudioControlKind)
+    {
+        auto propertyValueResult = GetWindowsStudioCameraControlPayload(controller, static_cast<int>(windowsStudioControlKind));
+        if (propertyValueResult == nullptr)
+        {
+            return nullptr;
+        }
+
+        IWindowsStudioPropertyPayload payload = nullptr;
+
+        switch (windowsStudioControlKind)
+        {
+        case WindowsStudioControlKind::KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED:
+        {
+            auto container = winrt::com_array<uint8_t>(sizeof(KSCAMERA_EXTENDEDPROP_HEADER));
+            propertyValueResult.GetUInt8Array(container);
+            payload = make<WindowsStudioSupportedPropertyPayload>(propertyValueResult, windowsStudioControlKind);
+            break;
+        }
+
+        case WindowsStudioControlKind::KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT: //fallthrough
+        case WindowsStudioControlKind::KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER: //fallthrough
+        case WindowsStudioControlKind::KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION: // fallthrough
+        case WindowsStudioControlKind::KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION:
+        {
+            payload = make<BasicWindowsStudioPropertyPayload>(propertyValueResult, windowsStudioControlKind);
+            break;
+        }
+
+
+        default:
+            throw hresult_invalid_argument(L"unexpected windowsStudioControlKind passed: " + to_hstring((int32_t)windowsStudioControlKind));
+        }
+
+        return payload;
+    }
+
+    void PropertyInquiry::SetWindowsStudioControlFlags(
+        winrt::Windows::Media::Devices::VideoDeviceController const& controller,
+        winrt::CameraKsPropertyHelper::WindowsStudioControlKind const& windowsStudioControlKind,
+        uint64_t flags)
+    {
+        int controlId = static_cast<int>(windowsStudioControlKind);
+
+        KSPROPERTY prop = 
+        {
+            KSPROPERTYSETID_WindowsCameraEffect, // Set
+            (ULONG)controlId /* KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_* */, // Id
+            0x00000002 /* KSPROPERTY_TYPE_SET */ // Flags
+        };
+        uint8_t* pProp = reinterpret_cast<uint8_t*>(&prop);
+        array_view<uint8_t const> serializedProp = array_view<uint8_t const>(pProp, sizeof(KSPROPERTY));
+
+        KSCAMERA_EXTENDEDPROP_HEADER header =
+        {
+            1, // Version
+            0xFFFFFFFF, // PinId = KSCAMERA_EXTENDEDPROP_FILTERSCOPE
+            sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE), // Size
+            0, // Result
+            flags, // Flags
+            0 // Capability
+        };
+        uint8_t* pHeader = reinterpret_cast<uint8_t*>(&header);
+        array_view<uint8_t const> serializedHeader = array_view<uint8_t const>(pHeader, header.Size);
+
+        auto setResult = controller.SetDevicePropertyByExtendedId(serializedProp, serializedHeader);
+
+        if (setResult != Windows::Media::Devices::VideoDeviceControllerSetDevicePropertyStatus::Success)
+        {
+            throw hresult_invalid_argument(L"Could not set Windows Studio device property flags for control id=" + winrt::to_hstring(controlId) + L" with status: " + winrt::to_hstring((int)setResult));
+        }
     }
 }
