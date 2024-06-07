@@ -286,3 +286,11 @@ __pycache__/
 *.btm.cs
 *.odx.cs
 *.xsd.cs
+Samples/CameraSettingsExternalSettingsApp/DefaultControlHelper/Generated Files/
+Samples/ControlMonitorApp/ControlMonitorHelper/Generated Files/
+Samples/ExtendedControlAndMetadata/EyeGazeAndBackgroundSegmentation/CameraKsPropertyHelper/Generated Files/
+Samples/ExtendedControlAndMetadata/MediaCaptureSampleExtendedControl/Generated Files/
+Samples/Shared/CameraKsPropertyHelper/Generated Files/
+Samples/VirtualCamera/VirtualCameraManager_WinRT/Generated Files/
+Samples/ExtendedControlAndMetadata/CPP-CLI_MediaCaptureSampleExtendedControl/Generated Files/
+Samples/ExtendedControlAndMetadata/WinRT_ExtendedControlAndMetadataSample/CameraKsPropertyHelper/Generated Files/

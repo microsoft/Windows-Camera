@@ -9,75 +9,26 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
+    <ScrollViewer ScrollViewer.VerticalScrollBarVisibility="Visible" VerticalScrollMode="Enabled">
         <StackPanel>
-            <TextBlock x:Name="SelectedCameraTB"/>
-            <MediaPlayerElement x:Name="UIMediaPlayerElement" AreTransportControlsEnabled="False"/>
-            <TextBox x:Name="UITextOutput" TextWrapping="Wrap"/>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
-                <TextBlock
-                    x:Uid="DefaultContrast"
-                    Text="Contrast"
-                    Visibility="{Binding ElementName=DefaultContrastSlider, Path=Visibility}"
-                    VerticalAlignment="Center" />
-                <Slider 
-                    x:Name="DefaultContrastSlider"
-                    x:Uid="DefaultContrastSlider"
-                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultContrast}"
-                    Minimum="0"
-                    Maximum="100"
-                    StepFrequency="1"
-                    ValueChanged="DefaultContrastSlider_ValueChanged"
-                    HorizontalAlignment="Center"
-                    MaxWidth="300"
-                    MinWidth="200"
-                    Visibility="Collapsed"
-                    VerticalAlignment="Center"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
-                <TextBlock
-                    x:Uid="DefaultBrightness"
-                    Text="Brightness"
-                    Visibility="{Binding ElementName=DefaultBrightnessSlider, Path=Visibility}"
-                    VerticalAlignment="Center" />
-                <Slider 
-                    x:Name="DefaultBrightnessSlider"
-                    x:Uid="DefaultBrightnessSlider"
-                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultBrightness}"
-                    Minimum="0"
-                    Maximum="100"
-                    StepFrequency="1"
-                    ValueChanged="DefaultBrightnessSlider_ValueChanged"
-                    HorizontalAlignment="Center"
-                    MaxWidth="300"
-                    MinWidth="200"
-                    Visibility="Collapsed"
-                    VerticalAlignment="Center"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
-                <TextBlock
-                    x:Uid="DefaultBlur"
-                    Text="Blur"
-                    Visibility="{Binding ElementName=DefaultBlurToggle, Path=Visibility}"
-                    VerticalAlignment="Center" />
-                <ToggleSwitch 
-                    x:Name="DefaultBlurToggle"
-                    x:Uid="DefaultBlurToggle"
-                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultBlur}"
-                    Toggled="DefaultBlurToggle_Toggled"
-                    HorizontalAlignment="Center"
-                    MaxWidth="300"
-                    MinWidth="200"
-                    Visibility="Collapsed"
-                    VerticalAlignment="Center"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
-                <TextBlock
+        <StackPanel>
+            <TextBlock Text="Camera ID:"/>
+            <ListBox x:Name="UICameraSelectionList" SelectionMode="Single" SelectionChanged="UICameraSelectionList_SelectionChanged"/>
+            <TextBlock x:Name="SelectedCameraTB" IsTextSelectionEnabled="True"/>
+            <Button x:Name="UILaunchSettingsButton" Content="Launch Camera Settings" Visibility="Collapsed" Click="UILaunchSettingsButton_Click"/>
+            <TextBlock x:Name="UITextOutput" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+        </StackPanel>
+
+            <StackPanel>
+                <MediaPlayerElement x:Name="UIMediaPlayerElement" AreTransportControlsEnabled="False" MaxHeight="400" MaxWidth="400"/>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
                     x:Uid="DefaultEVComp"
                     Text="EVCompensation"
                     Visibility="{Binding ElementName=DefaultEVCompSlider, Path=Visibility}"
                     VerticalAlignment="Center" />
-                <Slider 
+                    <Slider 
                     x:Name="DefaultEVCompSlider"
                     x:Uid="DefaultEVCompSlider"
                     AutomationProperties.LabeledBy="{Binding ElementName=DefaultEVComp}"
@@ -90,9 +41,70 @@
                     MinWidth="200"
                     Visibility="Collapsed"
                     VerticalAlignment="Center"/>
-            </StackPanel>
-            
-        </StackPanel>
+                </StackPanel>
 
-    </Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
+                    x:Uid="DefaultBrightness"
+                    Text="Brightness"
+                    Visibility="{Binding ElementName=DefaultBrightnessSlider, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                    <Slider 
+                    x:Name="DefaultBrightnessSlider"
+                    x:Uid="DefaultBrightnessSlider"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultBrightness}"
+                    Minimum="0"
+                    Maximum="100"
+                    StepFrequency="1"
+                    ValueChanged="DefaultBrightnessSlider_ValueChanged"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
+                    x:Uid="DefaultContrast"
+                    Text="Contrast"
+                    Visibility="{Binding ElementName=DefaultContrastSlider, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                    <Slider 
+                    x:Name="DefaultContrastSlider"
+                    x:Uid="DefaultContrastSlider"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultContrast}"
+                    Minimum="0"
+                    Maximum="100"
+                    StepFrequency="1"
+                    ValueChanged="DefaultContrastSlider_ValueChanged"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
+                    x:Uid="DefaultBlur"
+                    Text="Blur"
+                    Visibility="{Binding ElementName=DefaultBlurToggle, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                    <ToggleSwitch 
+                    x:Name="DefaultBlurToggle"
+                    x:Uid="DefaultBlurToggle"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultBlur}"
+                    Toggled="DefaultBlurToggle_Toggled"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+                </StackPanel>
+
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
 </Page>

@@ -8,8 +8,8 @@
 
   <Identity
     Name="ExternalCameraSettingsAppSample"
-    Publisher="CN=Contoso"
-    Version="1.0.0.0" />
+    Publisher="CN=lOUIS"
+    Version="1.0.2.0" />
 
   <mp:PhoneIdentity PhoneProductId="a46e3123-db2e-46f0-aeed-cb05a0c9d384" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

@@ -15,32 +15,27 @@ namespace winrt::DefaultControlHelper::implementation
     struct DefaultControlManager : DefaultControlManagerT<DefaultControlManager>
     {
         DefaultControlManager(winrt::hstring cameraSymbolicLink);
+        ~DefaultControlManager();
 
         winrt::DefaultControlHelper::DefaultController CreateController(DefaultControllerType type, const uint32_t id);
 
-        wil::com_ptr_t<IMFCameraControlDefaultsCollection> GetCollection() { return m_controlDefaultsCollection; }
+        wil::com_ptr_t<IMFCameraControlDefaultsCollection> GetDefaultCollection();
 
-        HRESULT Save();
+        HRESULT SaveDefaultCollection(IMFCameraControlDefaultsCollection* collection);
 
     private:
 
-        wil::com_ptr_t<IMFCameraConfigurationManager> m_configManager;
-        wil::com_ptr_t<IMFCameraControlDefaultsCollection> m_controlDefaultsCollection;
+        wil::com_ptr_t<IMFCameraConfigurationManager> m_spConfigManager;
+        wil::com_ptr<IMFAttributes> m_spAttributes;
     };
 
     struct DefaultController : DefaultControllerT<DefaultController>
     {
         DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, uint32_t id, winrt::com_ptr<DefaultControlManager> manager);
-        bool HasDefaultValueStored() { return m_hasDefaultValueStored; }
-        int32_t DefaultValue();
-        void DefaultValue(int32_t const& value);
+        winrt::Windows::Foundation::IReference<int32_t> TryGetDefaultValueStored();
+        void SetDefaultValue(int32_t const& value);
 
     private:
-
-        bool m_hasDefaultValueStored = false;
-        std::optional<MF_CAMERA_CONTROL_RANGE_INFO> m_rangeInfo;
-        wil::com_ptr<IMFCameraControlDefaults> m_controlDefaults;
-
         uint32_t m_id = 0;
         winrt::guid m_setGuid;
         winrt::com_ptr<DefaultControlManager> m_controlManager;
@@ -52,19 +47,19 @@ namespace winrt::DefaultControlHelper::implementation
     // different kind of camera control structures.
     struct IDefaultControllerInternal
     {
-        virtual void SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value) = 0;
-        virtual int32_t GetStoredDefaultValue(void* control, ULONG controlSize, void* data, ULONG dataSize) = 0;
-        virtual void Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id) = 0;
+        virtual void FormatPayloadWithValue(void* pControl, ULONG controlSize, void* pPayload, ULONG payloadSize, int32_t const& value) = 0;
+        virtual int32_t GetValueFromPayload(void* control, ULONG controlSize, void* pPayload, ULONG payloadSize) = 0;
+        virtual wil::com_ptr<IMFCameraControlDefaults> GetOrAddDefaultToCollection(IMFCameraControlDefaultsCollection* defaultCollection, winrt::guid setGuid, uint32_t id) = 0;
         virtual ~IDefaultControllerInternal() = default;
     };
 
     class DefaultControllerVidCapVideoProcAmp : public IDefaultControllerInternal
     {
     public:
-        virtual void SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value) override;
-        virtual int32_t GetStoredDefaultValue(void* control, ULONG controlSize, void* data, ULONG dataSize) override;
+        virtual void FormatPayloadWithValue(void* pControl, ULONG controlSize, void* pPayload, ULONG payloadSize, int32_t const& value) override;
+        virtual int32_t GetValueFromPayload(void* control, ULONG controlSize, void* pPayload, ULONG payloadSize) override;
 
-        virtual void Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id) override;
+        virtual wil::com_ptr<IMFCameraControlDefaults> GetOrAddDefaultToCollection(IMFCameraControlDefaultsCollection* defaultCollection, winrt::guid setGuid, uint32_t id);
         
         virtual ~DefaultControllerVidCapVideoProcAmp() = default;
     };
@@ -72,10 +67,10 @@ namespace winrt::DefaultControlHelper::implementation
     class DefaultControllerExtendedControl : public IDefaultControllerInternal
     {
     public:
-        virtual void SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value) override;
-        virtual int32_t GetStoredDefaultValue(void* control, ULONG controlSize, void* data, ULONG dataSize) override;
+        virtual void FormatPayloadWithValue(void* pControl, ULONG controlSize, void* pPayload, ULONG payloadSize, int32_t const& value) override;
+        virtual int32_t GetValueFromPayload(void* control, ULONG controlSize, void* pPayload, ULONG payloadSize) override;
 
-        virtual void Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id) override;
+        virtual wil::com_ptr<IMFCameraControlDefaults> GetOrAddDefaultToCollection(IMFCameraControlDefaultsCollection* defaultCollection, winrt::guid setGuid, uint32_t id);
 
         virtual ~DefaultControllerExtendedControl() = default;        
     };
@@ -83,10 +78,10 @@ namespace winrt::DefaultControlHelper::implementation
     class DefaultControllerEVCompExtendedControl : public IDefaultControllerInternal
     {
     public:
-        virtual void SaveDefault(void* pControl, ULONG controlSize, void* pData, ULONG dataSize, int32_t const& value) override;
-        virtual int32_t GetStoredDefaultValue(void* control, ULONG controlSize, void* data, ULONG dataSize) override;
+        virtual void FormatPayloadWithValue(void* pControl, ULONG controlSize, void* pPayload, ULONG payloadSize, int32_t const& value) override;
+        virtual int32_t GetValueFromPayload(void* control, ULONG controlSize, void* pPayload, ULONG payloadSize) override;
 
-        virtual void Initialize(winrt::com_ptr<DefaultControlManager> manager, wil::com_ptr<IMFCameraControlDefaults>& defaults, winrt::guid setGuid, uint32_t id) override;
+        virtual wil::com_ptr<IMFCameraControlDefaults> GetOrAddDefaultToCollection(IMFCameraControlDefaultsCollection* defaultCollection, winrt::guid setGuid, uint32_t id);
 
         virtual ~DefaultControllerEVCompExtendedControl() = default;
     };
