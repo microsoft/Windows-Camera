@@ -100,6 +100,6 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 </table>
 <table>
  <tr>
-  <td><a href="Samples/WindowsStudio">Sample of a single C# project for a UWP app that looks for a Windows Studio camera and interacts with its effects via generic KS Camera Extended Properties APIs</a></td>
+  <td><a href="Samples/WindowsStudio">C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects via APIs</a></td>
  </tr>
 </table>
