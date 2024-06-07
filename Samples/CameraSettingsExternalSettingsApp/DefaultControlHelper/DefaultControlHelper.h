@@ -19,20 +19,20 @@ namespace winrt::DefaultControlHelper::implementation
 
         winrt::DefaultControlHelper::DefaultController CreateController(DefaultControllerType type, const uint32_t id);
 
-        wil::com_ptr_t<IMFCameraControlDefaultsCollection> GetDefaultCollection();
+        wil::com_ptr<IMFCameraControlDefaultsCollection> GetDefaultCollection();
 
         HRESULT SaveDefaultCollection(IMFCameraControlDefaultsCollection* collection);
 
     private:
 
-        wil::com_ptr_t<IMFCameraConfigurationManager> m_spConfigManager;
+        wil::com_ptr<IMFCameraConfigurationManager> m_spConfigManager;
         wil::com_ptr<IMFAttributes> m_spAttributes;
     };
 
     struct DefaultController : DefaultControllerT<DefaultController>
     {
         DefaultController(winrt::DefaultControlHelper::DefaultControllerType type, uint32_t id, winrt::com_ptr<DefaultControlManager> manager);
-        winrt::Windows::Foundation::IReference<int32_t> TryGetDefaultValueStored();
+        winrt::Windows::Foundation::IReference<int32_t> TryGetStoredDefaultValue();
         void SetDefaultValue(int32_t const& value);
 
     private:

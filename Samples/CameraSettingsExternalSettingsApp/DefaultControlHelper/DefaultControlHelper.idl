@@ -15,7 +15,7 @@ namespace DefaultControlHelper
     
     runtimeclass DefaultController
     {
-        Windows.Foundation.IReference<Int32> TryGetDefaultValueStored();
+        Windows.Foundation.IReference<Int32> TryGetStoredDefaultValue();
         void SetDefaultValue(Int32 value);
     }
 

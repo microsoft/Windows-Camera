@@ -27,9 +27,9 @@ namespace winrt::DefaultControlHelper::implementation
         }
     }
 
-    wil::com_ptr_t<IMFCameraControlDefaultsCollection> DefaultControlManager::GetDefaultCollection()
+    wil::com_ptr<IMFCameraControlDefaultsCollection> DefaultControlManager::GetDefaultCollection()
     {
-        wil::com_ptr_t<IMFCameraControlDefaultsCollection> spControlDefaultsCollection = nullptr;
+        wil::com_ptr<IMFCameraControlDefaultsCollection> spControlDefaultsCollection = nullptr;
         THROW_IF_FAILED(m_spConfigManager->LoadDefaults(m_spAttributes.get(), &spControlDefaultsCollection));
         return spControlDefaultsCollection;
     }
@@ -89,7 +89,7 @@ namespace winrt::DefaultControlHelper::implementation
         }
     };
 
-    winrt::Windows::Foundation::IReference<int32_t> DefaultController::TryGetDefaultValueStored()
+    winrt::Windows::Foundation::IReference<int32_t> DefaultController::TryGetStoredDefaultValue()
     {
         winrt::Windows::Foundation::IReference<int32_t> resultValue = nullptr;
         bool hasDefaultValueStored = false;

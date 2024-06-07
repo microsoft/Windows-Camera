@@ -365,7 +365,7 @@ namespace OutboundSettingsAppTest
 
                         DefaultBlurToggle.Toggled -= DefaultBlurToggle_Toggled;
                         DefaultBlurToggle.Visibility = Visibility.Visible;
-                        var defaultValue = m_backgroundBlurController.TryGetDefaultValueStored();
+                        var defaultValue = m_backgroundBlurController.TryGetStoredDefaultValue();
                         if(defaultValue != null)
                         {
                             DefaultBlurToggle.IsOn = (defaultValue != 0);
@@ -399,7 +399,7 @@ namespace OutboundSettingsAppTest
                         DefaultEVCompSlider.Maximum = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Max;
                         DefaultEVCompSlider.StepFrequency = m_mediaCapture.VideoDeviceController.ExposureCompensationControl.Step;
                         DefaultEVCompSlider.Visibility = Visibility.Visible;
-                        var defaultValue = m_evCompController.TryGetDefaultValueStored();
+                        var defaultValue = m_evCompController.TryGetStoredDefaultValue();
                         if (defaultValue != null)
                         {
                             DefaultEVCompSlider.Value = (double)defaultValue;
@@ -438,7 +438,7 @@ namespace OutboundSettingsAppTest
                         DefaultBrightnessSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Brightness.Capabilities.Step;
                         DefaultBrightnessSlider.Visibility = Visibility.Visible;
 
-                        var defaultValue = m_brightnessController.TryGetDefaultValueStored();
+                        var defaultValue = m_brightnessController.TryGetStoredDefaultValue();
                         if (defaultValue != null)
                         {
                             DefaultBrightnessSlider.Value = (double)defaultValue;
@@ -484,7 +484,7 @@ namespace OutboundSettingsAppTest
                         DefaultContrastSlider.StepFrequency = m_mediaCapture.VideoDeviceController.Contrast.Capabilities.Step;
                         DefaultContrastSlider.Visibility = Visibility.Visible;
 
-                        var defaultValue = m_contrastController.TryGetDefaultValueStored();
+                        var defaultValue = m_contrastController.TryGetStoredDefaultValue();
                         if (defaultValue != null)
                         {
                             DefaultContrastSlider.Value = (double)defaultValue;
