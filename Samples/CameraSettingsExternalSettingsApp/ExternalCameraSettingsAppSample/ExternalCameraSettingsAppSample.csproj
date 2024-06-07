@@ -23,8 +23,8 @@
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
-    <AppxBundle>Always</AppxBundle>
-    <AppxBundlePlatforms>x86|x64|arm|arm64</AppxBundlePlatforms>
+    <AppxBundle>Never</AppxBundle>
+    <AppxBundlePlatforms>arm64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
@@ -159,10 +159,14 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.2.12</Version>
+      <Version>6.2.14</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ControlMonitorApp\ControlMonitorHelper\ControlMonitorHelperWinRT.vcxproj">
+      <Project>{5a835b38-9b32-43ce-90fa-edc3e4fc8070}</Project>
+      <Name>ControlMonitorHelperWinRT</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj">
       <Project>{3e174357-0294-40f1-ba11-7330617ddbb5}</Project>
       <Name>CameraKsPropertyHelper</Name>
@@ -176,6 +180,9 @@
     <PRIResource Include="Resources.resw">
       <SubType>Designer</SubType>
     </PRIResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ExternalCameraSettingsAppSample_TemporaryKey.pfx" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>

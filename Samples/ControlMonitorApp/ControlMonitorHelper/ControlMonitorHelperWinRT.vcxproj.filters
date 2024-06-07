@@ -12,12 +12,14 @@
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="ControlMonitorHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ControlMonitorHelper.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="ControlMonitorHelper.idl" />
+    <Midl Include="ControlMonitorHelperWinRT.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ControlMonitorHelperWinRT.def" />
