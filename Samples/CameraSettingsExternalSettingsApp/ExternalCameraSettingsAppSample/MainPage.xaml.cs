@@ -188,8 +188,7 @@ namespace OutboundSettingsAppTest
                 m_mediaCapture = new MediaCapture();
                 m_mediaPlayer = new MediaPlayer();
 
-                // We initialize the MediaCapture instance with the virtual camera in sharing mode
-                // to preview its stream without blocking other app from using it
+                // We initialize the MediaCapture instance with the provided camera ID
                 var initSettings = new MediaCaptureInitializationSettings()
                 {
                     SharingMode = MediaCaptureSharingMode.ExclusiveControl,
