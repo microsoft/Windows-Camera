@@ -1,3 +1,7 @@
+//
+// Copyright (C) Microsoft Corporation. All rights reserved.
+//
+
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
