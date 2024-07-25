@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="MediaCaptureWinUI3.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MediaCaptureWinUI3"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid x:Name="MainGrid" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="500"/>
+                <ColumnDefinition Width="500*" />
+                <ColumnDefinition Width="50" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="415*"/>
+                <RowDefinition Height="65"/>
+                <RowDefinition Height="200*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Column 0, Row 0 - device list -->
+            <Grid x:Name="GridCameraConfig" Grid.Column="0">
+                <ListView x:Name="lbToggleSettingsView" Grid.Row="2" Grid.Column="1" SelectionMode="None" ScrollViewer.VerticalScrollBarVisibility="Visible" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="auto">
+                    <!--<ListBox x:Name="lbToggleSettingsView" Grid.Row="2" Grid.Column="1" ScrollViewer.VerticalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollBarVisibility="Hidden" SelectionChanged="lbToggleSettingsView_SelectionChanged"> -->
+                    <ListView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical" HorizontalAlignment="stretch" />
+                        </ItemsPanelTemplate>
+                    </ListView.ItemsPanel>
+
+
+                    <!--  Media Catpure  settings -->
+                    <StackPanel Orientation="Vertical">
+                        <Grid Background="CadetBlue" HorizontalAlignment="stretch" Height="40">
+                            <TextBlock Text="Media Capture Settings"  Padding="5,0,0,0" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </Grid>
+                        <TextBlock x:Name="tbCurrentSettings" Padding="5,5,5,5"/>
+                    </StackPanel>
+
+                    <ListView x:Name="lvInitSettings" SelectionMode="None" HorizontalAlignment="Left">
+                        <Grid x:Name="InitSettingsGrid" Width="{Binding ActualWidth, ElementName=GridCameraConfig}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="200*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="40"/>
+                                <RowDefinition Height="40"/>
+                                <RowDefinition Height="40"/>
+                                <RowDefinition Height="40"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="Video Device: " Grid.Column="0" Grid.Row="0"/>
+                            <ComboBox x:Name="cbDeviceList" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left" MaxWidth="{Binding ActualWidth, ElementName=GridCameraConfig}" SelectionChanged="cbDeviceList_SelectionChanged"></ComboBox>
+
+                            <TextBlock Text="CaptureMode: " Grid.Column="0" Grid.Row="1"/>
+                            <ComboBox x:Name="cbCaptureMode" Grid.Column="1" Grid.Row="1" ItemsSource="{Binding captureModeList}"/>
+
+                            <TextBlock Text="VideoProfile: " Grid.Column="0" Grid.Row="2"/>
+                            <ComboBox x:Name="cbProfileList" Grid.Column="1" Grid.Row="2"/>
+
+                            <TextBlock Text="Memory Preference: " Grid.Column="0" Grid.Row="3"/>
+                            <ComboBox x:Name="cbMemoryPreferenceList" Grid.Column="1" Grid.Row="3"/>
+                        </Grid>
+                    </ListView>
+
+                    <!--  Preview Source settings -->
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Left" Width="{Binding ActualWidth, ElementName=GridCameraConfig}">
+                        <Grid Background="CadetBlue" HorizontalAlignment="stretch" Height="40">
+                            <TextBlock Text="Preview Source"  Padding="5,0,0,0" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </Grid>
+                        <TextBlock x:Name="tbCurrentSource" Padding="5,5,5,5" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch"  VerticalAlignment="Center">
+                        <TextBlock Text="Preview Source:" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cbPreviewSourceList" HorizontalAlignment="Stretch" SelectionChanged="cbPreviewSourceList_SelectionChanged"></ComboBox>
+                    </StackPanel>
+
+                    <!--  Media Type settings -->
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch"  VerticalAlignment="Center">
+                        <Grid Background="CadetBlue" HorizontalAlignment="stretch" Height="40">
+                            <TextBlock Text="Media Type"  Padding="5,0,0,0" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </Grid>
+                        <TextBlock x:Name="tbMediaType" Text="Current MediaType:" Padding="5,5,5,5"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch"  VerticalAlignment="Center">
+                        <TextBlock Text="MediaType:" Margin="0,0,10,0"/>
+                        <ComboBox x:Name="cbMediaTypeList" HorizontalAlignment="Stretch"></ComboBox>
+                    </StackPanel>
+                </ListView>
+            </Grid>
+            
+            <!--Camera preview section-->
+            <Grid x:Name="GridCameraPreview" Grid.Column="1" Grid.ColumnSpan="2" >
+                <Grid Grid.Row="0" x:Name="PreviewControlGrid" Background="#66000000">
+                    <MediaPlayerElement x:Name="myPreview" Stretch="Uniform" AreTransportControlsEnabled="False" ManipulationMode="None"/>
+                </Grid>
+            </Grid>
+            
+            <!-- Control buttons -->
+            <ListView x:Name="lbControlButtons" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"  ScrollViewer.VerticalScrollBarVisibility="Hidden" ScrollViewer.HorizontalScrollBarVisibility="Hidden" Background="#66000000" BorderThickness="3" BorderBrush="Black" SelectionMode="None">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left"  VerticalAlignment="Top">
+                    <!--<SymbolIcon Symbol="Setting" HorizontalAlignment="Left"  VerticalAlignment="Top"/>-->
+                    <Button x:Name="btnStartDevice" Content="Start Device" HorizontalAlignment="Left"  VerticalAlignment="Top" Click="btnStartDevice_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left"  VerticalAlignment="Top">
+                    <!--<SymbolIcon Symbol="List" HorizontalAlignment="Left"  VerticalAlignment="Top"/>-->
+                    <ToggleButton  x:Name="btnPreview" Content="Start Preview" HorizontalAlignment="Left"  VerticalAlignment="Top" IsEnabled="false" Click="btnPreview_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left"  VerticalAlignment="Top">
+                    <!--<SymbolIcon Symbol="Rotate" HorizontalAlignment="Left"  VerticalAlignment="Top"/>-->
+                    <Button x:Name="btnReset" Content="Reset Device" HorizontalAlignment="Left"  VerticalAlignment="Top" IsEnabled="false" Click="btnReset_Click"/>
+                </StackPanel>
+                <!--<StackPanel Orientation="Vertical" HorizontalAlignment="Left"  VerticalAlignment="Top">
+                    --><!--<SymbolIcon Symbol="AttachCamera" HorizontalAlignment="Left"  VerticalAlignment="Top"/>--><!--
+                    <TextBlock Text="Basics" HorizontalAlignment="Left"  VerticalAlignment="Top"/>
+                </StackPanel>
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Left"  VerticalAlignment="Top">
+                    --><!--<SymbolIcon Symbol="More" HorizontalAlignment="Left"  VerticalAlignment="Top"/>--><!--
+                    <TextBlock Text="Advanced" HorizontalAlignment="Left"  VerticalAlignment="Top"/>
+                </StackPanel>-->
+            </ListView>
+
+            <!-- Logs -->
+            <Grid x:Name="gridLogs"  Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2">
+                <ListView x:Name="lvLog" SelectionMode="None" Background="Black" BorderBrush="Black" BorderThickness="3" ScrollViewer.VerticalScrollBarVisibility="auto" ScrollViewer.VerticalScrollMode="Enabled" >
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="VerticalContentAlignment" Value="Top"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="MinHeight" Value="5" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListViewItem">
+                                        <ListViewItemPresenter ContentMargin="0" Padding="0" />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+                <!--<ToggleButton Name="btnCollapseLogs" VerticalAlignment="Bottom" HorizontalAlignment="Right" Checked="btnCollapseLogs_CheckUncheck" Unchecked="btnCollapseLogs_CheckUncheck">
+                    <ToggleButton.Content>
+                        <SymbolIcon Symbol="HideBcc"/>
+                    </ToggleButton.Content>
+                </ToggleButton>-->
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
