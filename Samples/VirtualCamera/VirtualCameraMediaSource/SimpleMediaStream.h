@@ -69,6 +69,7 @@ namespace winrt::WindowsSample::implementation
 
         DWORD m_dwStreamId = 0;
         MFSampleAllocatorUsage m_allocatorUsage;
+        LONGLONG m_sampleDuration = 333333;
     };
 }
 

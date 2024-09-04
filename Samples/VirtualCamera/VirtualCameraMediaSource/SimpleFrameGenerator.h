@@ -39,6 +39,7 @@ private:
     UINT32 m_width = 0;
     UINT32 m_height = 0;
     GUID m_subType = GUID_NULL;
+    LONGLONG m_sampleDuration = 333333;
 
 };
 

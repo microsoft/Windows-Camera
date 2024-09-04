@@ -13,6 +13,10 @@ HRESULT SimpleFrameGenerator::Initialize(_In_ IMFMediaType* pMediaType)
         RETURN_HR_MSG(MF_E_UNSUPPORTED_FORMAT, "Unsupported format: %s", winrt::to_hstring(m_subType).data());
     }
     MFGetAttributeSize(pMediaType, MF_MT_FRAME_SIZE, &m_width, &m_height);
+    UINT32 framerateNum, framerateDen;
+    
+    MFGetAttributeRatio(pMediaType, MF_MT_FRAME_RATE, &framerateNum, &framerateDen);
+    m_sampleDuration = 1000 / (framerateNum / framerateDen);
 
     return S_OK;
 }
@@ -73,9 +77,16 @@ HRESULT SimpleFrameGenerator::_CreateRGB32Frame(
     {
         return HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER);
     }
-
-    LONGLONG curSysTimeInS = MFGetSystemTime() / (MFTIME)10000000;
-    int offset = curSysTimeInS % height;
+    static LONGLONG lastTime = 0;
+    LONGLONG curSysTimeInS = MFGetSystemTime() / (MFTIME)10000;// / (MFTIME)10000000;
+    LONGLONG timeDelta = curSysTimeInS - lastTime;
+    if (timeDelta > 1000)
+    {
+        lastTime = curSysTimeInS;
+        timeDelta = 1000 - 1;
+    }
+    int offset = (float)timeDelta / 1000 * height;
+    //int offset = curSysTimeInS % height;
 
     for (unsigned int r = 0; r < height; r++)
     {
