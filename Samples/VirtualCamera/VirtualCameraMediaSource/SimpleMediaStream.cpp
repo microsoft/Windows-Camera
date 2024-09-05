@@ -15,7 +15,9 @@ namespace winrt::WindowsSample::implementation
     HRESULT SimpleMediaStream::Initialize(
             _In_ SimpleMediaSource* pSource,
             _In_ DWORD dwStreamId,
-            _In_ MFSampleAllocatorUsage allocatorUsage
+            _In_ MFSampleAllocatorUsage allocatorUsage,
+            _In_ UINT32 resolution, 
+            _In_ UINT32 framerate
         )
     {
         winrt::slim_lock_guard lock(m_Lock);
@@ -28,6 +30,9 @@ namespace winrt::WindowsSample::implementation
 
         m_dwStreamId = dwStreamId;
         m_allocatorUsage = allocatorUsage;
+        m_width = resolution;
+        m_height = resolution * 9 / 16;
+        m_framerate = framerate;
 
         const uint32_t NUM_MEDIATYPES = 1;
         wil::unique_cotaskmem_array_ptr<wil::com_ptr_nothrow<IMFMediaType>> mediaTypeList = wilEx::make_unique_cotaskmem_array<wil::com_ptr_nothrow<IMFMediaType>>(NUM_MEDIATYPES);
@@ -65,10 +70,10 @@ namespace winrt::WindowsSample::implementation
         spMediaType->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_NV12);
         spMediaType->SetUINT32(MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive);
         spMediaType->SetUINT32(MF_MT_ALL_SAMPLES_INDEPENDENT, TRUE);
-        MFSetAttributeSize(spMediaType.get(), MF_MT_FRAME_SIZE, NUM_IMAGE_COLS, NUM_IMAGE_ROWS);
-        MFSetAttributeRatio(spMediaType.get(), MF_MT_FRAME_RATE, 60, 1);
+        MFSetAttributeSize(spMediaType.get(), MF_MT_FRAME_SIZE, m_width, m_height);
+        MFSetAttributeRatio(spMediaType.get(), MF_MT_FRAME_RATE, m_framerate, 1);
         // frame size * pixle bit size * framerate
-        uint32_t bitrate2 = (uint32_t)(NUM_IMAGE_COLS * 1.5 * NUM_IMAGE_ROWS * 8 * 60);
+        uint32_t bitrate2 = (uint32_t)(m_width * 1.5 * m_height * 8 * 60);
         spMediaType->SetUINT32(MF_MT_AVG_BITRATE, bitrate2);
         MFSetAttributeRatio(spMediaType.get(), MF_MT_PIXEL_ASPECT_RATIO, 1, 1);
         mediaTypeList[0] = spMediaType.detach();

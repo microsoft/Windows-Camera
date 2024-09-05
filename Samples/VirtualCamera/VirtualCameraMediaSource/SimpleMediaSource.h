@@ -74,7 +74,7 @@ namespace winrt::WindowsSample::implementation
             _Out_  MFSampleAllocatorUsage* peUsage) override;
 
         // Non-Interface functions
-        HRESULT Initialize(_In_ IMFAttributes* pAttributes);
+        HRESULT Initialize(_In_ IMFAttributes* pAttributes, UINT32 resolution, UINT32 framerate);
 
     private:
         _Requires_lock_held_(m_Lock) HRESULT _CheckShutdownRequiresLock();

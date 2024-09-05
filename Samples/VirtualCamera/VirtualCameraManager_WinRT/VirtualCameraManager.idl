@@ -33,7 +33,7 @@ namespace VirtualCameraManager_WinRT
     [default_interface]
     unsealed runtimeclass VirtualCameraProxy
     {
-        void EnableVirtualCamera();
+        void EnableVirtualCamera(UInt32 resolution, UInt32 framerate);
 
         void DisableVirtualCamera();
 

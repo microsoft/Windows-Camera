@@ -14,6 +14,8 @@ namespace winrt::WindowsSample::implementation
         bool bIsWrappingCamera = false;
         wil::unique_cotaskmem_string spwszPhysicalSymLink;
         UINT32 vCamKind = 0;
+        UINT32 simpleSourceResolution = 1280;
+        UINT32 simpleSourceFramerate = 30;
         UINT32 cch = 0;
         wil::com_ptr_nothrow<IMFCollection> spCollection;
         wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
@@ -23,6 +25,14 @@ namespace winrt::WindowsSample::implementation
             if (SUCCEEDED(m_spActivateAttributes->GetUINT32(VCAM_KIND, &vCamKind)))
             {
                 DEBUG_MSG(L"Set VirtualCameraKind: %i", vCamKind);
+            }
+            if (SUCCEEDED(m_spActivateAttributes->GetUINT32(SIMPLESOURCE_RESOLUTION, &simpleSourceResolution)))
+            {
+                DEBUG_MSG(L"Set simpleSourceResolution: %i", simpleSourceResolution);
+            }
+            if (SUCCEEDED(m_spActivateAttributes->GetUINT32(SIMPLESOURCE_FRAMERATE, &simpleSourceFramerate)))
+            {
+                DEBUG_MSG(L"Set simpleSourceFramerate: %i", simpleSourceFramerate);
             }
             if (SUCCEEDED(m_spActivateAttributes->GetUnknown(MF_VIRTUALCAMERA_ASSOCIATED_CAMERA_SOURCES, IID_PPV_ARGS(&spCollection))))
             {
@@ -81,7 +91,7 @@ namespace winrt::WindowsSample::implementation
         {
             DEBUG_MSG(L"Activate SimpleMediaSource");
             m_spSimpleMediaSrc = winrt::make_self<winrt::WindowsSample::implementation::SimpleMediaSource>();
-            RETURN_IF_FAILED(m_spSimpleMediaSrc->Initialize(this));
+            RETURN_IF_FAILED(m_spSimpleMediaSrc->Initialize(this, simpleSourceResolution, simpleSourceFramerate));
             RETURN_IF_FAILED(m_spSimpleMediaSrc->QueryInterface(riid, ppv));
         }
         else

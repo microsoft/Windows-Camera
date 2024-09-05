@@ -26,7 +26,7 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
 
         ~VirtualCameraProxy();
 
-        void EnableVirtualCamera();
+        void EnableVirtualCamera(UINT32 resolution, UINT32 framerate);
         void DisableVirtualCamera();
         void RemoveVirtualCamera();
 
@@ -47,5 +47,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         wil::com_ptr_nothrow<IMFVirtualCamera> m_spVirtualCamera;
         winrt::hstring m_wrappedCameraSymbolicLink;
         winrt::VirtualCameraManager_WinRT::VirtualCameraKind m_virtualCameraKind;
+        bool m_isStarted = false;
     };
 }

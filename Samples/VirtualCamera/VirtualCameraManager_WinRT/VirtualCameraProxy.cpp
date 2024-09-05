@@ -4,6 +4,7 @@
 #include "VirtualCameraProxy.h"
 #include "VirtualCameraProxy.g.cpp"
 #include "mfidl.h"
+#include "VirtualCameraMediaSource.h"
 
 namespace winrt::VirtualCameraManager_WinRT::implementation
 {
@@ -46,37 +47,48 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         m_spVirtualCamera = nullptr;
     }
 
-    void VirtualCameraProxy::EnableVirtualCamera()
+    void VirtualCameraProxy::EnableVirtualCamera(UINT32 resolution, UINT32 framerate)
     {
+        if (m_virtualCameraKind == VirtualCameraKind::Synthetic && resolution > 0 && framerate > 0)
+        {
+            THROW_IF_FAILED_MSG(m_spVirtualCamera->SetUINT32(SIMPLESOURCE_RESOLUTION, resolution),
+                "failed to set SIMPLESOURCE_RESOLUTION");
+            THROW_IF_FAILED_MSG(m_spVirtualCamera->SetUINT32(SIMPLESOURCE_FRAMERATE, framerate),
+                "failed to set SIMPLESOURCE_RESOLUTION");
+        }
         // start camera
-        THROW_IF_FAILED_MSG(m_spVirtualCamera->Start(nullptr),
-            "Failed to start camera");
-
-        // get symbolic link name from the virtual camera
-        wil::unique_cotaskmem_string pwszSymLink;
-        UINT32 cch;
-        m_spVirtualCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &pwszSymLink, &cch);
-        m_symLink = pwszSymLink.get();
-
-        // get friendly name from the virtual camera
-        wil::unique_cotaskmem_string pwszFriendlyName;
-        m_spVirtualCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &pwszFriendlyName, &cch);
-        auto friendlyNameEdit = std::wstring(pwszFriendlyName.get());
-
-        // remove the virtual camera name tag added by the OS
-        std::wstring portionToRemove = L" (Windows Test Virtual Camera)";
-        size_t replaceStart = friendlyNameEdit.rfind(portionToRemove);
-        if (replaceStart != std::wstring::npos)
+        if (!m_isStarted)
         {
-            friendlyNameEdit.erase(replaceStart, portionToRemove.size());
+            THROW_IF_FAILED_MSG(m_spVirtualCamera->Start(nullptr),
+                "Failed to start camera");
+
+            // get symbolic link name from the virtual camera
+            wil::unique_cotaskmem_string pwszSymLink;
+            UINT32 cch;
+            m_spVirtualCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_SYMBOLIC_LINK, &pwszSymLink, &cch);
+            m_symLink = pwszSymLink.get();
+
+            // get friendly name from the virtual camera
+            wil::unique_cotaskmem_string pwszFriendlyName;
+            m_spVirtualCamera->GetAllocatedString(MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, &pwszFriendlyName, &cch);
+            auto friendlyNameEdit = std::wstring(pwszFriendlyName.get());
+
+            // remove the virtual camera name tag added by the OS
+            std::wstring portionToRemove = L" (Windows Test Virtual Camera)";
+            size_t replaceStart = friendlyNameEdit.rfind(portionToRemove);
+            if (replaceStart != std::wstring::npos)
+            {
+                friendlyNameEdit.erase(replaceStart, portionToRemove.size());
+            }
+            portionToRemove = L" (Windows Virtual Camera)";
+            replaceStart = friendlyNameEdit.rfind(portionToRemove);
+            if (replaceStart != std::wstring::npos)
+            {
+                friendlyNameEdit.erase(replaceStart, portionToRemove.size());
+            }
+            m_friendlyName = friendlyNameEdit;
         }
-        portionToRemove = L" (Windows Virtual Camera)";
-        replaceStart = friendlyNameEdit.rfind(portionToRemove);
-        if (replaceStart != std::wstring::npos)
-        {
-            friendlyNameEdit.erase(replaceStart, portionToRemove.size());
-        }
-        m_friendlyName = friendlyNameEdit;
+        m_isStarted = true;
     }
 
     void VirtualCameraProxy::DisableVirtualCamera()
@@ -84,6 +96,8 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // stop camera
         THROW_IF_FAILED_MSG(m_spVirtualCamera->Stop(),
             "Failed to stop camera");
+        
+        m_isStarted = false;
     }
 
     void VirtualCameraProxy::RemoveVirtualCamera()

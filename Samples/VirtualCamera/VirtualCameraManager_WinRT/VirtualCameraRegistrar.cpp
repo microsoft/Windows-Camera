@@ -157,10 +157,11 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
     winrt::Windows::Foundation::Collections::IVector<winrt::Windows::Devices::Enumeration::DeviceInformation>
         VirtualCameraRegistrar::GetExistingVirtualCameraDevices()
     {
+        static const winrt::hstring _DEVPKEY_DeviceInterface_IsVirtualCamera(L"{6EDC630D-C2E3-43B7-B2D1-20525A1AF120},3");
         auto returnList = single_threaded_vector<winrt::Windows::Devices::Enumeration::DeviceInformation>();
 
         auto taskResult = winrt::Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
-            winrt::Windows::Media::Devices::MediaDevice::GetVideoCaptureSelector());
+            winrt::Windows::Media::Devices::MediaDevice::GetVideoCaptureSelector(), { _DEVPKEY_DeviceInterface_IsVirtualCamera });
 
         // we wait for max 20s to fetch the list of available camera devices
         static const int waitTimeInSeconds = 20;
@@ -181,7 +182,6 @@ namespace winrt::VirtualCameraManager_WinRT::implementation
         // for each camera device, check if it is a virtual camera by looking for a specific device interface and a DEVPROPKEY
         for (uint32_t i = 0; i < deviceList.Size(); i++)
         {
-            static const winrt::hstring _DEVPKEY_DeviceInterface_IsVirtualCamera(L"{6EDC630D-C2E3-43B7-B2D1-20525A1AF120},3");
             auto device = deviceList.GetAt(i);
             winrt::Windows::Foundation::Collections::IVector<winrt::hstring> requestedProps{ winrt::single_threaded_vector<winrt::hstring>({_DEVPKEY_DeviceInterface_IsVirtualCamera}) };
             auto deviceInterface = winrt::Windows::Devices::Enumeration::DeviceInformation::CreateFromIdAsync(

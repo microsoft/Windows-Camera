@@ -142,7 +142,7 @@ namespace VirtualCameraManager_App
                                friendlyText,
                                "");
                         }
-                        vcam.EnableVirtualCamera();
+                        vcam.EnableVirtualCamera(0, 0);
 
                         var fireAndForgetUITask = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, async () =>
                         {
@@ -234,7 +234,7 @@ namespace VirtualCameraManager_App
                                   relatedVCamInfo.FriendlyName,
                                   relatedVCamInfo.WrappedCameraSymLink);
 
-                                virtualCamera.EnableVirtualCamera();
+                                virtualCamera.EnableVirtualCamera(0, 0);
 
                                 var vCamControl = new VirtualCameraControl(virtualCamera);
                                 vCamControl.VirtualCameraControlFailed += VirtualCameraControlFailed;

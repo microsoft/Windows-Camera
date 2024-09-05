@@ -58,6 +58,7 @@ namespace VirtualCameraManager_App
             UIAccess.Text = VirtualCameraProxyInst.IsKnownInstance ? VirtualCameraProxyInst.Access.ToString() : "?";
             UILifetime.Text = VirtualCameraProxyInst.IsKnownInstance ? VirtualCameraProxyInst.Lifetime.ToString() : "?";
             UISymLinkName.Text = VirtualCameraProxyInst.SymbolicLink;
+            UIChangeRes1080.Visibility = UIChangeRes720.Visibility = UIChangeRes360.Visibility = (VirtualCameraProxyInst.VirtualCameraKind == VirtualCameraKind.Synthetic ? Visibility.Visible : Visibility.Collapsed);
         }
 
         /// <summary>
@@ -139,7 +140,7 @@ namespace VirtualCameraManager_App
             try
             {
                 DisposeOfUIPreview();
-                VirtualCameraProxyInst.EnableVirtualCamera();
+                VirtualCameraProxyInst.EnableVirtualCamera(0,0);
 
                 await InitializeAsync();
 
@@ -217,6 +218,52 @@ namespace VirtualCameraManager_App
                 {
                     m_mediaPlayer.Source = null;
                 }
+            }
+        }
+
+        private async void UIChangeRes1080_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                DisposeOfUIPreview();
+                VirtualCameraProxyInst.EnableVirtualCamera(1920, 45);
+
+                await InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                VirtualCameraControlFailed?.Invoke(ex);
+            }
+        }
+
+        private async void UIChangeRes720_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                DisposeOfUIPreview();
+                VirtualCameraProxyInst.EnableVirtualCamera(1280, 30);
+
+                await InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                VirtualCameraControlFailed?.Invoke(ex);
+            }
+        }
+
+        private async void UIChangeRes360_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                m_mediaCapture.
+                DisposeOfUIPreview();
+                VirtualCameraProxyInst.EnableVirtualCamera(640, 60);
+
+                await InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                VirtualCameraControlFailed?.Invoke(ex);
             }
         }
     }

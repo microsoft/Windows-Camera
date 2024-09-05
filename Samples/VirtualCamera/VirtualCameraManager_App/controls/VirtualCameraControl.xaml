@@ -50,6 +50,10 @@
                             <SymbolIcon Symbol="Delete"/>
                         </Button.Content>
                     </Button>
+                    <Button Name="UIChangeRes1080" Click="UIChangeRes1080_Click" ToolTipService.ToolTip="Enable" Content="1080@45"/>
+                    <Button Name="UIChangeRes720" Click="UIChangeRes720_Click" ToolTipService.ToolTip="Enable" Content="720@30"/>
+                    <Button Name="UIChangeRes360" Click="UIChangeRes360_Click" ToolTipService.ToolTip="Enable" Content="360@60"/>
+                    
                 </StackPanel>
             </ContentControl>
         </StackPanel>

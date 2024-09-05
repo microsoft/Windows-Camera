@@ -31,7 +31,7 @@ namespace winrt::WindowsSample::implementation
         IFACEMETHODIMP GetStreamState(_Out_ MF_STREAM_STATE* pState) override;
 
         // Non-interface methods.
-        HRESULT Initialize(_In_ SimpleMediaSource* pSource, _In_ DWORD streamId, _In_ MFSampleAllocatorUsage allocatorUsage);
+        HRESULT Initialize(_In_ SimpleMediaSource* pSource, _In_ DWORD streamId, _In_ MFSampleAllocatorUsage allocatorUsage, _In_ UINT32 resolution, _In_ UINT32 framerate);
         HRESULT Start(_In_ IMFMediaType* pMediaType);
         HRESULT Stop(_In_ bool fSendEvent);
         HRESULT Shutdown();
@@ -70,6 +70,9 @@ namespace winrt::WindowsSample::implementation
         DWORD m_dwStreamId = 0;
         MFSampleAllocatorUsage m_allocatorUsage;
         LONGLONG m_sampleDuration = 333333;
+        UINT32 m_width;
+        UINT32 m_height;
+        UINT32 m_framerate;
     };
 }
 

@@ -12,7 +12,7 @@ namespace winrt::WindowsSample::implementation
     /// </summary>
     /// <param name="pAttributes"></param>
     /// <returns></returns>
-    HRESULT SimpleMediaSource::Initialize(_In_ IMFAttributes* pAttributes)
+    HRESULT SimpleMediaSource::Initialize(_In_ IMFAttributes* pAttributes, UINT32 resolution, UINT32 framerate)
     {
         winrt::slim_lock_guard lock(m_Lock);
 
@@ -35,7 +35,7 @@ namespace winrt::WindowsSample::implementation
         {
             auto ptr = winrt::make_self<SimpleMediaStream>();
             m_streamList[i] = ptr.detach();
-            RETURN_IF_FAILED(m_streamList[i]->Initialize(this, i, MFSampleAllocatorUsage_UsesProvidedAllocator));
+            RETURN_IF_FAILED(m_streamList[i]->Initialize(this, i, MFSampleAllocatorUsage_UsesProvidedAllocator, resolution, framerate));
 
             RETURN_IF_FAILED(m_streamList[i]->GetStreamDescriptor(&streamDescriptorList[i]));
         }
