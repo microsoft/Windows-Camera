@@ -205,7 +205,7 @@ public sealed partial class MainWindow : Window
 
                 for (int i = 0; i < supportedControls; i++)
                 {
-                    KsProperty payloadKsProperty = FromBytes<KsProperty>(byteResultPayload, sizeofHeader + i * sizeofKsProperty);
+                    KsProperty payloadKsProperty = FromBytes<KsProperty>(byteResultPayload, sizeofKsProperty, sizeofHeader + i * sizeofKsProperty);
 
                     if (new Guid(payloadKsProperty.Set) == KSPROPERTYSETID_WindowsCameraEffect)
                     {
