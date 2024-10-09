@@ -2,16 +2,19 @@
 
 >**This sample will only run fully on a system equipped with a [Windows Studio Effects](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires a NPU and the related Windows Studio Effects driver package installed or pulled-in via Windows Update by the device manufacturer.**
 
-This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system and then gets and sets extended camera controls associated with Windows Studio Effects such as the following 3 introduced in version 1 of Windows Studio Effects: 
-- Background Blur (Standard Blur, Portrait Blur and Segmentation Mask Metadata)
-- Eye Gaze Correction (Standard and Teleprompter)
-- Automatic Framing
+This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to leverage [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
+- Standard Blur, Portrait Blur and Segmentation Mask Metadata : KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation)*)
+- Eye Contact Standard and Teleprompter: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
+- Automatic Framing: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
 
-as well as the newer effects in version 2 such as 
-- Portrait Light 
-- Creative Filters (Animated, Watercolor and Illustrated)
 
-1. Looks for a Windows Studio camera on the system 
+It also taps into newer effects available in version 2 that are exposed using a set of DDIs custom to Windows Studio Effects. Since these are exclusive to Windows Studio Effects and shipped outside the OS, their defninition is not part of the Windows SDK and has to be copied into your code base ([see DDI documentation](<./Windows Studio Effects DDIs.md>)):
+- Portrait Light (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_stagelight-control>)*)
+- Creative Filters (Animated, Watercolor and Illustrated) (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_creativefilter-control>)*)
+
+The app demonstrates the following:
+
+1. Looks for a Windows Studio camera on the system which must conform to the 2 below criteria:
     
     1. Checks if the system exposes the related Windows Studio dev prop key.
         ```csharp
@@ -25,7 +28,7 @@ as well as the newer effects in version 2 such as
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
     
-2. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set.
+2. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 
