@@ -12,7 +12,7 @@ the [extended camera controls](https://learn.microsoft.com/en-us/windows-hardwar
 - **Automatic Framing**: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
 
 From an application standpoint, these Windows standardized DDIs can be programmatically interacted with either using:
-- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRT_GET_SET) and in the code sample included in this repo
+- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRTGETSET) and in the code sample included in this repo
 - *Win32* level via the *[IMFExtendedCameraController](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontroller)* retrieved from an *IMFMediaSource* followed by 
 an instance of the *[IMFExtendedCameraControl](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontrol)* for each control. Here's an example for sending a GET and a SET payload for the **[Eye Contact Standard](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)** DDI.
 ~~~cpp
@@ -80,7 +80,7 @@ typedef enum {
 In order to use these DDIs for *WSE* version 2 in your code, you would copy those definitions into your header file as they are not included in any of the Windows SDK.
 
 From an application standpoint, these *WSE* custom DDIs can be programmatically interacted with either using:
-- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRT_GET_SET) and in the code sample included in this repo
+- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRTGETSET) and in the code sample included in this repo
 - *Win32* level via the the *[IKSControl](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nn-ksproxy-ikscontrol)* interface retrieved from an *IMFMediaSource* followed by invoking the *[IKsControl::KsProperty()](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nf-ksproxy-ikscontrol-ksproperty)* method with the data payload below prescribed for each of the *WSE* custom DDI. Here's an example for sending a GET and a SET payload for the **[Creative Filters](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)** custom DDI.
 ~~~cpp
 #include <ks.h>

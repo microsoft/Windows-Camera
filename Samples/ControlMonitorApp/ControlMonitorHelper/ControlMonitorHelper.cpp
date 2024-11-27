@@ -68,34 +68,10 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
     {
         if (m_spMonitor != nullptr)
         {
-            THROW_IF_FAILED(m_spMonitor->Stop());
-            for each (auto&& var in m_controls)
+            if (m_isStarted)
             {
-                if (var.controlKind != ControlKind::All)
-                {
-                    GUID guid{};
-                    switch (var.controlKind)
-                    {
-                    case ControlKind::VidCapCameraControlKind:
-                        guid = PROPSETID_VIDCAP_CAMERACONTROL;
-                        break;
-                    case ControlKind::VidCapVideoProcAmpKind:
-                        guid = PROPSETID_VIDCAP_VIDEOPROCAMP;
-                        break;
-                    case ControlKind::ExtendedControlKind:
-                        guid = KSPROPERTYSETID_ExtendedCameraControl;
-                        break;
-                    case ControlKind::WindowsStudioEffectsKind:
-                        guid = KSPROPERTYSETID_WindowsCameraEffect;
-                        break;
-                    default:
-                        throw winrt::hresult_error(E_UNEXPECTED, L"Invalid ControlKind");
-                    }
-
-                    THROW_IF_FAILED(m_spMonitor->RemoveControlSubscription(guid, var.controlId));
-                }
+                THROW_IF_FAILED(m_spMonitor->Stop());
             }
-
             m_spMonitor = nullptr;
         }
     } CATCH_LOG()
@@ -107,6 +83,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
         {
             throw winrt::hresult_error(hr, L"could not Stop IMFCameraControlMonitor..");
         }
+        m_isStarted = false;
     }
 
     void ControlMonitorManager::Start()
@@ -116,6 +93,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
         {
             throw winrt::hresult_error(hr, L"could not Start IMFCameraControlMonitor..");
         }
+        m_isStarted = true;
     }
 
     //

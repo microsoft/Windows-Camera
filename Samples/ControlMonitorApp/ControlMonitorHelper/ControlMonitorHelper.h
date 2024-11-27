@@ -54,6 +54,7 @@ namespace winrt::ControlMonitorHelperWinRT::implementation
         winrt::com_ptr<CameraControlCallback> m_spCallback;
         wil::com_ptr<IMFCameraControlMonitor> m_spMonitor;
         winrt::array_view<ControlData const> m_controls;
+        bool m_isStarted = false;
     };
 }
 

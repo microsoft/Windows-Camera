@@ -1,8 +1,14 @@
-# C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects
+#  Windows Studio Effects camera sample application - C# .Net WinUI & WinRT
 
->**This sample will only run fully on a system equipped with a [Windows Studio Effects](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires a NPU and the related Windows Studio Effects driver package installed or pulled-in via Windows Update by the device manufacturer.**
+additional documentation regarding ***[Windows Studio Effect (WSE) and its Driver-Defined Interfaces (DDIs)](/Windows%20Studio%20Effects%20DDIs.md)***
 
-This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to leverage [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
+>This sample will only run fully on a system equipped with a [Windows Studio Effects (*WSE*)](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires:
+>1. a compatible NPU
+>2. the related Windows Studio Effects driver package installed or pulled-in via Windows Update
+>3. a camera opted into *WSE* by the device manufacturer in its driver. Currently these camera must be front-facing
+
+
+This folder contains a C# sample named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to leverage [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
 - Standard Blur, Portrait Blur and Segmentation Mask Metadata : KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation)*)
 - Eye Contact Standard and Teleprompter: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
 - Automatic Framing: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
@@ -28,7 +34,7 @@ The app demonstrates the following:
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
     
-2. <a id="WinRT_GET_SET"></a> Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
+2. [](WinRTGETSET) Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 

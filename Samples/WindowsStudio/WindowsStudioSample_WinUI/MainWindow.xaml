@@ -16,6 +16,7 @@
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
             <RowDefinition Height="35"/>
+            <RowDefinition Height="35"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -85,15 +86,33 @@
          IsEnabled="False">
         </Button>
 
+        <ComboBox
+            x:Name="UIFormatsAvailable"
+            Grid.Column="0"
+            Grid.Row="6"
+            Grid.ColumnSpan="1"
+            IsEnabled="false"
+            SelectionChanged="UIFormatsAvailable_SelectionChanged">
+        </ComboBox>
+
+        <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="6">
+        <TextBlock Text="Camera profile:" VerticalAlignment="Center"/>
+        <ComboBox
+            x:Name="UIProfilesAvailable"
+            IsEnabled="false"
+            SelectionChanged="UIProfilesAvailable_SelectionChanged">
+        </ComboBox>
+        </StackPanel>
+
         <!--Camera preview-->
         <MediaPlayerElement Name="UIPreviewElement"
                       Stretch="Uniform"
                       AreTransportControlsEnabled="False"
-                      Grid.Row="6"
+                      Grid.Row="7"
                       Grid.ColumnSpan="4"/>
 
         <Image Name="UIMaskPreviewElement"
-               Grid.Row="6"
+               Grid.Row="7"
                Grid.Column="4"
                VerticalAlignment="Bottom"/>
     </Grid>
