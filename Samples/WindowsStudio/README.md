@@ -28,7 +28,7 @@ The app demonstrates the following:
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
     
-2. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
+2. <a id="WinRT_GET_SET"></a> Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 
