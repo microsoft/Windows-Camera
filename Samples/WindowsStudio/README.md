@@ -8,16 +8,36 @@ additional documentation regarding ***[Windows Studio Effect (WSE) and its Drive
 >3. a camera opted into *WSE* by the device manufacturer in its driver. Currently these camera must be front-facing
 
 
-This folder contains a C# sample named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to leverage [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
+This folder contains a C# sample named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to query support and toggle DDIs.
+
+## WSE v1 effects
+The sample leverages [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
 - Standard Blur, Portrait Blur and Segmentation Mask Metadata : KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation)*)
 - Eye Contact Standard and Teleprompter: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
 - Automatic Framing: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
 
-
+## WSE V2 effects
 It also taps into newer effects available in version 2 that are exposed using a set of DDIs custom to Windows Studio Effects. Since these are exclusive to Windows Studio Effects and shipped outside the OS, their defninition is not part of the Windows SDK and has to be copied into your code base ([see DDI documentation](<./Windows Studio Effects DDIs.md>)):
 - Portrait Light (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_stagelight-control>)*)
 - Creative Filters (Animated, Watercolor and Illustrated) (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_creativefilter-control>)*)
 
+## WSE frame formats and profiles
+Finally it allows to see all the MediaTypes (frame formats) exposed by the camera and change the [camera profile](https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/camera-profiles) it is provisioned with. Windows Studio Effects limits the MediaType exposed with:
+- Resolutions of at most 2560x1440 and at least 640x360
+- Framerate of at most 30fps and at least 15fps
+- Subtype in NV12 format only
+
+That said, these limits are only imposed when the camera profile used is one of the below [known video profile](https://learn.microsoft.com/en-us/uwp/api/windows.media.capture.knownvideoprofile?view=winrt-26100):
+- the default (or not specified), also known as *Legacy* profile
+- *VideoRecording*
+- *VideoConferencing*
+
+**With other profiles however, while these limits are not imposed and instead rely on the capabilities defined by the original camera driver, none of the Windows Studio Effects DDIs are supported**. This is why for example, the Windows Camera Application might not support any effects when entering photo capture mode.
+
+*WSE* also always defines and exposes a custom *"passthrough"* profile that exposes all MediaTypes available. This is meant to enable application scenarios such as initializing the camera to record video at higher resolution than 1440p or higher framerate than 30fps when the camera supports these capabilities but is limited by *WSE* in order to apply effects.
+
+
+## Code walkthrough
 The app demonstrates the following:
 
 1. Looks for a Windows Studio camera on the system which must conform to the 2 below criteria:
@@ -34,7 +54,7 @@ The app demonstrates the following:
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
     
-2. [](WinRTGETSET) Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set ([see DDI documentation](<./Windows Studio Effects DDIs.md>).
+2. <a id="WinRTGETSET"></a> Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set [see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 

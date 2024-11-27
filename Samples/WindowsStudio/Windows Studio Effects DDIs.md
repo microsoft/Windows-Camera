@@ -5,14 +5,14 @@ The *WSE* driver can be interacted with using APIs which transacts according to 
 
 
 ## Windows standardized DDIs implemented by *WSE*
-Some of the Windows Studio Effects are driven using standardized Windows DDIs included in the Windows SDK under 
+Some of the Windows Studio Effects are actionable using standardized Windows DDIs included in the Windows SDK under 
 the [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) property set:
 - **Standard Blur, Portrait Blur and Segmentation Mask Metadata**: KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation)*)
 - **Eye Contact Standard and Teleprompter**: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
 - **Automatic Framing**: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
 
 From an application standpoint, these Windows standardized DDIs can be programmatically interacted with either using:
-- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRTGETSET) and in the code sample included in this repo
+- *WinRT*, refer to the example on the [previous page here](<./README.md#code-walkthrough>) and in the code sample included in this repo folder
 - *Win32* level via the *[IMFExtendedCameraController](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontroller)* retrieved from an *IMFMediaSource* followed by 
 an instance of the *[IMFExtendedCameraControl](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontrol)* for each control. Here's an example for sending a GET and a SET payload for the **[Eye Contact Standard](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)** DDI.
 ~~~cpp
@@ -80,7 +80,7 @@ typedef enum {
 In order to use these DDIs for *WSE* version 2 in your code, you would copy those definitions into your header file as they are not included in any of the Windows SDK.
 
 From an application standpoint, these *WSE* custom DDIs can be programmatically interacted with either using:
-- *WinRT*, refer to the example on the [previous page here](.\README.md#WinRTGETSET) and in the code sample included in this repo
+- *WinRT*, refer to the example on the [previous page here](<./README.md#code-walkthrough>) and in the code sample included in this repo folder
 - *Win32* level via the the *[IKSControl](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nn-ksproxy-ikscontrol)* interface retrieved from an *IMFMediaSource* followed by invoking the *[IKsControl::KsProperty()](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nf-ksproxy-ikscontrol-ksproperty)* method with the data payload below prescribed for each of the *WSE* custom DDI. Here's an example for sending a GET and a SET payload for the **[Creative Filters](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)** custom DDI.
 ~~~cpp
 #include <ks.h>
@@ -182,7 +182,19 @@ wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
     }
 ~~~
 
+# WSE custom profile
+*WSE* exposes a custom *"passthrough"* profile that exposes all MediaTypes but prevents usage of any effect DDIs. This profile can be leveraged by application to bypass [stream, resolution and framerate limits](<./README.md#WSE-limits-frame-formats-and-profiles>) imposed by *WSE* for scenarios such as recording at higher resolution when possible. This custom profile definition needs to be copied in your code as it is not a Windows standard profile defined in WDK.
 
+C++
+~~~cpp
+// A custom camera profile specific to Windows Studio that allows through 
+// all MediaTypes on color pin(s) but without effect DDIs support. Useful for
+// example to record videos at resolution or framerate outside the ranges supported
+// to apply effects.
+// {E4ED96D9-CD40-412F-B20A-B7402A43DCD2}
+DEFINE_GUID(KSCAMERAPROFILE_WindowsStudioNoEffectsColorPassthrough,
+    0xe4ed96d9, 0xcd40, 0x412f, 0xb2, 0xa, 0xb7, 0x40, 0x2a, 0x43, 0xdc, 0xd2);
+~~~
 
 # WSE custom DDI specification
 The GET and SET data payload format for each of these custom WSE DDIs is covered below. 
