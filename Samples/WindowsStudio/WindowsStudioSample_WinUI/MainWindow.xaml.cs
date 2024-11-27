@@ -427,13 +427,10 @@ public sealed partial class MainWindow : Window
         UIFormatsAvailable.SelectionChanged += UIFormatsAvailable_SelectionChanged;
 
         // Connect the camera to the UI element for previewing the camera
-        //if (m_mediaPlayer == null)
-        {
-            m_mediaPlayer = new MediaPlayer();
-            m_mediaPlayer.RealTimePlayback = true;
-            m_mediaPlayer.AutoPlay = true;
-            m_mediaPlayer.CommandManager.IsEnabled = false; // disable playback controls
-        }
+        m_mediaPlayer = new MediaPlayer();
+        m_mediaPlayer.RealTimePlayback = true;
+        m_mediaPlayer.AutoPlay = true;
+        m_mediaPlayer.CommandManager.IsEnabled = false; // disable playback controls
         var mediaSource = MediaSource.CreateFromMediaFrameSource(m_selectedMediaFrameSource);
         m_mediaPlayer.Source = mediaSource;
 
