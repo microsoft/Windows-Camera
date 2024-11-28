@@ -16,26 +16,26 @@ The sample leverages [extended camera controls](https://learn.microsoft.com/en-u
 - Eye Contact Standard and Teleprompter: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
 - Automatic Framing: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
 
-## WSE V2 effects
+## WSE v2 effects
 It also taps into newer effects available in version 2 that are exposed using a set of DDIs custom to Windows Studio Effects. Since these are exclusive to Windows Studio Effects and shipped outside the OS, their defninition is not part of the Windows SDK and has to be copied into your code base ([see DDI documentation](<./Windows Studio Effects DDIs.md>)):
 - Portrait Light (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_stagelight-control>)*)
 - Creative Filters (Animated, Watercolor and Illustrated) (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_creativefilter-control>)*)
 
 ## WSE limits frame formats and profiles
-the code sample allows to see all the MediaTypes (frame formats) exposed by the camera and change the [camera profile](https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/camera-profiles) it is provisioned with. Windows Studio Effects limits 
-- the number of concurrent stream from a source with effects applied to 1
-- usage of only color streams  
-- MediaType exposed with:
+The code sample allows to see all the MediaTypes (frame formats) exposed by the camera and change the [camera profile](https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/camera-profiles) it is provisioned with. When initialized with profile for processing effects, *WSE* limits:
+- The number of stream available from a source with effects applied to 1
+- Processing of only color stream (i.e. no infrared stream, etc.) 
+- MediaTypes exposed with:
   - Resolutions of at most 2560x1440 and at least 640x360
   - Framerate of at most 30fps and at least 15fps
-  - Subtype in NV12 format only
+  - Subtype in NV12 format only (*WSE* may take as input other subtypes, but will currently only expose out NV12)
 
-That said, these limits are only imposed when the camera profile used is one of the below [known video profile](https://learn.microsoft.com/en-us/uwp/api/windows.media.capture.knownvideoprofile?view=winrt-26100):
+That said as alluded to above, these limits are only imposed when the camera profile used is one of the below [known video profile](https://learn.microsoft.com/en-us/uwp/api/windows.media.capture.knownvideoprofile?view=winrt-26100):
 - the default (or not specified), also known as *Legacy* profile
 - *VideoRecording*
 - *VideoConferencing*
 
-**With other profiles however, while these limits are not imposed and instead rely on the capabilities defined by the original camera driver, none of the Windows Studio Effects DDIs are supported**. This is why for example, the Windows Camera Application might not support any effects when entering photo capture mode.
+**With other profiles however, while these limits are not imposed and instead rely on the capabilities defined by the original camera driver, none of the Windows Studio Effects DDIs are supported**. This is why for example, the Windows Camera Application might not support any effects when entering photo capture mode but offer a different set of MediaTypes to exercise such as with higher resolution and other subtypes.
 
 *WSE* also always defines and exposes a custom *"passthrough"* profile that exposes all MediaTypes available (*[see DDI doc](<./Windows Studio Effects DDIs.md#WSE-custom-profile>)*). This is meant to enable application scenarios such as initializing the camera to record video at higher resolution than 1440p or higher framerate than 30fps when the camera supports these capabilities but is limited by *WSE* in order to apply effects.
 
@@ -75,12 +75,12 @@ The app demonstrates the following:
          MemoryPreference = MediaCaptureMemoryPreference.Cpu,
          StreamingCaptureMode = StreamingCaptureMode.Video,
          SharingMode = MediaCaptureSharingMode.ExclusiveControl,
-         //Either the default (null) or a specific profile
-         VideoProfile = m_availableCameraProfiles != null ? m_availableCameraProfiles[UIProfilesAvailable.SelectedIndex] : null
+         // Either the default (null) or a specific camera profile
+         VideoProfile = (m_availableCameraProfiles == null ? null : m_availableCameraProfiles[UIProfilesAvailable.SelectedIndex])
      });
     ```
 
-3. <a id="WinRTGETSET"></a> Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set [see DDI documentation](<./Windows Studio Effects DDIs.md>).
+3. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set [see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 

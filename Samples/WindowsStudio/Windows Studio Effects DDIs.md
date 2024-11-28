@@ -13,56 +13,59 @@ the [extended camera controls](https://learn.microsoft.com/en-us/windows-hardwar
 
 From an application standpoint, these Windows standardized DDIs can be programmatically interacted with either using:
 - *WinRT*, refer to the example on the [previous page here](<./README.md#code-walkthrough>) and in the code sample included in this repo folder
+
 - *Win32* level via the *[IMFExtendedCameraController](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontroller)* retrieved from an *IMFMediaSource* followed by 
 an instance of the *[IMFExtendedCameraControl](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfextendedcameracontrol)* for each control. Here's an example for sending a GET and a SET payload for the **[Eye Contact Standard](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)** DDI.
-~~~cpp
-#include <ks.h>
-#include <ksmedia.h>
+    #### C++ example to leverage Windows standardized DDI implemented by *WSE*
+    ~~~cpp
+    #include <ks.h>
+    #include <ksmedia.h>
 
-// Assuming you initialize your camera source "spMediaSource" in your code using IMFCaptureEngine
-wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
+    // Assuming you initialize your camera source "spMediaSource" in your code using IMFCaptureEngine
+    wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
 
-    //... in your method ...
+        //... in your method ...
 
-    // Retrieve the IMFExtendedCameraController
-    wil::com_ptr_nothrow<IMFExtendedCameraController> spExtendedCameraController;
-    wil::com_ptr_nothrow<IMFGetService> spGetService;
-    wil::com_ptr_nothrow<IMFExtendedCameraControl> spExtendedCameraControl;
+        // Retrieve the IMFExtendedCameraController
+        wil::com_ptr_nothrow<IMFExtendedCameraController> spExtendedCameraController;
+        wil::com_ptr_nothrow<IMFGetService> spGetService;
+        wil::com_ptr_nothrow<IMFExtendedCameraControl> spExtendedCameraControl;
 
-    RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spGetService)));
-    RETURN_IF_FAILED(spGetService->GetService(GUID_NULL, IID_PPV_ARGS(&spExtendedCameraController)));
+        RETURN_IF_FAILED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spGetService)));
+        RETURN_IF_FAILED(spGetService->GetService(GUID_NULL, IID_PPV_ARGS(&spExtendedCameraController)));
 
-    // If the GET call succeeds
-    if (SUCCEEDED(spExtendedCameraController->GetExtendedCameraControl(MF_CAPTURE_ENGINE_MEDIASOURCE,
-        KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
-        &spExtendedCameraControl)))
-    {
-        // Check if Eye gaze correction DDI is supported and it is not already ON
-        if (KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON & spExtendedCameraControl->GetCapabilities()
-            && (KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF == spExtendedCameraControl->GetFlags()))
+        // If the GET call succeeds
+        if (SUCCEEDED(spExtendedCameraController->GetExtendedCameraControl(MF_CAPTURE_ENGINE_MEDIASOURCE,
+            KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION,
+            &spExtendedCameraControl)))
         {
-            // Tell the camera to turn it on.
-            RETURN_IF_FAILED(spExtendedCameraControl->SetFlags(KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON));
-            // Write the changed settings to the driver.
-            RETURN_IF_FAILED(spExtendedCameraControl->CommitSettings());
+            // Check if Eye gaze correction DDI is supported and it is not already ON
+            if (KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON & spExtendedCameraControl->GetCapabilities()
+                && (KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_OFF == spExtendedCameraControl->GetFlags()))
+            {
+                // Tell the camera to turn it on.
+                RETURN_IF_FAILED(spExtendedCameraControl->SetFlags(KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON));
+                // Write the changed settings to the driver.
+                RETURN_IF_FAILED(spExtendedCameraControl->CommitSettings());
+            }
         }
-    }
-~~~
+    ~~~
 
 
 ## Custom DDIs implemented by *WSE* driver
 A newer set of effects supported in *WSE* version 2 are exposed as custom DDIs under a different and exclusive property set (***KSPROPERTYSETID_WindowsStudioCameraControl*** defined below) not standardized with a particular Windows SDK:
 
- - **Portrait Light: [KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT)**
- - **Creative Filters: [KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)**
+ - **Portrait Light: [KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT-Control)**
+ - **Creative Filters: [KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER-Control)**
 
  Furthermore, the Windows Studio driver component exposes additional DDIs that can be useful to applications to advertise some capabilities: 
- - **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED)**
- - **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION)**
+ - Report which *DDIs* are supported and implemented by *WSE* specifically: **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED-Control)**
+ - Disclose if any defined mean to mitigate performance decrease is possible and used: **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION-Control)**
 
  Finally, the Windows Studio driver component exposes a DDI useful to other driver components so that they can register to be notified when certain effects are toggled in WSE:
-  - **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION)**
+  - **[KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION-Control)**
 
+#### C++ definition of *WSE* custom DDIs:
 ~~~cpp
 // Property set exclusive to Windows Studio Effects under which custom DDIs are defined
 // {C1D740A8-BC18-43F4-A500-6BDF91839FDE}
@@ -81,126 +84,127 @@ In order to use these DDIs for *WSE* version 2 in your code, you would copy thos
 
 From an application standpoint, these *WSE* custom DDIs can be programmatically interacted with either using:
 - *WinRT*, refer to the example on the [previous page here](<./README.md#code-walkthrough>) and in the code sample included in this repo folder
-- *Win32* level via the the *[IKSControl](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nn-ksproxy-ikscontrol)* interface retrieved from an *IMFMediaSource* followed by invoking the *[IKsControl::KsProperty()](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nf-ksproxy-ikscontrol-ksproperty)* method with the data payload below prescribed for each of the *WSE* custom DDI. Here's an example for sending a GET and a SET payload for the **[Creative Filters](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)** custom DDI.
-~~~cpp
-#include <ks.h>
-#include <ksmedia.h>
 
-// Assuming you initialize your camera source "spMediaSource" in your code using IMFCaptureEngine
-wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
+- *Win32* level via the the *[IKSControl](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nn-ksproxy-ikscontrol)* interface retrieved from an *IMFMediaSource* followed by invoking the *[IKsControl::KsProperty()](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ksproxy/nf-ksproxy-ikscontrol-ksproperty)* method with the data payload below prescribed for each of the *WSE* custom DDI. Here's an example for sending a GET and a SET payload for the **[Creative Filters](#KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER-Control)** custom DDI.
+    #### C++ example to leverage custom *WSE* DDI
+    ~~~cpp
+    #include <ks.h>
+    #include <ksmedia.h>
 
-    //... in your method ...
+    // Assuming you initialize your camera source "spMediaSource" in your code using IMFCaptureEngine
+    wil::com_ptr_nothrow<IMFMediaSource> spMediaSource;
 
-    // Retrieve the IKsControl interface
-    wil::com_ptr_nothrow<IKsControl> spKsControl;
-    if (SUCCEEDED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl))))
-    {
-        // Create a GET data payload to send down to the *WSE* driver to query capability
+        //... in your method ...
 
-        // First define the target DDI and operation (a GET) using a KSPROPERTY
-        KSPROPERTY creativeFilterGetProperty =
+        // Retrieve the IKsControl interface
+        wil::com_ptr_nothrow<IKsControl> spKsControl;
+        if (SUCCEEDED(spMediaSource->QueryInterface(IID_PPV_ARGS(&spKsControl))))
         {
-            KSPROPERTYSETID_WindowsCameraEffect, // set
-            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER, // id
-            KSPROPERTY_TYPE_GET // flag
-        };
+            // Create a GET data payload to send down to the *WSE* driver to query capability
 
-        // Create the data payload for a GET operation.
-        // The data payload layout follows the specification and is comprised in this case of a KSCAMERA_EXTENDEDPROP_HEADER 
-        // followed by a KSCAMERA_EXTENDEDPROP_VALUE
-        ULONG getCreativeFilterPayloadSizeNeeded = sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE);
-        wil::unique_cotaskmem_ptr<BYTE[]> spGetCreativeFilterPayload = wil::make_unique_cotaskmem_nothrow<BYTE[]>(getCreativeFilterPayloadSizeNeeded);
-        KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)spGetCreativeFilterPayload.get();
-        KSCAMERA_EXTENDEDPROP_VALUE* pValue = (KSCAMERA_EXTENDEDPROP_VALUE*)(pExtendedHeader + 1);
-        
-        // Assign proper values to the payload
-        *pExtendedHeader =
-        {
-            1, // Version
-            KSCAMERA_EXTENDEDPROP_FILTERSCOPE, // PinID
-            getCreativeFilterPayloadSizeNeeded, // Size
-            0, // Result
-            0, // Flags
-            0 // Capability
-        };
-        pValue->Value.ull = 0;
-
-        // Check if CreativeFilter DDI is supported in driver
-        HRESULT hr = spKsControl->KsProperty(
-            &creativeFilterGetProperty,
-            sizeof(KSPROPERTY), 
-            spGetCreativeFilterPayload.get(), 
-            getCreativeFilterPayloadSizeNeeded, 
-            &getCreativeFilterPayloadSizeNeeded);
-
-        // if the DDI is supported and a particular Flags value value reported as supported in the Capability field, 
-        // in this case KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED, 
-        // let's now send a SET payload to set that particular Flags value
-        if (SUCCEEDED(hr) && (KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED & pExtendedHeader->Capability))
-        {
-            // Define the target DDI and operation (a SET this time) using a KSPROPERTY
-            KSPROPERTY creativeFilterSetProperty =
+            // First define the target DDI and operation (a GET) using a KSPROPERTY
+            KSPROPERTY creativeFilterGetProperty =
             {
                 KSPROPERTYSETID_WindowsCameraEffect, // set
                 KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER, // id
-                KSPROPERTY_TYPE_SET// flag
+                KSPROPERTY_TYPE_GET // flag
             };
 
-            // Create the data payload for a SET operation.
-            // The data payload layout follows the specification and is comprised of a KSCAMERA_EXTENDEDPROP_HEADER 
+            // Create the data payload for a GET operation.
+            // The data payload layout follows the specification and is comprised in this case of a KSCAMERA_EXTENDEDPROP_HEADER 
             // followed by a KSCAMERA_EXTENDEDPROP_VALUE
-            ULONG setCreativeFilterPayloadSizeNeeded = getCreativeFilterPayloadSizeNeeded;
-            wil::unique_cotaskmem_ptr<BYTE[]> spSetCreativeFilterPayload = wil::make_unique_cotaskmem_nothrow<BYTE[]>(setCreativeFilterPayloadSizeNeeded);
-            KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader2 = (KSCAMERA_EXTENDEDPROP_HEADER*)spSetCreativeFilterPayload.get();
-            KSCAMERA_EXTENDEDPROP_VALUE* pValue2 = (KSCAMERA_EXTENDEDPROP_VALUE*)(pExtendedHeader2 + 1);
+            ULONG getCreativeFilterPayloadSizeNeeded = sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE);
+            wil::unique_cotaskmem_ptr<BYTE[]> spGetCreativeFilterPayload = wil::make_unique_cotaskmem_nothrow<BYTE[]>(getCreativeFilterPayloadSizeNeeded);
+            KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader = (KSCAMERA_EXTENDEDPROP_HEADER*)spGetCreativeFilterPayload.get();
+            KSCAMERA_EXTENDEDPROP_VALUE* pValue = (KSCAMERA_EXTENDEDPROP_VALUE*)(pExtendedHeader + 1);
             
             // Assign proper values to the payload
-            *pExtendedHeader2 =
+            *pExtendedHeader =
             {
                 1, // Version
                 KSCAMERA_EXTENDEDPROP_FILTERSCOPE, // PinID
                 getCreativeFilterPayloadSizeNeeded, // Size
                 0, // Result
-                KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED, // Flags
+                0, // Flags
                 0 // Capability
             };
             pValue->Value.ull = 0;
 
-            // Send a SET payload for the CreativeFilter DDI
-            hr = spKsControl->KsProperty(
-                &creativeFilterSetProperty,
-                sizeof(KSPROPERTY),
-                spSetCreativeFilterPayload.get(),
-                setCreativeFilterPayloadSizeNeeded,
-                &setCreativeFilterPayloadSizeNeeded);
+            // Check if CreativeFilter DDI is supported in driver
+            HRESULT hr = spKsControl->KsProperty(
+                &creativeFilterGetProperty,
+                sizeof(KSPROPERTY), 
+                spGetCreativeFilterPayload.get(), 
+                getCreativeFilterPayloadSizeNeeded, 
+                &getCreativeFilterPayloadSizeNeeded);
 
-            if (SUCCEEDED(hr))
+            // if the DDI is supported and a particular Flags value value reported as supported in the Capability field, 
+            // in this case KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED, 
+            // let's now send a SET payload to set that particular Flags value
+            if (SUCCEEDED(hr) && (KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED & pExtendedHeader->Capability))
             {
-                // we have sucessfully sent our SET payload
+                // Define the target DDI and operation (a SET this time) using a KSPROPERTY
+                KSPROPERTY creativeFilterSetProperty =
+                {
+                    KSPROPERTYSETID_WindowsCameraEffect, // set
+                    KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER, // id
+                    KSPROPERTY_TYPE_SET// flag
+                };
+
+                // Create the data payload for a SET operation.
+                // The data payload layout follows the specification and is comprised of a KSCAMERA_EXTENDEDPROP_HEADER 
+                // followed by a KSCAMERA_EXTENDEDPROP_VALUE
+                ULONG setCreativeFilterPayloadSizeNeeded = getCreativeFilterPayloadSizeNeeded;
+                wil::unique_cotaskmem_ptr<BYTE[]> spSetCreativeFilterPayload = wil::make_unique_cotaskmem_nothrow<BYTE[]>(setCreativeFilterPayloadSizeNeeded);
+                KSCAMERA_EXTENDEDPROP_HEADER* pExtendedHeader2 = (KSCAMERA_EXTENDEDPROP_HEADER*)spSetCreativeFilterPayload.get();
+                KSCAMERA_EXTENDEDPROP_VALUE* pValue2 = (KSCAMERA_EXTENDEDPROP_VALUE*)(pExtendedHeader2 + 1);
+                
+                // Assign proper values to the payload
+                *pExtendedHeader2 =
+                {
+                    1, // Version
+                    KSCAMERA_EXTENDEDPROP_FILTERSCOPE, // PinID
+                    getCreativeFilterPayloadSizeNeeded, // Size
+                    0, // Result
+                    KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED, // Flags
+                    0 // Capability
+                };
+                pValue->Value.ull = 0;
+
+                // Send a SET payload for the CreativeFilter DDI
+                hr = spKsControl->KsProperty(
+                    &creativeFilterSetProperty,
+                    sizeof(KSPROPERTY),
+                    spSetCreativeFilterPayload.get(),
+                    setCreativeFilterPayloadSizeNeeded,
+                    &setCreativeFilterPayloadSizeNeeded);
+
+                if (SUCCEEDED(hr))
+                {
+                    // we have sucessfully sent our SET payload
+                }
             }
         }
-    }
-~~~
+    ~~~
 
 # WSE custom profile
 *WSE* exposes a custom *"passthrough"* profile that exposes all MediaTypes but prevents usage of any effect DDIs. This profile can be leveraged by application to bypass [stream, resolution and framerate limits](<./README.md#WSE-limits-frame-formats-and-profiles>) imposed by *WSE* for scenarios such as recording at higher resolution when possible. This custom profile definition needs to be copied in your code as it is not a Windows standard profile defined in WDK.
 
-C++
+#### C++ definition of custom "passthrough" profile exposed by *WSE*
 ~~~cpp
-// A custom camera profile specific to Windows Studio that allows through 
+// A custom camera profile specific to Windows Studio Effects that allows through 
 // all MediaTypes on color pin(s) but without effect DDIs support. Useful for
 // example to record videos at resolution or framerate outside the ranges supported
 // to apply effects.
 // {E4ED96D9-CD40-412F-B20A-B7402A43DCD2}
-DEFINE_GUID(KSCAMERAPROFILE_WindowsStudioNoEffectsColorPassthrough,
-    0xe4ed96d9, 0xcd40, 0x412f, 0xb2, 0xa, 0xb7, 0x40, 0x2a, 0x43, 0xdc, 0xd2);
+static GUID KSCAMERAPROFILE_WindowsStudioNoEffectsColorPassthrough = { 0xe4ed96d9, 0xcd40, 0x412f, 0xb2, 0xa, 0xb7, 0x40, 0x2a, 0x43, 0xdc, 0xd2 };
 ~~~
 
 # WSE custom DDI specification
 The GET and SET data payload format for each of these custom WSE DDIs is covered below. 
 
 ----------
-## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED"></a> KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED Control
+## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED"></a>KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SUPPORTED Control
 This control allows to retrieve a list of supported KSProperties intercepted and implemented specifically by the Windows Studio Effects (*WSE*) camera driver component. Think of it as exclusively a *getter* for which controls corresponding to KSPROPERTY_CAMERACONTROL_EXTENDED_\*, KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_\* and any other custom property set that are implemented directly within *WSE* driver component. It can be preemptively queried before individually proceeding to getting capabilities for each of them if interaction with exclusively the *WSE* driver is desired or simply used to correlate with an existing set of DDI capabilities already fetched to understand if their implementation is provided by *WSE* or another component that is part of the camera driver stack.
 
 ### Usage Summary
@@ -237,7 +241,7 @@ for example, a GET call could return the following payload to be reinterpreted: 
 |🔚| [KSPROPERTY](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-structure) | *Set* = KSPROPERTYSETID_ExtendedCameraControl <br />*Id* = KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION <br />*Flags* = KSPROPERTY_TYPE_GET |
 
 ----------
-## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT"></a> KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT Control
+## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT"></a>KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT Control
 The Stage Light DDI allows to turn ON or OFF the application of the Stage Light effect on the frames. This effect enhances the visual appearance of a face by identifying then processing face pixels with a suite of solutions such as augmenting resolution, removing noise and illumination artifacts, brightening, etc. 
 
 ### Usage Summary
@@ -264,7 +268,7 @@ The KSPROPERTY payload follows the same layout as traditional KSPROPERTY_CAMERAC
 | **Flags** | KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_OFF or KSCAMERA_WINDOWSSTUDIO_STAGELIGHT_ON |
 
 ----------
-## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER"></a> KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER Control
+## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER"></a>KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER Control
 The Creative Filter DDI allows to toggle a pre-defined effect that alters the appearance of a primary subject in the scene. The effect modifies the facial area and potentially also the background of the main subject.
 
 ### Usage Summary
@@ -293,7 +297,7 @@ The KSPROPERTY payload follows the same layout as traditional KSPROPERTY_CAMERAC
 | **Flags** |KSCAMERA_WINDOWSSTUDIO_ CREATIVEFILTER_OFF or KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ILLUSTRATED or KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ANIMATED or KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_WATERCOLOR |
 
 ----------
-## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION"></a> KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION Control 
+## <a id="KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION"></a>KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION Control 
 
 This control is not meant to be used by application and camera session clients. 
 
