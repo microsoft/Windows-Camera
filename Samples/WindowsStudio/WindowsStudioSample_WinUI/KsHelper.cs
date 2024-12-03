@@ -2,15 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml.Controls;
-using Windows.Foundation;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
-using Windows.Media.MediaProperties;
-using Windows.Storage.Streams;
 using WinRT;
 
 [ComImport]
