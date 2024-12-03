@@ -2,15 +2,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml.Controls;
-using Windows.Foundation;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture.Frames;
 using Windows.Media.Devices;
-using Windows.Media.MediaProperties;
-using Windows.Storage.Streams;
 using WinRT;
 
 [ComImport]
@@ -198,6 +193,24 @@ namespace WindowsStudioSample_WinUI
             public RECT ForegroundBoundingBox;
             //public byte[] MaskData;
         };
+
+        // Lookup table to match a known camera profile ID with a legible name
+        public static readonly Dictionary<string, string> CameraProfileIdLUT =
+            new Dictionary<string, string>()
+            {
+                { "{B4894D81-62B7-4EEC-8740-80658C4A9D3E}", "Legacy" }, // KSCAMERAPROFILE_Legacy
+                { "{A0E517E8-8F8C-4F6F-9A57-46FC2F647EC0}", "VideoRecording" }, // KSCAMERAPROFILE_VideoRecording
+                { "{32440725-961B-4CA3-B5B2-854E719D9E1B}", "HighQualityPhoto" }, // KSCAMERAPROFILE_HighQualityPhoto
+                { "{6B52B017-42C7-4A21-BFE3-23F009149887}", "BalancedVideoAndPhoto" }, // KSCAMERAPROFILE_BalancedVideoAndPhoto
+                { "{C5444A88-E1BF-4597-B2DD-9E1EAD864BB8}", "VideoConferencing" }, // KSCAMERAPROFILE_VideoConferencing
+                { "{02399D9D-4EE8-49BA-BC07-5FF156531413}", "PhotoSequence" }, // KSCAMERAPROFILE_PhotoSequence
+                { "{566E6113-8C35-48E7-B89F-D23FDC1219DC}", "HighFrameRate" }, // KSCAMERAPROFILE_HighFrameRate
+                { "{9FF2CB56-E75A-49B1-A928-9985D5946F87}", "VariablePhotoSequence" }, // KSCAMERAPROFILE_VariablePhotoSequence
+                { "{D4F3F4EC-BDFF-4314-B1D4-008E281F74E7}", "VideoHDR8" }, // KSCAMERAPROFILE_VideoHDR8
+                { "{81361B22-700B-4546-A2D4-C52E907BFC27}", "FaceAuth_Mode" }, // KSCAMERAPROFILE_FaceAuth_Mode
+                { "{E4ED96D9-CD40-412F-B20A-B7402A43DCD2}", "WSENoEffectsColorPassthrough" }, // KSCAMERAPROFILE_WindowsStudioNoEffectsColorPassthrough
+            };
+
         #endregion KsMedia
         //
         // end of redefinition of constant values and structures defined ksmedia.h 

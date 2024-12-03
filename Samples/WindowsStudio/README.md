@@ -1,17 +1,48 @@
-# C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects
+#  Windows Studio Effects camera sample application - C# .Net WinUI & WinRT
 
->**This sample will only run fully on a system equipped with a [Windows Studio Effects](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires a NPU and the related Windows Studio Effects driver package installed or pulled-in via Windows Update by the device manufacturer.**
+additional documentation regarding ***[Windows Studio Effect (WSE) and its Driver-Defined Interfaces (DDIs)](<./Windows Studio Effects DDIs.md>)***
 
-This folder contains a single C# .csproj sample project named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system and then gets and sets extended camera controls associated with Windows Studio Effects such as the following 3 introduced in version 1 of Windows Studio Effects: 
-- Background Blur (Standard Blur, Portrait Blur and Segmentation Mask Metadata)
-- Eye Gaze Correction (Standard and Teleprompter)
-- Automatic Framing
+>This sample will only run fully on a system equipped with a [Windows Studio Effects (*WSE*)](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires:
+>1. a compatible NPU
+>2. the related Windows Studio Effects driver package installed or pulled-in via Windows Update
+>3. a camera opted into *WSE* by the device manufacturer in its driver. Currently these camera must be front-facing
 
-as well as the newer effects in version 2 such as 
-- Portrait Light 
-- Creative Filters (Animated, Watercolor and Illustrated)
 
-1. Looks for a Windows Studio camera on the system 
+This folder contains a C# sample named **WindowsStudioSample_WinUI** which checks if a Windows Studio Effects camera is available on the system. It then proceeds using WinRT APIs to query support and toggle DDIs.
+
+## WSE v1 effects
+The sample leverages [extended camera controls](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/kspropertysetid-extendedcameracontrol) standardized in the OS and defined in Windows SDK such as the following 3 implemented as Windows Studio Effects in version 1: 
+- Standard Blur, Portrait Blur and Segmentation Mask Metadata : KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-backgroundsegmentation)*)
+- Eye Contact Standard and Teleprompter: KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-eyegazecorrection)*)
+- Automatic Framing: KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow)*) and KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW_CONFIGCAPS (*[DDI documentation](https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-digitalwindow-configcaps)*)
+
+## WSE v2 effects
+It also taps into newer effects available in version 2 that are exposed using a set of DDIs custom to Windows Studio Effects. Since these are exclusive to Windows Studio Effects and shipped outside the OS, their definition is not part of the Windows SDK and has to be copied into your code base ([see DDI documentation](<./Windows Studio Effects DDIs.md>)):
+- Portrait Light (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_stagelight-control>)*)
+- Creative Filters (Animated, Watercolor and Illustrated) (*[DDI documentation](<./Windows Studio Effects DDIs.md#ksproperty_cameracontrol_windowsstudio_creativefilter-control>)*)
+
+## WSE limits frame formats and profiles
+The code sample allows to see all the MediaTypes (frame formats) exposed by the camera and change the [camera profile](https://learn.microsoft.com/en-us/windows/uwp/audio-video-camera/camera-profiles) it is provisioned with. When initialized with profile for processing effects, *WSE* limits:
+- The number of streams available from a source with effects applied to 1
+- Processing of only color stream (i.e. no infrared stream, etc.) 
+- MediaTypes exposed with:
+  - Resolutions of at most 2560x1440 and at least 640x360
+  - Framerate of at most 30fps and at least 15fps
+  - Subtype in NV12 format only (*WSE* may take as input other subtypes, but will currently only expose out NV12)
+
+That said as alluded to above, these limits are only imposed when the camera profile used is one of the below [known video profile](https://learn.microsoft.com/en-us/uwp/api/windows.media.capture.knownvideoprofile?view=winrt-26100):
+- the default (or not specified), also known as *Legacy* profile
+- *VideoRecording*
+- *VideoConferencing*
+
+**With other profiles however, while these limits are not imposed and instead rely on the capabilities defined by the original camera driver, none of the Windows Studio Effects DDIs are supported**. This is why for example, the Windows Camera Application might not support any effects when entering photo capture mode but offer a different set of MediaTypes to exercise such as with higher resolution and other subtypes.
+
+In recent release, *WSE* will define and expose a custom *"passthrough"* profile that exposes all MediaTypes available (*[see DDI doc](<./Windows Studio Effects DDIs.md#WSE-custom-profile>)*). This is meant to enable application scenarios such as initializing the camera to record video at higher resolution than 1440p or higher framerate than 30fps when the camera supports these capabilities but is limited by *WSE* in order to apply effects. The below code sample shows how to query for all supported camera profiles, including this one if available in the *WSE* version on the system.
+
+## Code walkthrough
+The app demonstrates the following:
+
+1. Looks for a Windows Studio camera on the system which must conform to the 2 below criteria:
     
     1. Checks if the system exposes the related Windows Studio dev prop key.
         ```csharp
@@ -24,8 +55,32 @@ as well as the newer effects in version 2 such as
         ```csharp
        DeviceInformation selectedDeviceInfo = deviceInfoCollection.FirstOrDefault(x => x.EnclosureLocation.Panel == Windows.Devices.Enumeration.Panel.Front);
         ```
-    
-2. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set.
+
+2. Checks if camera profiles are supported and initializes a MediaCapture instance with either the selected profile or the default.
+    ```csharp
+    // List all camera profiles exposed by this device
+    if (MediaCapture.IsVideoProfileSupported(selectedDeviceInfo.Id))
+    {
+        m_availableCameraProfiles = MediaCapture.FindAllVideoProfiles(selectedDeviceInfo.Id).ToList();
+        // ... see the lookup table "CameraProfileIdLUT" in KsHelper.cs that correlates profile GUIDs with legible names and see the method IdentifyCompatibleWindowsStudioCamera() that correlates this lookup table with the profiles retrieved with the above call.
+    }
+
+    // ...
+
+    // Initialize MediaCapture instance with a specific camera profile
+     await m_mediaCapture.InitializeAsync(
+     new MediaCaptureInitializationSettings()
+     {
+         VideoDeviceId = selectedDeviceInfo.Id,
+         MemoryPreference = MediaCaptureMemoryPreference.Cpu,
+         StreamingCaptureMode = StreamingCaptureMode.Video,
+         SharingMode = MediaCaptureSharingMode.ExclusiveControl,
+         // Either the default (null) or a specific camera profile
+         VideoProfile = (m_availableCameraProfiles == null ? null : m_availableCameraProfiles[UIProfilesAvailable.SelectedIndex])
+     });
+    ```
+
+3. Check if the newer set of Windows Studio Effects in version 2 are supported. These new DDIs are defined in a new property set [see DDI documentation](<./Windows Studio Effects DDIs.md>).
     ```csharp
     // New Windows Studio Effects custom KsProperties live under this property set
     public static readonly Guid KSPROPERTYSETID_WindowsStudioEffects = 

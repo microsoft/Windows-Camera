@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,15 +25,18 @@ using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace WindowsStudioSample_WinUI;
 /// <summary>
-/// An empty window that can be used on its own or navigated to within a Frame.
+/// Main window class.
 /// </summary>
 public sealed partial class MainWindow : Window
 {
     // Camera related
+    private DeviceInformation m_cameraDeviceInfo;
     private MediaCapture m_mediaCapture;
-    private MediaPlayer m_mediaPlayer;
+    private MediaPlayer m_mediaPlayer = null;
     private MediaFrameSource m_selectedMediaFrameSource;
     private MediaFrameFormat m_selectedFormat;
+    private IEnumerable<MediaFrameFormat> m_availableFormats;
+    private List<MediaCaptureVideoProfile> m_availableCameraProfiles = null;
     private ControlMonitorManager m_controlManager = null;
     private DispatcherQueue m_uiDispatcherQueue = null;
     private MediaFrameReader m_mediaFrameReader = null;
@@ -139,32 +144,62 @@ public sealed partial class MainWindow : Window
     /// <summary>
     /// Uninitialize the camera
     /// </summary>
-    private async Task UninitializeCamera()
+    private void UninitializeCamera()
     {
-        if (m_mediaPlayer != null)
+        // disable UI
+        m_initLock.Wait();
+        try
         {
-            m_mediaPlayer.Source = null;
-            m_mediaPlayer = null;
-        }
-        m_frameReadingLock.Wait();
-        m_backgroundSegmentationImageRefreshLock.Wait();
-        if (m_mediaFrameReader != null)
-        {
-            m_mediaFrameReader.FrameArrived -= MediaFrameReader_FrameArrived;
-            await m_mediaFrameReader.StopAsync();
-            m_mediaFrameReader = null;
-        }
-        if (m_mediaCapture != null)
-        {
-            m_mediaCapture = null;
-        }
-        m_backgroundSegmentationImageRefreshLock.Release();
-        m_frameReadingLock.Release();
+            UIProfilesAvailable.IsEnabled = false;
+            UIFormatsAvailable.IsEnabled = false;
+            UIFormatsAvailable.ItemsSource = null;
+            UIEyeGazeCorrectionModes.IsEnabled = false;
+            UIBackgroundSegmentationModes.IsEnabled = false;
+            UIStageLightSwitch.IsEnabled = false;
+            UICreativeFilterModes.IsEnabled = false;
+            UIAutomaticFramingSwitch.IsEnabled = false;
+            m_availableFormats = null;
 
-        if (m_controlManager != null)
+            if (m_mediaPlayer != null)
+            {
+                m_mediaPlayer.Source = null;
+                m_mediaPlayer = null;
+            }
+
+            if (m_controlManager != null)
+            {
+                m_controlManager.CameraControlChanged -= CameraControlMonitor_ControlChanged;
+                m_controlManager = null;
+            }
+
+            m_frameReadingLock.Wait();
+            m_backgroundSegmentationImageRefreshLock.Wait();
+            try
+            {
+                if (m_mediaFrameReader != null)
+                {
+                    m_mediaFrameReader.FrameArrived -= MediaFrameReader_FrameArrived;
+                    m_mediaFrameReader.StopAsync().Wait();
+                    m_mediaFrameReader = null;
+                }
+
+                m_selectedMediaFrameSource = null;
+                m_selectedFormat = null;
+                if (m_mediaCapture != null)
+                {
+                    m_mediaCapture.Failed -= MediaCapture_Failed;
+                    m_mediaCapture = null;
+                }
+            }
+            finally
+            {
+                m_backgroundSegmentationImageRefreshLock.Release();
+                m_frameReadingLock.Release();
+            }
+        }
+        finally
         {
-            m_controlManager.CameraControlChanged -= CameraControlMonitor_ControlChanged;
-            m_controlManager = null;
+            m_initLock.Release();
         }
 
         m_appState = AppState.Unitialized;
@@ -185,9 +220,14 @@ public sealed partial class MainWindow : Window
         {
             m_initLock.Wait();
 
-            // Attempt to find a Windows Studio camera then initialize a MediaCapture instance
-            // for it and start streaming
-            await InitializeWindowsStudioMediaCaptureAsync();
+            // Attempt to find a Windows Studio camera..
+            if (m_cameraDeviceInfo == null)
+            {
+                m_cameraDeviceInfo = await IdentifyCompatibleWindowsStudioCamera();
+            }
+
+            // Then initialize a MediaCapture instance for this camera and start streaming
+            await InitializeWindowsStudioMediaCaptureAsync(m_cameraDeviceInfo);
 
             // verify if Windows Studio Effects version 2 is supported
             try
@@ -243,14 +283,22 @@ public sealed partial class MainWindow : Window
             m_controlManager.CameraControlChanged += CameraControlMonitor_ControlChanged;
 
             // Refresh UI element associated with Windows Studio effects (version 1)
-            RefreshEyeGazeUI();
-            RefreshBackgroundSegmentationUI();
-            RefreshAutomaticFramingUI();
+            try
+            {
+                RefreshEyeGazeUI();
+                RefreshBackgroundSegmentationUI();
+                RefreshAutomaticFramingUI();
+            }
+            catch (Exception)
+            {
+                // Windows Studio Effects v1 not supported
+                Debug.Print("Windows Studio Effects v1 not supported");
+            }
         }
         catch (Exception ex)
         {
             NotifyUser(ex.Message, NotifyType.ErrorMessage);
-            await UninitializeCamera();
+            UninitializeCamera();
             m_appState = AppState.Error;
         }
         finally
@@ -260,10 +308,10 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Initialize a MediaCapture instance for a Windows Studio camera if available on the system
+    /// Search for a camera that supports Windows Studio Effects and return its device information.
     /// </summary>
-    /// <returns></returns>
-    private async Task InitializeWindowsStudioMediaCaptureAsync()
+    /// <returns>DeviceInformation</returns>
+    private async Task<DeviceInformation> IdentifyCompatibleWindowsStudioCamera()
     {
         // Retrieve the list of cameras available on the system with the additional properties
         // that specifies if the system is compatible with Windows Studio
@@ -285,6 +333,37 @@ public sealed partial class MainWindow : Window
             throw new InvalidOperationException("Could not find a front facing camera with Windows Studio Effects");
         }
 
+        // List all camera profiles exposed by this device
+        if (MediaCapture.IsVideoProfileSupported(selectedDeviceInfo.Id))
+        {
+            m_availableCameraProfiles = MediaCapture.FindAllVideoProfiles(selectedDeviceInfo.Id).ToList();
+
+            UIProfilesAvailable.SelectionChanged -= UIProfilesAvailable_SelectionChanged;
+
+            // Attempt to retrieve a legible name for each available profile 
+            UIProfilesAvailable.ItemsSource = m_availableCameraProfiles.Select(
+                profile =>
+                {
+                    string profileName = "";
+                    string profileIdString = profile.Id.Split(',')?.ElementAt(0);
+                    if (profileIdString != null && CameraProfileIdLUT.TryGetValue(profileIdString, out profileName))
+                    {
+                        return profile.Id.Replace(profileIdString, profileName);
+                    }
+                    return profile.Id;
+                });
+            UIProfilesAvailable.SelectedIndex = 0;
+            UIProfilesAvailable.SelectionChanged += UIProfilesAvailable_SelectionChanged;
+        }
+        return selectedDeviceInfo;
+    }
+
+    /// <summary>
+    /// Initialize a MediaCapture instance for a Windows Studio camera if available on the system
+    /// </summary>
+    /// <returns></returns>
+    private async Task InitializeWindowsStudioMediaCaptureAsync(DeviceInformation selectedDeviceInfo)
+    { 
         // Initialize MediaCapture with the Windows Studio camera device id
         m_mediaCapture = new MediaCapture();
 
@@ -296,7 +375,8 @@ public sealed partial class MainWindow : Window
                 VideoDeviceId = selectedDeviceInfo.Id,
                 MemoryPreference = MediaCaptureMemoryPreference.Cpu,
                 StreamingCaptureMode = StreamingCaptureMode.Video,
-                SharingMode = MediaCaptureSharingMode.ExclusiveControl
+                SharingMode = MediaCaptureSharingMode.ExclusiveControl,
+                VideoProfile = m_availableCameraProfiles != null ? m_availableCameraProfiles[UIProfilesAvailable.SelectedIndex] : null
             });
 
         // find the frame source, i.e. the stream or pin we want to use to preview from the Windows Studio camera
@@ -316,7 +396,7 @@ public sealed partial class MainWindow : Window
 
         // Filter MediaType given resolution and framerate preference, and filter out non-compatible subtypes
         // in this case we are looking for a MediaType closest to 1080p @ above 15fps
-        const uint targetFrameRate = 15;
+        const uint targetFramerate = 30;
         const uint targetWidth = 1920;
         const uint targetHeight = 1080;
         bool IsCompatibleSubtype(string subtype)
@@ -327,26 +407,34 @@ public sealed partial class MainWindow : Window
                    || string.Compare(subtype, MediaEncodingSubtypes.Rgb32, true) == 0;
         }
 
-        var formats = m_selectedMediaFrameSource.SupportedFormats.Where(
-                        format => (format.FrameRate.Numerator / format.FrameRate.Denominator) > targetFrameRate
-                                  && IsCompatibleSubtype(format.Subtype))?.OrderBy(
-                                      format => Math.Abs((int)(format.VideoFormat.Width * format.VideoFormat.Height) - (targetWidth * targetHeight)));
-
-        m_selectedFormat = formats.FirstOrDefault();
-
+        m_availableFormats = m_selectedMediaFrameSource.SupportedFormats.Where(
+            format => IsCompatibleSubtype(format.Subtype))?.OrderBy(
+                format => Math.Abs((int)(format.VideoFormat.Width * format.VideoFormat.Height) - (targetWidth * targetHeight))
+                + ((format.FrameRate.Numerator / format.FrameRate.Denominator) - targetFramerate));
+        
+        m_selectedFormat = m_availableFormats.FirstOrDefault();
         if (m_selectedFormat == null)
         {
             throw new Exception($"Could not find a valid frame source format to stream with");
         }
         await m_selectedMediaFrameSource.SetFormatAsync(m_selectedFormat);
 
+        // Update UI with all possible formats available on the stream that can be toggled
+        UIFormatsAvailable.SelectionChanged -= UIFormatsAvailable_SelectionChanged;
+        UIFormatsAvailable.ItemsSource = m_availableFormats.Select(
+            format => $"{format.Subtype}: " +
+                      $"{format.VideoFormat.Width}x{format.VideoFormat.Height}" +
+                      $"@{format.FrameRate.Numerator / format.FrameRate.Denominator}fps");
+        UIFormatsAvailable.SelectedIndex = 0;
+        UIFormatsAvailable.SelectionChanged += UIFormatsAvailable_SelectionChanged;
+
         // Connect the camera to the UI element for previewing the camera
         m_mediaPlayer = new MediaPlayer();
         m_mediaPlayer.RealTimePlayback = true;
         m_mediaPlayer.AutoPlay = true;
+        m_mediaPlayer.CommandManager.IsEnabled = false; // disable playback controls
         var mediaSource = MediaSource.CreateFromMediaFrameSource(m_selectedMediaFrameSource);
         m_mediaPlayer.Source = mediaSource;
-        m_mediaPlayer.CommandManager.IsEnabled = false; // disable playback controls
 
         UIPreviewElement.SetMediaPlayer(m_mediaPlayer);
 
@@ -371,6 +459,10 @@ public sealed partial class MainWindow : Window
         m_mediaFrameReader = await m_mediaCapture.CreateFrameReaderAsync(m_selectedMediaFrameSource);
         m_mediaFrameReader.FrameArrived += MediaFrameReader_FrameArrived;
         await m_mediaFrameReader.StartAsync();
+
+        // enable UI options to change frame format and camera profile
+        UIFormatsAvailable.IsEnabled = true;
+        UIProfilesAvailable.IsEnabled = (m_availableCameraProfiles != null);
     }
 
     /// <summary>
@@ -430,11 +522,11 @@ public sealed partial class MainWindow : Window
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="errorEventArgs"></param>
-    private async void MediaCapture_Failed(MediaCapture sender, MediaCaptureFailedEventArgs errorEventArgs)
+    private void MediaCapture_Failed(MediaCapture sender, MediaCaptureFailedEventArgs errorEventArgs)
     {
         m_initLock.Wait();
-        NotifyUser(errorEventArgs.Message, NotifyType.ErrorMessage);
-        var t = UninitializeCamera();
+        NotifyUser($"MediaCapture_Failed: {errorEventArgs.Message}", NotifyType.ErrorMessage);
+        UninitializeCamera();
         m_appState = AppState.Error;
         m_initLock.Release();
     }
@@ -466,7 +558,8 @@ public sealed partial class MainWindow : Window
                     break;
 
                 default:
-                    throw new Exception("unhandled control change, implement or allow through at your convenience");
+                    //unhandled control change, implement or allow through at your convenience
+                    break;
             }
         }
         else if (control.controlKind == ControlKind.WindowsStudioEffectsKind)
@@ -707,6 +800,24 @@ public sealed partial class MainWindow : Window
         var uri = new Uri($"ms-controlcenter:studioeffects");
         var fireAndForget = Windows.System.Launcher.LaunchUriAsync(uri);
     }
+
+    private async void UIFormatsAvailable_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (UIFormatsAvailable.IsEnabled)
+        {
+            await m_selectedMediaFrameSource.SetFormatAsync(m_availableFormats.ElementAt(UIFormatsAvailable.SelectedIndex));
+        }
+    }
+
+    private void UIProfilesAvailable_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (UIProfilesAvailable.IsEnabled)
+        {
+            UninitializeCamera();
+            var t = InitializeCameraAndUI(); // fire-forget
+        }
+    }
+
     #endregion UICallbacks
 
 

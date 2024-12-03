@@ -5,30 +5,45 @@
 
 # Windows Platform sample applications and tools for using and developing the Camera features
 
-This repo contains sample applications that demonstrate the API usage patterns for using the camera related features on Universal Windows Platform (UWP), Win32 Desktop platform and .NetCore 3.0 for Windows 10. 
-These code samples were created with the project templates available in Visual Studio, and are designed to run on desktop, mobile, and future devices.
+This repo contains a collection of samples that demonstrate the API usage patterns for using the camera related features in WinUI3, .Net, Universal Windows Platform (UWP) and Win32 Desktop applications for Windows 10 and Windows 11.
 
 > **Note:** If you are unfamiliar with Git and GitHub, you can download the entire collection as a 
 > [ZIP file](https://github.com/microsoft/Windows-Camera/archive/master.zip), but be 
 > sure to unzip everything to access shared dependencies. 
 
-## Universal Windows Platform (UWP) samples/tools
+## Content
 
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 16299 for Windows 10 or higher on a per-sample basis.
+- [Windows Studio Effects (*WSE*) camera sample application - C# .Net WinUI & WinRT](Samples/WindowsStudio/README.md)
 
-   [Get a free copy of Visual Studio 2017 Community Edition with support for building Universal Windows Platform apps](http://go.microsoft.com/fwlink/p/?LinkID=280676)
+- [Windows Studio Effects Driver-Defined Interfaces *(DDI)* documentation with C++ win32 code snippets](Samples/WindowsStudio/Windows%20Studio%20Effects%20DDIs.md)
+
+- [Sample of Control Monitoring app that listens changes to various camera controls](Samples/ControlMonitorApp/readme.md)
+
+- [Sample of Virtual Camera mediasource (IMFVirtualCamera) and configuration app](Samples/VirtualCamera/README.md)
+
+- [Sample of Companion Settings app to read and save default configurations via IMFCameraConfigurationManager APIs](Samples/CameraSettingsExternalSettingsApp/readme.md)
+
+- [Sample to demonstrate how to use the IMFSensorActivityMonitor API](Samples/SensorActivityMonitorConsoleApp/readme.md)
+
+- [Sample to demonstrate basic camera application with MediaCapture APIs and WinUI3](Samples/MediaCaptureWinUI3/MediaCaptureWinUI3/Readme.md)
+
+- [Win32 Desktop console application demonstrating use of WinRT Windows Media Capture APIs](Samples/WMCConsole_winrtcpp/README.md)
+
+- [WinRT applications demonstrating use of custom KS Camera Extended Properties and extraction of frame metadata](Samples/ExtendedControlAndMetadata/README.md)
+
+- [Win32 Desktop application and libraries demonstrating use of Windows APIs and Windows Media Foundation APIs for RTP/RTSP streaming from camera](Samples/NetworkMediaStreamer/Readme.md)
+
+- [360-degree camera capture/record/preview](Tools/Cam360/README.md)
+
+## Visual Studio requirement
+
+These samples require Visual Studio and the Windows Software Development Kit (SDK) of varying minimal version for Windows 10 or higher on a per-sample basis.
+
+   [Get a free copy of Visual Studio Community Edition](https://visualstudio.microsoft.com/)
 
 Additionally, to stay on top of the latest updates to Windows and the development tools, become a Windows Insider by joining the Windows Insider Program.
 
    [Become a Windows Insider](https://insider.windows.com/)
-
-## Win32 Desktop applications/tools
-
-These samples require Visual Studio 2017 Update 4 or higher and the Windows Software Development Kit (SDK) version 17763 for Windows 10.
-
-## .NetCore 3.0 Desktop applications/tools
-
-These samples require .NetCore 3.0 SDK and Visual Studio 2019 preview. (https://visualstudio.microsoft.com/vs/preview/)
 
 ## Using the samples
 
@@ -62,44 +77,3 @@ For more information see the [Code of Conduct FAQ](https://opensource.microsoft.
 contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
 
-## Samples
-<table>
- <tr>
-  <td><a href="Tools/Cam360">360-degree camera capture/record/preview</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/WMCConsole_winrtcpp">Win32 Desktop console application demonstrating use of Windows Media Capture APIs</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/ExtendedControlAndMetadata">WinRT applications demonstrating use of custom KS Camera Extended Properties and extraction of frame metadata</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/NetworkMediaStreamer"> Win32 Desktop application and libraries demonstrating use of Windows APIs and Windows Media Foundation APIs for RTP/RTSP streaming from camera</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/VirtualCamera"> Sample of Virtual Camera mediasource and configuration app </a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/CameraSettingsExternalSettingsApp"> Sample of Companion Settings app to read and save default configurations via IMFCameraConfigurationManager APIs</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/ControlMonitorApp">Sample of Control Monitoring app that listens changes to various camera controls</a></td>
- </tr>
-</table>
-<table>
- <tr>
-  <td><a href="Samples/WindowsStudio">C# .Net WinUI & WinRT sample application for using a Windows Studio camera and its set of effects via APIs</a></td>
- </tr>
-</table>
