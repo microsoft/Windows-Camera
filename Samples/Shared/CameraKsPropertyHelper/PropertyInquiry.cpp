@@ -294,11 +294,12 @@ namespace winrt::CameraKsPropertyHelper::implementation
         {
             // retrieve the GET payload and modify the part we want to send a SET with
             // if we are here we assume user has check for support first
-            auto  getPayload =
+            auto getPayload =
                 GetExtendedCameraControlPayload(
                     controller,
                     static_cast<int>(extendedControlKind));
-            auto pVidProcGetPayload = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload).Payload();
+            auto pPayloadWrapper = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload);
+            KsVidProcCameraExtendedPropPayload* pVidProcGetPayload = pPayloadWrapper.Payload();
 
             pVidProcGetPayload->header.Flags = flags;
 
@@ -364,7 +365,8 @@ namespace winrt::CameraKsPropertyHelper::implementation
                 GetExtendedCameraControlPayload(
                     controller,
                     static_cast<int>(extendedControlKind));
-            auto pVidProcGetPayload = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload).Payload();
+            auto pPayloadWrapper = PropertyValuePayloadHolder<KsVidProcCameraExtendedPropPayload>(getPayload);
+            KsVidProcCameraExtendedPropPayload* pVidProcGetPayload = pPayloadWrapper.Payload();
 
             pVidProcGetPayload->header.Flags = flags;
             pVidProcGetPayload->vidProcSetting.VideoProc.Value.ul = (ULONG)value;
