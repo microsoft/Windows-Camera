@@ -6,8 +6,8 @@
 
 namespace winrt::CameraKsPropertyHelper::implementation
 {
-    static GUID KSPROPERTYSETID_WindowsCameraEffect =
-    { 0x1666d655, 0x21a6, 0x4982, 0x97, 0x28, 0x52, 0xc3, 0x9e, 0x86, 0x9f, 0x90 };
+    /*static GUID KSPROPERTYSETID_WindowsCameraEffect =
+    { 0x1666d655, 0x21a6, 0x4982, 0x97, 0x28, 0x52, 0xc3, 0x9e, 0x86, 0x9f, 0x90 };*/
 
     // Redefining structs normally available in ksmedia.h but not available due to WINAPI_PARTITION_APP
     //
