@@ -35,6 +35,7 @@ namespace OutboundSettingsAppTest
         private DefaultControlHelper.DefaultController m_contrastController = null;
         private DefaultControlHelper.DefaultController m_brightnessController = null;
         private DefaultControlHelper.DefaultController m_backgroundBlurController = null;
+        private DefaultControlHelper.DefaultController m_hdrController = null;
         private DefaultControlHelper.DefaultController m_evCompController = null;
         private ControlMonitorHelperWinRT.ControlMonitorManager m_controlMonitorManager = null;
 
@@ -240,7 +241,7 @@ namespace OutboundSettingsAppTest
                 {
                     // retrieve default control manager to inspect and alter any default value
                     m_brightnessController = m_controlManager.CreateController(
-                        DefaultControlHelper.DefaultControllerType.VideoProcAmp, 
+                        DefaultControlHelper.DefaultControllerType.VideoProcAmp,
                         (uint)CameraKsPropertyHelper.VidCapVideoProcAmpKind.KSPROPERTY_VIDEOPROCAMP_BRIGHTNESS);
 
                     await UpdateBrightnessValueUI();
@@ -251,7 +252,7 @@ namespace OutboundSettingsAppTest
                 {
                     // retrieve default control manager to inspect and alter any default value
                     m_evCompController = m_controlManager.CreateController(
-                        DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, 
+                        DefaultControlHelper.DefaultControllerType.ExtendedCameraControl,
                         (uint)CameraKsPropertyHelper.ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_EVCOMPENSATION);
 
                     await UpdateEVCompValueUI();
@@ -267,10 +268,23 @@ namespace OutboundSettingsAppTest
                 {
                     // retrieve default control manager to inspect and alter any default value
                     m_backgroundBlurController = m_controlManager.CreateController(
-                        DefaultControlHelper.DefaultControllerType.ExtendedCameraControl, 
+                        DefaultControlHelper.DefaultControllerType.ExtendedCameraControl,
                         (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
 
                     await UpdateBackgroundSegmentationValueUI();
+                }
+
+                //hdr
+                getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR);
+                bool isHdrControlSupported = (getPayload != null);
+                if (isHdrControlSupported /*|| true && getPayload.Capability to be worked out.*/) 
+                {
+                    // retrieve default control manager to inspect and alter any default value
+                    m_hdrController = m_controlManager.CreateController(
+                        DefaultControlHelper.DefaultControllerType.ExtendedCameraControl,
+                        (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR);
+
+                    await UpdateHdrValueUI();
                 }
 
                 // create a CameraControlMonitor to be alerted when a control value is changed from outside our app
@@ -339,7 +353,9 @@ namespace OutboundSettingsAppTest
                     case (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION:
                         var t2 = UpdateBackgroundSegmentationValueUI();
                         break;
-
+                    case (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR:
+                        var t3 = UpdateHdrValueUI();
+                        break;
                     default:
                         throw new Exception("unhandled ExtendedControlKind change, implement or allow through at your convenience");
                 }
@@ -371,6 +387,39 @@ namespace OutboundSettingsAppTest
                         }
 
                         DefaultBlurToggle.Toggled += DefaultBlurToggle_Toggled;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    UITextOutput.Text = $"error: {ex.Message}";
+                }
+            });
+        }
+
+        /// <summary>
+        /// Update Video Hdr UI given default value stored.
+        /// </summary>
+        /// <returns></returns>
+        private async Task UpdateHdrValueUI()
+        {
+            await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                try
+                {
+                    if (m_hdrController != null)
+                    {
+                        // query current value
+                        IExtendedPropertyHeader getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR);
+
+                        DefaultHdrToggle.Toggled -= DefaultHdrToggle_Toggled;
+                        DefaultHdrToggle.Visibility = Visibility.Visible;
+                        var defaultValue = m_hdrController.TryGetStoredDefaultValue();
+                        if (defaultValue != null)
+                        {
+                            DefaultHdrToggle.IsOn = (defaultValue != 0);
+                        }
+
+                        DefaultHdrToggle.Toggled += DefaultHdrToggle_Toggled;
                     }
                 }
                 catch (Exception ex)
@@ -552,6 +601,20 @@ namespace OutboundSettingsAppTest
             }
         }
 
+        private void DefaultHdrToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                int flags = (DefaultHdrToggle.IsOn) ? 1:0;
+                m_hdrController.SetDefaultValue(flags);
+                PropertyInquiry.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR, (uint)flags);
+            }
+            catch (Exception ex)
+            {
+                UITextOutput.Text = $"error: {ex.Message}";
+            }
+        }
+
         private async void DefaultEVCompSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             try
@@ -584,6 +647,7 @@ namespace OutboundSettingsAppTest
                 var t = InitializeAsync(); // fire-forget
             }
         }
+
 #endregion UICallbacks
     }
 }

@@ -34,6 +34,7 @@
     <ClInclude Include="FieldOfView2ConfigCapsPropertyPayload.h" />
     <ClInclude Include="WindowsStudioSupportedPropertyPayload.h" />
     <ClInclude Include="BasicWindowsStudioPropertyPayload.h" />
+    <ClInclude Include="VideoHdrPropertyPayload.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="CameraKsPropertyInquiry.idl" />
@@ -41,5 +42,8 @@
   <ItemGroup>
     <None Include="CameraKsPropertyHelper.def" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(MSBuildThisFileDirectory)..\..\natvis\wil.natvis" />
   </ItemGroup>
 </Project>

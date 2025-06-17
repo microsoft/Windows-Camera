@@ -213,6 +213,12 @@ namespace CameraKsPropertyHelper
         Windows.Foundation.Collections.IVectorView<BackgroundSegmentationConfigCaps> ConfigCaps { get; };
     }
 
+    // class to encapsulate a KSPROPERTY containing a KSCAMERA_EXTENDEDPROP_HEADER for KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR
+    runtimeclass VideoHdrPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload
+    {
+
+    }
+
     // Projected representation of KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS returned by KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS DDI
     runtimeclass FieldOfView2ConfigCapsPropertyPayload : [default] IExtendedPropertyHeader, IExtendedPropertyPayload
     {

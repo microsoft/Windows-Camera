@@ -102,7 +102,25 @@
                     Visibility="Collapsed"
                     VerticalAlignment="Center"/>
                 </StackPanel>
-
+                
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock
+                    x:Uid="DefaultHdr"
+                    Text="HDR"
+                    Visibility="{Binding ElementName=DefaultHdrToggle, Path=Visibility}"
+                    VerticalAlignment="Center" />
+                    <ToggleSwitch 
+                    x:Name="DefaultHdrToggle"
+                    x:Uid="DefaultHdrToggle"
+                    AutomationProperties.LabeledBy="{Binding ElementName=DefaultHdr}"
+                    Toggled="DefaultHdrToggle_Toggled"
+                    HorizontalAlignment="Center"
+                    MaxWidth="300"
+                    MinWidth="200"
+                    Visibility="Collapsed"
+                    VerticalAlignment="Center"/>
+                </StackPanel>
+                
             </StackPanel>
 
         </StackPanel>
