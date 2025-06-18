@@ -275,9 +275,8 @@ namespace OutboundSettingsAppTest
                 }
 
                 //hdr
-                getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR);
-                bool isHdrControlSupported = (getPayload != null);
-                if (isHdrControlSupported /*|| true && getPayload.Capability to be worked out.*/) 
+                bool isHdrControlSupported = m_mediaCapture.VideoDeviceController.HdrVideoControl.Supported;
+                if (isHdrControlSupported) 
                 {
                     // retrieve default control manager to inspect and alter any default value
                     m_hdrController = m_controlManager.CreateController(
@@ -375,11 +374,10 @@ namespace OutboundSettingsAppTest
                 {
                     if (m_backgroundBlurController != null)
                     {
-                        // query current value
-                        IExtendedPropertyHeader getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION);
-
                         DefaultBlurToggle.Toggled -= DefaultBlurToggle_Toggled;
                         DefaultBlurToggle.Visibility = Visibility.Visible;
+                        
+                        // query current default value
                         var defaultValue = m_backgroundBlurController.TryGetStoredDefaultValue();
                         if(defaultValue != null)
                         {
@@ -408,11 +406,10 @@ namespace OutboundSettingsAppTest
                 {
                     if (m_hdrController != null)
                     {
-                        // query current value
-                        IExtendedPropertyHeader getPayload = PropertyInquiry.GetExtendedControl(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR);
-
                         DefaultHdrToggle.Toggled -= DefaultHdrToggle_Toggled;
                         DefaultHdrToggle.Visibility = Visibility.Visible;
+
+                        // query current default value
                         var defaultValue = m_hdrController.TryGetStoredDefaultValue();
                         if (defaultValue != null)
                         {
@@ -605,9 +602,9 @@ namespace OutboundSettingsAppTest
         {
             try
             {
-                int flags = (DefaultHdrToggle.IsOn) ? 1:0;
-                m_hdrController.SetDefaultValue(flags);
-                PropertyInquiry.SetExtendedControlFlags(m_mediaCapture.VideoDeviceController, ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR, (uint)flags);
+                Windows.Media.Devices.HdrVideoMode flags = (DefaultHdrToggle.IsOn) ? Windows.Media.Devices.HdrVideoMode.On : Windows.Media.Devices.HdrVideoMode.Off;
+                m_hdrController.SetDefaultValue((int)flags);
+                m_mediaCapture.VideoDeviceController.HdrVideoControl.Mode = flags;
             }
             catch (Exception ex)
             {
