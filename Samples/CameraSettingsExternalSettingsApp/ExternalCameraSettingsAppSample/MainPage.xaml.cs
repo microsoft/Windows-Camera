@@ -353,6 +353,8 @@ namespace OutboundSettingsAppTest
                     case (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION:
                         var t2 = UpdateBackgroundSegmentationValueUI();
                         break;
+                    //Stop the video preview first to receive this control change.
+                    //https://learn.microsoft.com/en-us/windows-hardware/drivers/stream/ksproperty-cameracontrol-extended-videohdr
                     case (uint)ExtendedControlKind.KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR:
                         var t3 = UpdateHdrValueUI();
                         break;
