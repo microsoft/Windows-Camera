@@ -15,7 +15,6 @@
 #include "FieldOfView2ConfigCapsPropertyPayload.h"
 #include "WindowsStudioSupportedPropertyPayload.h"
 #include "BasicWindowsStudioPropertyPayload.h"
-#include "VideoHdrPropertyPayload.h"
 using namespace winrt::Windows::Media::Devices;
 
 namespace winrt::CameraKsPropertyHelper::implementation
@@ -244,6 +243,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
             }  
 
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION: // fallthrough
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR: // fallthrough
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2:
             {
                 payload = make<BasicExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
@@ -259,12 +259,6 @@ namespace winrt::CameraKsPropertyHelper::implementation
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS:
             {
                 payload = make<FieldOfView2ConfigCapsPropertyPayload>(propertyValueResult);
-                break;
-            }
-
-            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR:
-            {
-                payload = make<VideoHdrPropertyPayload>(propertyValueResult);
                 break;
             }
 
