@@ -233,9 +233,13 @@ namespace winrt::DefaultControlHelper::implementation
         wil::com_ptr<IMFCameraControlDefaults> spDefaults = nullptr;
 
         THROW_HR_IF_NULL(E_INVALIDARG, defaultCollection);
-
+        MF_CAMERA_CONTROL_CONFIGURATION_TYPE controlConfigType = MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART;
+        if (id == KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR)
+        {
+            controlConfigType = MF_CAMERA_CONTROL_CONFIGURATION_TYPE_PRESTART;
+        }
         THROW_IF_FAILED(defaultCollection->GetOrAddExtendedControl(
-            MF_CAMERA_CONTROL_CONFIGURATION_TYPE_POSTSTART,
+            controlConfigType,
             id,
             KSCAMERA_EXTENDEDPROP_FILTERSCOPE,
             sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE),

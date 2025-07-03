@@ -419,6 +419,7 @@ namespace OutboundSettingsAppTest
                         }
 
                         DefaultHdrToggle.Toggled += DefaultHdrToggle_Toggled;
+                        UITextOutput.Text = "Stop the video preview first to receive KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR change.";
                     }
                 }
                 catch (Exception ex)
