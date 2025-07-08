@@ -243,6 +243,7 @@ namespace winrt::CameraKsPropertyHelper::implementation
             }  
 
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION: // fallthrough
+            case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_VIDEOHDR: // fallthrough
             case ExtendedControlKind::KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2:
             {
                 payload = make<BasicExtendedPropertyPayload>(propertyValueResult, extendedControlKind);
