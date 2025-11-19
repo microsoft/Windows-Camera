@@ -334,7 +334,7 @@ public sealed partial class MainWindow : Window
             UIProfilesAvailable.SelectionChanged -= UIProfilesAvailable_SelectionChanged;
 
             // Attempt to retrieve a legible name for each available profile 
-            UIProfilesAvailable.ItemsSource = m_availableCameraProfiles.Select(
+            var profileList = m_availableCameraProfiles.Select(
                 profile =>
                 {
                     string profileName = "";
@@ -344,8 +344,10 @@ public sealed partial class MainWindow : Window
                         return profile.Id.Replace(profileIdString, profileName);
                     }
                     return profile.Id;
-                });
-            UIProfilesAvailable.SelectedIndex = 0;
+                }).ToList();
+            UIProfilesAvailable.ItemsSource = profileList;
+            int profileIndexToSelect = profileList.FindIndex(profileName => profileName.Contains(LegacyProfileNameStr));
+            UIProfilesAvailable.SelectedIndex = profileIndexToSelect >= 0 ? profileIndexToSelect : 0;
             UIProfilesAvailable.SelectionChanged += UIProfilesAvailable_SelectionChanged;
         }
         return selectedDeviceInfo;

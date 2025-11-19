@@ -195,10 +195,11 @@ namespace WindowsStudioSample_WinUI
         };
 
         // Lookup table to match a known camera profile ID with a legible name
+        public const string LegacyProfileNameStr = "Legacy";
         public static readonly Dictionary<string, string> CameraProfileIdLUT =
             new Dictionary<string, string>()
             {
-                { "{B4894D81-62B7-4EEC-8740-80658C4A9D3E}", "Legacy" }, // KSCAMERAPROFILE_Legacy
+                { "{B4894D81-62B7-4EEC-8740-80658C4A9D3E}", LegacyProfileNameStr }, // KSCAMERAPROFILE_Legacy
                 { "{A0E517E8-8F8C-4F6F-9A57-46FC2F647EC0}", "VideoRecording" }, // KSCAMERAPROFILE_VideoRecording
                 { "{32440725-961B-4CA3-B5B2-854E719D9E1B}", "HighQualityPhoto" }, // KSCAMERAPROFILE_HighQualityPhoto
                 { "{6B52B017-42C7-4A21-BFE3-23F009149887}", "BalancedVideoAndPhoto" }, // KSCAMERAPROFILE_BalancedVideoAndPhoto
