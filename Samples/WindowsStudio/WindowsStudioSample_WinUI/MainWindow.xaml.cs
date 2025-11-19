@@ -147,59 +147,52 @@ public sealed partial class MainWindow : Window
     private void UninitializeCamera()
     {
         // disable UI
-        m_initLock.Wait();
+
+        UIProfilesAvailable.IsEnabled = false;
+        UIFormatsAvailable.IsEnabled = false;
+        UIFormatsAvailable.ItemsSource = null;
+        UIEyeGazeCorrectionModes.IsEnabled = false;
+        UIBackgroundSegmentationModes.IsEnabled = false;
+        UIStageLightSwitch.IsEnabled = false;
+        UICreativeFilterModes.IsEnabled = false;
+        UIAutomaticFramingSwitch.IsEnabled = false;
+        m_availableFormats = null;
+
+        if (m_mediaPlayer != null)
+        {
+            m_mediaPlayer.Source = null;
+            m_mediaPlayer = null;
+        }
+
+        if (m_controlManager != null)
+        {
+            m_controlManager.CameraControlChanged -= CameraControlMonitor_ControlChanged;
+            m_controlManager = null;
+        }
+
+        m_frameReadingLock.Wait();
+        m_backgroundSegmentationImageRefreshLock.Wait();
         try
         {
-            UIProfilesAvailable.IsEnabled = false;
-            UIFormatsAvailable.IsEnabled = false;
-            UIFormatsAvailable.ItemsSource = null;
-            UIEyeGazeCorrectionModes.IsEnabled = false;
-            UIBackgroundSegmentationModes.IsEnabled = false;
-            UIStageLightSwitch.IsEnabled = false;
-            UICreativeFilterModes.IsEnabled = false;
-            UIAutomaticFramingSwitch.IsEnabled = false;
-            m_availableFormats = null;
-
-            if (m_mediaPlayer != null)
+            if (m_mediaFrameReader != null)
             {
-                m_mediaPlayer.Source = null;
-                m_mediaPlayer = null;
+                m_mediaFrameReader.FrameArrived -= MediaFrameReader_FrameArrived;
+                m_mediaFrameReader.StopAsync().Wait();
+                m_mediaFrameReader = null;
             }
 
-            if (m_controlManager != null)
+            m_selectedMediaFrameSource = null;
+            m_selectedFormat = null;
+            if (m_mediaCapture != null)
             {
-                m_controlManager.CameraControlChanged -= CameraControlMonitor_ControlChanged;
-                m_controlManager = null;
-            }
-
-            m_frameReadingLock.Wait();
-            m_backgroundSegmentationImageRefreshLock.Wait();
-            try
-            {
-                if (m_mediaFrameReader != null)
-                {
-                    m_mediaFrameReader.FrameArrived -= MediaFrameReader_FrameArrived;
-                    m_mediaFrameReader.StopAsync().Wait();
-                    m_mediaFrameReader = null;
-                }
-
-                m_selectedMediaFrameSource = null;
-                m_selectedFormat = null;
-                if (m_mediaCapture != null)
-                {
-                    m_mediaCapture.Failed -= MediaCapture_Failed;
-                    m_mediaCapture = null;
-                }
-            }
-            finally
-            {
-                m_backgroundSegmentationImageRefreshLock.Release();
-                m_frameReadingLock.Release();
+                m_mediaCapture.Failed -= MediaCapture_Failed;
+                m_mediaCapture = null;
             }
         }
         finally
         {
-            m_initLock.Release();
+            m_backgroundSegmentationImageRefreshLock.Release();
+            m_frameReadingLock.Release();
         }
 
         m_appState = AppState.Unitialized;
@@ -341,7 +334,7 @@ public sealed partial class MainWindow : Window
             UIProfilesAvailable.SelectionChanged -= UIProfilesAvailable_SelectionChanged;
 
             // Attempt to retrieve a legible name for each available profile 
-            UIProfilesAvailable.ItemsSource = m_availableCameraProfiles.Select(
+            var profileList = m_availableCameraProfiles.Select(
                 profile =>
                 {
                     string profileName = "";
@@ -351,8 +344,10 @@ public sealed partial class MainWindow : Window
                         return profile.Id.Replace(profileIdString, profileName);
                     }
                     return profile.Id;
-                });
-            UIProfilesAvailable.SelectedIndex = 0;
+                }).ToList();
+            UIProfilesAvailable.ItemsSource = profileList;
+            int profileIndexToSelect = profileList.FindIndex(profileName => profileName.Contains(LegacyProfileNameStr));
+            UIProfilesAvailable.SelectedIndex = profileIndexToSelect >= 0 ? profileIndexToSelect : 0;
             UIProfilesAvailable.SelectionChanged += UIProfilesAvailable_SelectionChanged;
         }
         return selectedDeviceInfo;
@@ -813,7 +808,9 @@ public sealed partial class MainWindow : Window
     {
         if (UIProfilesAvailable.IsEnabled)
         {
+            m_initLock.Wait();
             UninitializeCamera();
+            m_initLock.Release();
             var t = InitializeCameraAndUI(); // fire-forget
         }
     }
