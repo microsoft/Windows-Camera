@@ -1,7 +1,12 @@
 #  Windows Studio Effects camera sample application - C# .Net WinUI & WinRT
+
+
+> See additional documentation regarding ***[Windows Studio Effect (WSE) and its Driver-Defined Interfaces (DDIs) and custom device properties](<./Windows Studio Effects DDIs.md>)***
+
+---
+
 ![Demo App screenshot](./DocAssets/DemoAppScreenshot.png)
 
-additional documentation regarding ***[Windows Studio Effect (WSE) and its Driver-Defined Interfaces (DDIs) and custom device properties](<./Windows Studio Effects DDIs.md>)***
 
 >This sample will only run fully on a system equipped with a [Windows Studio Effects (*WSE*)](https://learn.microsoft.com/en-us/windows/ai/studio-effects/) camera, which in itself requires:
 >1. a compatible NPU

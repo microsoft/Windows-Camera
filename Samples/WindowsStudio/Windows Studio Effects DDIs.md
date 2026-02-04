@@ -460,6 +460,7 @@ The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n'
 
 ## <a id="MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS"></a>MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS frame metadata
 Produced when the control KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA is set with a bit mask containing KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS. This metadata contains the 2D facial landmarks of each face tracked in the frame. The landmarks provided follow the Multi-PIE 68 points mark-up scheme and adds 2 extra points, one for each center of the iris, for a total of 70 tracked per face.
+
 ![Facial landmarks - 70 points](./DocAssets/FaceLandmarks.png)
 
 The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n' * **WSEFaceLandmarksMetadata**
@@ -801,7 +802,6 @@ Implementing this DDI is optional:
 | -- | -- | -- |
 | ![sensor crop example 1](./DocAssets/SensorCrop1.png) | Size.cx = 3840<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1440, We infer then that the sensor area covered is:<br>2880 x 2160 |
 | ![sensor crop example 2](./DocAssets/SensorCrop2.png) | Size.cx = 3520<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1080, We infer then that the sensor area covered is:<br>2880 x 2160 |
- |
 | ![sensor crop example 3](./DocAssets/SensorCrop3.png) | Size.cx = 1600<br>Size.cy = 1600 | Mediatype is of resolution 800 x 800, We infer then that the sensor area covered is:<br>1600 x 1600 |
 
 >**A driver component such as a DMFT that does not implement this DDI call shall relay it to the subsequent component**
