@@ -449,7 +449,7 @@ When the Flags value is anything but KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_OFF, ea
 ## <a id="MF_WINDOWSSTUDIO_METADATA_FACETRACKING"></a>MF_WINDOWSSTUDIO_METADATA_FACETRACKING frame metadata
 Produced when the control KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA is set with a bit mask containing KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACETRACKING. This metadata contains the bounding box of each face tracked in the frame. 
 
-![face tracking bounding box](DocAssets\FaceTrackingBoundingBox.png)
+![face tracking bounding box](./DocAssets/FaceTrackingBoundingBox.png)
 
 The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n' * **WSEFaceTrackingMetadata**
 | | |
@@ -460,7 +460,7 @@ The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n'
 
 ## <a id="MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS"></a>MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS frame metadata
 Produced when the control KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA is set with a bit mask containing KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS. This metadata contains the 2D facial landmarks of each face tracked in the frame. The landmarks provided follow the Multi-PIE 68 points mark-up scheme and adds 2 extra points, one for each center of the iris, for a total of 70 tracked per face.
-![Facial landmarks - 70 points](DocAssets\FaceLandmarks.png)
+![Facial landmarks - 70 points](./DocAssets/FaceLandmarks.png)
 
 The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n' * **WSEFaceLandmarksMetadata**
 | | |
@@ -472,7 +472,7 @@ The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n'
 ## <a id="MF_WINDOWSSTUDIO_METADATA_FACEPOSE"></a>MF_WINDOWSSTUDIO_METADATA_FACEPOSE frame metadata
 Produced when the control KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA is set with a bit mask containing KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACEPOSE. This metadata contains the 3D orientation of each face tracked in the frame in Euler angles (pitch, yaw, roll) along each axis (x, y, z) in degrees in a right-handedness coordinate system, where the Z axis points towards the user.
 
-![Face pose](DocAssets\FacePose.png)
+![Face pose](./DocAssets/FacePose.png)
 
 The metadata payload is in the following layout: **WSEFaceMetadataHeader** + 'n' * **WSEFacePoseMetadata**
 | | |
@@ -799,10 +799,10 @@ Implementing this DDI is optional:
 
 | Example of possible sensor crop | Example values returned via DDI assuming SensorWidth = 3840, SensorHeight = 2640 for the sensor center crop (green) | Example sensor area leveraged to service MediaType (red) |
 | -- | -- | -- |
-| ![sensor crop example 1](DocAssets\SensorCrop1.png) | Size.cx = 3840<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1440, We infer then that the sensor area covered is:<br>2880 x 2160 |
-| ![sensor crop example 2](DocAssets\SensorCrop2.png) | Size.cx = 3520<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1080, We infer then that the sensor area covered is:<br>2880 x 2160
+| ![sensor crop example 1](./DocAssets/SensorCrop1.png) | Size.cx = 3840<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1440, We infer then that the sensor area covered is:<br>2880 x 2160 |
+| ![sensor crop example 2](./DocAssets/SensorCrop2.png) | Size.cx = 3520<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1080, We infer then that the sensor area covered is:<br>2880 x 2160 |
  |
-| ![sensor crop example 3](DocAssets\SensorCrop3.png) | Size.cx = 1600<br>Size.cy = 1600 | Mediatype is of resolution 800 x 800, We infer then that the sensor area covered is:<br>1600 x 1600 |
+| ![sensor crop example 3](./DocAssets/SensorCrop3.png) | Size.cx = 1600<br>Size.cy = 1600 | Mediatype is of resolution 800 x 800, We infer then that the sensor area covered is:<br>1600 x 1600 |
 
 >**A driver component such as a DMFT that does not implement this DDI call shall relay it to the subsequent component**
 
@@ -981,7 +981,7 @@ Implementing this DDI is optional:
 
 | Input image to *WSE*, green cropping quadrilateral corners in red. Those red points coordinates are sent down to driver if the DDI is supported. | WSE output image resulting from cropping the input image using the green quadrilateral |
 | -- | -- |
-| ![input to *WSE* with viewport updated control supported](DocAssets\ViewportUpdated1.png) | ![output to *WSE* with viewport updated control supported](DocAssets\ViewportUpdated2.png) |
+| ![input to *WSE* with viewport updated control supported](./DocAssets/ViewportUpdated1.png) | ![output to *WSE* with viewport updated control supported](./DocAssets/ViewportUpdated2.png) |
 
 >**If a driver component intercepts this KSProperty DDI, it shall relay any SET payload if supported to the subsequent component in which case it needs to adjust coordinates according to its own manipulation of the viewport if there are any**
 
