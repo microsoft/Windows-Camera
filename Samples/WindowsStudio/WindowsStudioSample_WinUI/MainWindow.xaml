@@ -6,114 +6,132 @@
     xmlns:local="using:WindowsStudioSample_WinUI"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    SizeChanged="Window_SizeChanged"
+    Closed="Window_Closed">
+    <Window.SystemBackdrop>
+        <MicaBackdrop/>
+    </Window.SystemBackdrop>
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="50"/>
-            <RowDefinition Height="45"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
-            <RowDefinition Height="35"/>
+            <RowDefinition Height="250"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Vertical" Grid.Row="0" Grid.RowSpan="1">
+            <TextBlock Name="UITitle" Text="Windows Studio Efffects" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" FontSize="16"/>
 
-        <TextBlock Name="UITitle" Text="Windows Studio Efffects" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="4" FontWeight="Bold" FontSize="16"/>
-        
-        <InfoBar Name="UIStatusBar"
-                 Grid.Column="0" 
-                 Grid.Row="1"
-                 Grid.ColumnSpan="3"  
+            <InfoBar Name="UIStatusBar"  
                  IsOpen="True" 
                  IsClosable="False"
                  Message="nothing to report">
-        </InfoBar>
+            </InfoBar>
 
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Vertical">
+                    <ComboBox
+                        x:Name="UIFormatsAvailable"
+                        Grid.Column="0"
+                        Grid.Row="6"
+                        Grid.ColumnSpan="1"
+                        IsEnabled="false"
+                        SelectionChanged="UIFormatsAvailable_SelectionChanged">
+                    </ComboBox>
 
-        <TextBlock Text="Background Effects" Grid.Column="0" Grid.Row="2"/>
-        <ComboBox Name="UIBackgroundSegmentationModes" IsEnabled="false" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged" Grid.Column="1" Grid.Row="2" BorderBrush="#99FFFFFF" Background="{x:Null}"/>
+                    <TextBlock Text="Camera profile:" VerticalAlignment="Center"/>
+                    <ComboBox
+                        x:Name="UIProfilesAvailable"
+                        IsEnabled="false"
+                        SelectionChanged="UIProfilesAvailable_SelectionChanged">
+                    </ComboBox>
+                    <StackPanel Orientation="Horizontal">
+                        <Button x:Name="UILaunchSettingsPage"
+                             Content="Launch camera settings page"
+                             Click="UILaunchSettingsPage_Click"
+                             Foreground="Black"
+                             Style="{StaticResource AccentButtonStyle}" 
+                             IsEnabled="False">
+                        </Button>
+                    <AppBarSeparator/>
+                        <Button x:Name="UILaunchQuickSettingsPanel"
+                             Content="Launch quick settings panel"
+                             Click="UILaunchQuickSettingsPanel_Click"
+                             Foreground="Black"
+                             Style="{StaticResource AccentButtonStyle}" 
+                             IsEnabled="False">
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Background Effects"/>
+                        <ComboBox Name="UIBackgroundSegmentationModes" IsEnabled="false" SelectionChanged="UIBackgroundSegmentationModes_SelectionChanged" Grid.Column="1" Grid.Row="2" BorderBrush="#99FFFFFF" Background="{x:Null}"/>
+                    </StackPanel>
 
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Eye Contact"/>
+                        <ComboBox Name="UIEyeGazeCorrectionModes" IsEnabled="false" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"  Grid.Column="1" Grid.Row="3" BorderBrush="#99FFFFFF" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Automatic Framing"/>
+                        <ToggleSwitch Name="UIAutomaticFramingSwitch"
+                         IsEnabled="false" 
+                         Toggled="UIAutomaticFramingSwitch_Toggled" 
+                         OnContent="On" 
+                         OffContent="Off">
+                        </ToggleSwitch>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Automatic Framing Kind"/>
+                        <ComboBox Name="UIAutomaticFramingKind" IsEnabled="false" SelectionChanged="UIAutomaticFramingKind_SelectionChanged" BorderBrush="#99FFFFFF"/>
+                    </StackPanel>
+                </StackPanel>
 
-        <TextBlock Text="Eye Contact" Grid.Column="0" Grid.Row="3"/>
-        <ComboBox Name="UIEyeGazeCorrectionModes" IsEnabled="false" SelectionChanged="UIEyeGazeCorrectionModes_SelectionChanged"  Grid.Column="1" Grid.Row="3" BorderBrush="#99FFFFFF" />
-
-        <TextBlock Text="Automatic Framing" Grid.Column="0" Grid.Row="4"/>
-        <ToggleSwitch Name="UIAutomaticFramingSwitch" Grid.Column="1" Grid.Row="4"
-                 IsEnabled="false" 
-                 Toggled="UIAutomaticFramingSwitch_Toggled" 
-                 OnContent="On" 
-                 OffContent="Off" 
-                 Foreground="Black">
-        </ToggleSwitch>
-
-        <TextBlock Text="Portrait Light" Grid.Column="2" Grid.Row="2"/>
-        <ToggleSwitch Name="UIStageLightSwitch" Grid.Column="3" Grid.Row="2"
+                <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Portrait Light"/>
+                        <ToggleSwitch Name="UIStageLightSwitch"
                  IsEnabled="false" 
                  Toggled="UIStageLightSwitch_Toggled" 
                  OnContent="On" 
                  OffContent="Off" 
                  Foreground="Black"/>
+                    </StackPanel>
 
-        <TextBlock Text="Creative Filters" Grid.Column="2" Grid.Row="3"/>
-        <ComboBox Name="UICreativeFilterModes" IsEnabled="false" SelectionChanged="UICreativeFilterModes_SelectionChanged" Grid.Column="3" Grid.Row="3" BorderBrush="#99FFFFFF"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Creative Filters"/>
+                        <ComboBox Name="UICreativeFilterModes" IsEnabled="false" SelectionChanged="UICreativeFilterModes_SelectionChanged" BorderBrush="#99FFFFFF"/>
+                    </StackPanel>
 
-        <Button x:Name="UILaunchSettingsPage"
-                 Content="Launch camera settings page"
-                 Click="UILaunchSettingsPage_Click"
-                 Foreground="Black"
-                 Grid.Column="0" 
-                 Grid.Row="5"
-                 Grid.ColumnSpan="2"
-                 Style="{StaticResource AccentButtonStyle}" 
-                 IsEnabled="False">
-        </Button>
-        <Button x:Name="UILaunchQuickSettingsPanel"
-         Content="Launch quick settings panel"
-         Click="UILaunchQuickSettingsPanel_Click"
-         Foreground="Black"
-         Grid.Column="1" 
-         Grid.Row="5"
-         Grid.ColumnSpan="2"
-         Style="{StaticResource AccentButtonStyle}" 
-         IsEnabled="False">
-        </Button>
-
-        <ComboBox
-            x:Name="UIFormatsAvailable"
-            Grid.Column="0"
-            Grid.Row="6"
-            Grid.ColumnSpan="1"
-            IsEnabled="false"
-            SelectionChanged="UIFormatsAvailable_SelectionChanged">
-        </ComboBox>
-
-        <StackPanel Orientation="Horizontal" Grid.Column="1" Grid.Row="6">
-        <TextBlock Text="Camera profile:" VerticalAlignment="Center"/>
-        <ComboBox
-            x:Name="UIProfilesAvailable"
-            IsEnabled="false"
-            SelectionChanged="UIProfilesAvailable_SelectionChanged">
-        </ComboBox>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Name="UIFaceTracking" Content="Track" IsEnabled="false" Checked="UIFaceTracking_Checked" Unchecked="UIFaceTracking_Checked"/>
+                        <CheckBox Name="UIFaceLandmarks" Content="Landmarks" IsEnabled="false" Checked="UIFaceLandmarks_Checked" Unchecked="UIFaceLandmarks_Checked"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Name="UIFacePose" Content="Pose" IsEnabled="false" Checked="UIFacePose_Checked" Unchecked="UIFacePose_Checked"/>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
         </StackPanel>
+        <Grid Grid.Row="1" Grid.RowSpan="1">
+            <!--Camera preview-->
+            <MediaPlayerElement Name="UIPreviewElement"
+                    Stretch="Uniform"
+                    AreTransportControlsEnabled="False"/>
 
-        <!--Camera preview-->
-        <MediaPlayerElement Name="UIPreviewElement"
-                      Stretch="Uniform"
-                      AreTransportControlsEnabled="False"
-                      Grid.Row="7"
-                      Grid.ColumnSpan="4"/>
-
-        <Image Name="UIMaskPreviewElement"
-               Grid.Row="7"
-               Grid.Column="4"
+            <TextBox Name="UIMetadataText"
+               AcceptsReturn="True"
+               Background="Black"
+               Foreground="White"
                VerticalAlignment="Bottom"/>
+
+            <Image Name="UIMaskPreviewElement"
+               VerticalAlignment="Bottom"/>
+
+            <Canvas Name="UIPreviewCanvas"
+                    Background="Transparent"
+                    PointerMoved="UIPreviewCanvas_PointerMoved"/>
+        </Grid>
+
     </Grid>
 </Window>

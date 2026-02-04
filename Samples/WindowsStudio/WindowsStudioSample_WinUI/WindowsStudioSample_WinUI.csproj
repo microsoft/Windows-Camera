@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
+        <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
         <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
         <RootNamespace>WindowsStudioSample_WinUI</RootNamespace>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <Platforms>x86;x64;ARM64</Platforms>
         <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-        <PublishProfile>win10-$(Platform).pubxml</PublishProfile>
         <UseWinUI>true</UseWinUI>
         <EnableMsixTooling>true</EnableMsixTooling>
+        <PublishProfile>Properties\PublishProfiles\win10-$(Platform).pubxml</PublishProfile>
         <SupportedOSPlatformVersion>10.0.22621.0</SupportedOSPlatformVersion>
         <PackageCertificateKeyFile>WindowsStudioSample_WinUI_TemporaryKey.pfx</PackageCertificateKeyFile>
         <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
@@ -33,9 +33,9 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.0.7" />
-        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.5.240428000" />
-        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.22621.3233" />
+        <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.2.0" />
+        <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260101001" />
+        <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7463" />
         <Manifest Include="$(ApplicationManifest)" />
     </ItemGroup>
 

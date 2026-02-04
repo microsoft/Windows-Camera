@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Windows.Graphics.Imaging;
 using Windows.Media.Capture.Frames;
@@ -33,7 +34,10 @@ namespace WindowsStudioSample_WinUI
         {
             KSPROPERTY_CAMERACONTROL_EXTENDED_EYEGAZECORRECTION = 40,
             KSPROPERTY_CAMERACONTROL_EXTENDED_BACKGROUNDSEGMENTATION = 41,
-            KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW = 43
+            KSPROPERTY_CAMERACONTROL_EXTENDED_DIGITALWINDOW = 43,
+            KSPROPERTY_CAMERACONTROL_EXTENDED_FRAMERATE_THROTTLE = 44,
+            KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2_CONFIGCAPS = 45,
+            KSPROPERTY_CAMERACONTROL_EXTENDED_FIELDOFVIEW2 = 46
         };
 
         public enum BackgroundSegmentationCapabilityKind : uint
@@ -50,6 +54,12 @@ namespace WindowsStudioSample_WinUI
             KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_ON = 1,
             KSCAMERA_EXTENDEDPROP_EYEGAZECORRECTION_STARE = 2,
         };
+        
+        public enum FramerateThrottleCapabilityKind : uint
+        {
+            KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_OFF = 0,
+            KSCAMERA_EXTENDEDPROP_FRAMERATE_THROTTLE_ON = 1
+        };
 
         // --> Windows Studio Effects custom KsProperties
         public static readonly Guid KSPROPERTYSETID_WindowsCameraEffect = 
@@ -62,7 +72,11 @@ namespace WindowsStudioSample_WinUI
             KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_STAGELIGHT = 1,
             KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER = 2,
             KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION = 3,
-            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION = 4
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_PERFORMANCEMITIGATION = 4,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA = 5,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SENSORCENTERCROP = 6,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND = 7,
+            KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_UPDATED_VIEWPORT = 8
         };
 
         public enum StageLightCapabilityKind : uint
@@ -78,6 +92,66 @@ namespace WindowsStudioSample_WinUI
             KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_ANIMATED = 2,
             KSCAMERA_WINDOWSSTUDIO_CREATIVEFILTER_WATERCOLOR = 4
         };
+
+        public static readonly Guid MF_WINDOWSSTUDIO_METADATA_FACETRACKING =
+            Guid.Parse("F008811B-70C6-4A4F-9424-D576AC159905");
+
+        public static readonly Guid MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS =
+            Guid.Parse("1239D90E-6920-49A9-B72E-5F6D77944675");
+
+        public static readonly Guid MF_WINDOWSSTUDIO_METADATA_FACEPOSE =
+            Guid.Parse("397757AA-B630-43CE-AD47-AB3AC5FE4728");
+
+        public enum WindowsStudioFaceMetadataCapabilityKind : uint
+        {
+            KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_OFF = 0,
+            KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACETRACKING = 1,
+            KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS = 2,
+            KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACEPOSE = 4
+        };
+
+        public enum WindowsStudioAutomaticFramingKindCapabilityKind : uint
+        {
+            KSCAMERA_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND_WINDOW = 1,
+            KSCAMERA_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND_CINEMATIC = 2
+        };
+
+        public struct MF_FLOAT2
+        {
+            public float x;
+            public float y;
+        };
+
+        struct WSEFaceMetadataHeader
+        {
+            public uint Count;
+            public uint Size;
+        };
+
+        public struct WSEFaceTrackingMetadata
+        {
+            public MF_FLOAT2 TopLeft; // Top left corner of the bounding box of face in image relative coordinates [0, 1]
+            public MF_FLOAT2 BoxSize; // Width and Height of the bounding box of face in image relative coordinates [0, 1]
+            public float Confidence; // Confidence of this region being an actual face (0..1)
+            public uint TrackId; // Corresponding track id
+        };
+
+        public const int MAX_NUM_LANDMARKS = 70;
+        public unsafe struct WSEFaceLandmarksMetadata
+        {
+            // maximum number of landmarks
+            public fixed float Landmarks2D[MAX_NUM_LANDMARKS * 2]; // landmark location of faces in image relative coordinates [0, 1].
+            public fixed float Confidence[MAX_NUM_LANDMARKS]; // individual confidence for each landmark (0..1)
+            public uint TrackId; // corresponding track id
+        };
+
+        const int EULER_ANGLE_COUNT = 3; // number of angles in pose
+        public unsafe struct WSEFacePoseMetadata
+        {
+            public fixed float Pose[EULER_ANGLE_COUNT]; // yaw, pitch, roll
+            public float Confidence; // overall confidence of pose detection results (0..1)
+            public uint TrackId; // corresponding track id
+        }
         // <-- Windows Studio Effects custom KsProperties
 
         [StructLayout(LayoutKind.Sequential)]
@@ -193,6 +267,15 @@ namespace WindowsStudioSample_WinUI
             public RECT ForegroundBoundingBox;
             //public byte[] MaskData;
         };
+
+        [StructLayout(LayoutKind.Sequential)]
+        public unsafe struct KSCAMERA_EXTENDEDPROP_FIELDOFVIEW2_CONFIGCAPS
+        {
+            public short DefaultDiagonalFieldOfViewInDegrees; // The default FoV value for the driver/device 
+            public short DiscreteFoVStopsCount;               // Count of use FoV entries in DiscreteFoVStops array  
+            public fixed short DiscreteFoVStops[360];         // Descending list of FoV Stops in degrees 
+            public ushort Reserved;
+        }
 
         // Lookup table to match a known camera profile ID with a legible name
         public const string LegacyProfileNameStr = "Legacy";
@@ -393,6 +476,116 @@ namespace WindowsStudioSample_WinUI
             }
             return maskSoftwareBitmap;
 
+        }
+
+        public static string ExtractFaceTrackMetadata(MediaFrameReference frame, out WSEFaceTrackingMetadata? metadataOut)
+        {
+            // face tracking
+            string result = "";
+            metadataOut = null;
+            foreach (var s in frame.Properties)
+            {
+                result += $"{s.Key} : {s.Value}\n";
+            }
+            if (frame.Properties.TryGetValue(MFSampleExtension_CaptureMetadata, out var captureMetadata))
+            {
+                if (captureMetadata is IReadOnlyDictionary<Guid, object> captureMetadataLookUp)
+                {
+                    if (captureMetadataLookUp.TryGetValue(MF_WINDOWSSTUDIO_METADATA_FACETRACKING, out var metadataBlob))
+                    {
+                        byte[] payloadBytes = (byte[])metadataBlob;
+                        int byteOffset = Marshal.SizeOf<WSEFaceMetadataHeader>();
+                        WSEFaceMetadataHeader payloadHeader = FromBytes<WSEFaceMetadataHeader>(payloadBytes, byteOffset, 0);
+                        int WSEFaceTrackingMetadataSize = Marshal.SizeOf<WSEFaceTrackingMetadata>();
+
+                        result += $"ft({payloadHeader.Count}):";
+
+                        for (int i = 0; i < payloadHeader.Count; i++)
+                        {
+                            metadataOut = FromBytes<WSEFaceTrackingMetadata>(payloadBytes, WSEFaceTrackingMetadataSize, byteOffset);
+                            result += $"t:{metadataOut?.TrackId} {metadataOut?.TopLeft.x,4:0.00},{metadataOut?.TopLeft.y,4:0.00} -> w:{metadataOut?.BoxSize.x,4:0.00} h:{metadataOut?.BoxSize.y,4:0.00}";
+                            byteOffset += WSEFaceTrackingMetadataSize;
+                        }
+
+                        result += $"\n";
+                    }
+                }
+            }
+
+            return result;
+        }
+        public static string ExtractFaceLandmarksMetadata(MediaFrameReference frame, out WSEFaceLandmarksMetadata? metadataOut)
+        {
+            string result = "";
+            metadataOut = null;
+
+            // landmarks
+            if (frame.Properties.TryGetValue(MFSampleExtension_CaptureMetadata, out var captureMetadata))
+            {
+                if (captureMetadata is IReadOnlyDictionary<Guid, object> captureMetadataLookUp)
+                {
+                    if (captureMetadataLookUp.TryGetValue(MF_WINDOWSSTUDIO_METADATA_FACELANDMARKS, out var metadataBlob))
+                    {
+                        byte[] payloadBytes = (byte[])metadataBlob;
+                        int byteOffset = Marshal.SizeOf<WSEFaceMetadataHeader>();
+                        WSEFaceMetadataHeader payloadHeader = FromBytes<WSEFaceMetadataHeader>(payloadBytes, byteOffset, 0);
+                        int WSEFaceLandmarksMetadataSize = Marshal.SizeOf<WSEFaceLandmarksMetadata>();
+
+                        result += $"fl({payloadHeader.Count}):";
+
+                        for (int i = 0; i < payloadHeader.Count; i++)
+                        {
+                            WSEFaceLandmarksMetadata faceMetadata = FromBytes<WSEFaceLandmarksMetadata>(payloadBytes, WSEFaceLandmarksMetadataSize, byteOffset);
+                            metadataOut = faceMetadata;
+                            unsafe
+                            {
+                                result += $"t:{faceMetadata.TrackId} {faceMetadata.Landmarks2D[0],4:0.00},{faceMetadata.Landmarks2D[1],4:0.00}";
+                            }
+                            byteOffset += WSEFaceLandmarksMetadataSize;
+                        }
+                        result += $"\n";
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public static string ExtractFacePoseMetadata(MediaFrameReference frame, out WSEFacePoseMetadata? metadataOut)
+        {
+            string result = "";
+            metadataOut = null;
+
+            // pose
+            if (frame.Properties.TryGetValue(MFSampleExtension_CaptureMetadata, out var captureMetadata))
+            {
+                if (captureMetadata is IReadOnlyDictionary<Guid, object> captureMetadataLookUp)
+                {
+                    if (captureMetadataLookUp.TryGetValue(MF_WINDOWSSTUDIO_METADATA_FACEPOSE, out var metadataBlob))
+                    {
+                        byte[] payloadBytes = (byte[])metadataBlob;
+                        int byteOffset = Marshal.SizeOf<WSEFaceMetadataHeader>();
+                        WSEFaceMetadataHeader payloadHeader = FromBytes<WSEFaceMetadataHeader>(payloadBytes, byteOffset, 0);
+                        int WSEFacePoseMetadataSize = Marshal.SizeOf<WSEFacePoseMetadata>();
+
+                        result += $"fp({payloadHeader.Count}):";
+
+                        for (int i = 0; i < payloadHeader.Count; i++)
+                        {
+                            WSEFacePoseMetadata faceMetadata = FromBytes<WSEFacePoseMetadata>(payloadBytes, WSEFacePoseMetadataSize, byteOffset);
+                            metadataOut = faceMetadata;
+                            unsafe
+                            {
+                                result += $"t:{faceMetadata.TrackId} {faceMetadata.Pose[0],4:0.00},{faceMetadata.Pose[1],4:0.00}, {faceMetadata.Pose[2],4:0.00}";
+                            }
+                            byteOffset += WSEFacePoseMetadataSize;
+                        }
+                        result += $"\n";
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }
