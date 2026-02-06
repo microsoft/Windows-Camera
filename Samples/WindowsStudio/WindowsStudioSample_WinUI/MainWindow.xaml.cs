@@ -1,26 +1,30 @@
 // Copyright (c) Microsoft. All rights reserved.
 
+using ControlMonitorHelperWinRT;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System.Threading;
-using Windows.Media.Capture.Frames;
-using Windows.Media.Capture;
-using Windows.Media.Playback;
-using Microsoft.UI.Dispatching;
 using System.Threading.Tasks;
-using static WindowsStudioSample_WinUI.KsHelper;
 using Windows.Devices.Enumeration;
+using Windows.Foundation;
+using Windows.Graphics.Imaging;
+using Windows.Media.Capture;
+using Windows.Media.Capture.Frames;
+using Windows.Media.Core;
 using Windows.Media.Devices;
 using Windows.Media.MediaProperties;
-using Windows.Media.Core;
-using ControlMonitorHelperWinRT;
-using Windows.Graphics.Imaging;
-using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Media.Playback;
+using static WindowsStudioSample_WinUI.KsHelper;
 
 
 namespace WindowsStudioSample_WinUI;
@@ -46,6 +50,17 @@ public sealed partial class MainWindow : Window
     private SoftwareBitmapSource m_backgroundMaskImageSource = new SoftwareBitmapSource();
     private bool m_isShowingMask = false;
 
+    // canvas
+    private SemaphoreSlim m_canvasRefreshLock = new SemaphoreSlim(1);
+    private double m_canvasOffsetX = 0, m_canvasOffsetY = 0;
+    private Rectangle m_trackingRectUI = new Rectangle() { StrokeThickness = 3, Stroke = new SolidColorBrush(Microsoft.UI.Colors.Blue) };
+    private Ellipse[] m_landmarksPointsUI = null;
+    private Line[] m_poseLinesUI = new Line[2]
+    {
+        new Line() { Stroke = new SolidColorBrush(Microsoft.UI.Colors.Green), StrokeThickness = 8, X1=-50, X2=50 },
+        new Line() { Stroke = new SolidColorBrush(Microsoft.UI.Colors.Pink), StrokeThickness = 8, Y1=-50, Y2=50 },
+    };
+
     // this DevPropKey signifies if the system is capable of exposing a Windows Studio camera
     private const string DEVPKEY_DeviceInterface_IsWindowsCameraEffectAvailable = "{6EDC630D-C2E3-43B7-B2D1-20525A1AF120} 4";
 
@@ -57,6 +72,7 @@ public sealed partial class MainWindow : Window
     }
 
     private AppState m_appState = AppState.Unitialized;
+    private Point m_pointerPosition;
 
     // Lookup table for Background Segmentation DDI flag values and UI names
     readonly Dictionary<string, ulong> m_possibleBackgroundSegmentationFlagValues = new()
@@ -130,12 +146,40 @@ public sealed partial class MainWindow : Window
             }
         };
 
+    // Lookup table for Automatic Framing Kind DDI flag values and UI names
+    readonly Dictionary<string, ulong> m_possibleAutomaticFramingKindFlagValues = new()
+        {
+            {
+                "Cinematic",
+                (ulong)WindowsStudioAutomaticFramingKindCapabilityKind.KSCAMERA_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND_CINEMATIC
+            },
+            {
+                "Standard",
+                (ulong)WindowsStudioAutomaticFramingKindCapabilityKind.KSCAMERA_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND_WINDOW
+            }
+        };
+
     public MainWindow()
     {
         this.InitializeComponent();
-        this.ExtendsContentIntoTitleBar = true;;
+        this.ExtendsContentIntoTitleBar = true;
         this.SetTitleBar(UITitle);
-        
+
+        this.AppWindow.Changed += AppWindow_Changed;
+        m_landmarksPointsUI = new Ellipse[70];
+        for (int i = 0; i < MAX_NUM_LANDMARKS; i++)
+        {
+            m_landmarksPointsUI[i] = new Ellipse()
+            {
+                StrokeThickness = 3,
+                Stroke = new SolidColorBrush(i < 68 ? Microsoft.UI.Colors.Red : Microsoft.UI.Colors.Yellow),
+                Fill = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+                Width = 5,
+                Height = 5,
+                Visibility = Visibility.Collapsed
+            };
+        }
+
         m_uiDispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         var fireAndForget = InitializeCameraAndUI();
@@ -144,7 +188,7 @@ public sealed partial class MainWindow : Window
     /// <summary>
     /// Uninitialize the camera
     /// </summary>
-    private void UninitializeCamera()
+    private async Task UninitializeCamera()
     {
         // disable UI
 
@@ -171,13 +215,14 @@ public sealed partial class MainWindow : Window
         }
 
         m_frameReadingLock.Wait();
-        m_backgroundSegmentationImageRefreshLock.Wait();
         try
         {
             if (m_mediaFrameReader != null)
             {
                 m_mediaFrameReader.FrameArrived -= MediaFrameReader_FrameArrived;
-                m_mediaFrameReader.StopAsync().Wait();
+                m_backgroundSegmentationImageRefreshLock.Wait();
+                m_canvasRefreshLock.Wait();
+                await m_mediaFrameReader.StopAsync();
                 m_mediaFrameReader = null;
             }
 
@@ -191,6 +236,7 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
+            m_canvasRefreshLock.Release();
             m_backgroundSegmentationImageRefreshLock.Release();
             m_frameReadingLock.Release();
         }
@@ -213,6 +259,16 @@ public sealed partial class MainWindow : Window
         {
             m_initLock.Wait();
 
+            UIPreviewCanvas.Children.Clear();
+
+            UIPreviewCanvas.Children.Add(m_trackingRectUI);
+            UIPreviewCanvas.Children.Add(m_poseLinesUI[0]);
+            UIPreviewCanvas.Children.Add(m_poseLinesUI[1]);
+            for (int i = 0; i < m_landmarksPointsUI.Count(); i++)
+            {
+                UIPreviewCanvas.Children.Add(m_landmarksPointsUI[i]);
+            }
+
             // Attempt to find a Windows Studio camera..
             if (m_cameraDeviceInfo == null)
             {
@@ -233,7 +289,7 @@ public sealed partial class MainWindow : Window
                 // reinterpret the byte array as an extended property payload
                 KSCAMERA_EXTENDEDPROP_HEADER payloadHeader = FromBytes<KSCAMERA_EXTENDEDPROP_HEADER>(byteResultPayload);
                 int sizeofHeader = Marshal.SizeOf<KSCAMERA_EXTENDEDPROP_HEADER>();
-                int sizeofKsProperty = Marshal.SizeOf<KsProperty>(); ;
+                int sizeofKsProperty = Marshal.SizeOf<KsProperty>();
                 int supportedControls = ((int)payloadHeader.Size - sizeofHeader) / sizeofKsProperty;
 
                 for (int i = 0; i < supportedControls; i++)
@@ -249,6 +305,14 @@ public sealed partial class MainWindow : Window
                         else if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_CREATIVEFILTER)
                         {
                             RefreshCreativeFilterUI();
+                        }
+                        else if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA)
+                        {
+                            RefreshFaceMetadataUI();
+                        }
+                        else if (payloadKsProperty.Id == (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND)
+                        {
+                            RefreshAutomaticFramingKindUI();
                         }
                     }
                 }
@@ -291,7 +355,7 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             NotifyUser(ex.Message, NotifyType.ErrorMessage);
-            UninitializeCamera();
+            await UninitializeCamera();
             m_appState = AppState.Error;
         }
         finally
@@ -507,6 +571,69 @@ public sealed partial class MainWindow : Window
                         m_backgroundSegmentationImageRefreshLock.Release();
                     });
                 }
+
+                // Attempt to extract the face metadata
+                string faceTrackMetadataOutput = ExtractFaceTrackMetadata(frame, out var faceTrackMetadataOut);
+                string faceLandmarksMetadataOutput = ExtractFaceLandmarksMetadata(frame, out var faceLandmarksMetadataOut);
+                string facePoseMetadataOutput = ExtractFacePoseMetadata(frame, out var facePoseMetadataOut);
+
+                if (faceTrackMetadataOut != null || faceLandmarksMetadataOut != null || facePoseMetadataOut != null)
+                {
+                    m_uiDispatcherQueue.TryEnqueue(() =>
+                    {
+                        m_canvasRefreshLock.Wait(0);
+                        try
+                        {
+                            UIMetadataText.Text = faceTrackMetadataOutput + faceLandmarksMetadataOutput + facePoseMetadataOutput;
+                            if (faceTrackMetadataOut != null)
+                            {
+                                m_trackingRectUI.Width = (double)(faceTrackMetadataOut?.BoxSize.x * (UIPreviewElement.ActualWidth - 2 * m_canvasOffsetX));
+                                m_trackingRectUI.Height = (double)(faceTrackMetadataOut?.BoxSize.y * (UIPreviewCanvas.ActualHeight - 2 * m_canvasOffsetY));
+                                Canvas.SetLeft(m_trackingRectUI, (double)(faceTrackMetadataOut?.TopLeft.x * (UIPreviewCanvas.ActualWidth - 2 * m_canvasOffsetX) + m_canvasOffsetX));
+                                Canvas.SetTop(m_trackingRectUI, (double)(faceTrackMetadataOut?.TopLeft.y * (UIPreviewCanvas.ActualHeight - 2 * m_canvasOffsetY) + m_canvasOffsetY));
+                            }
+                            if (faceLandmarksMetadataOut != null)
+                            {
+                                WSEFaceLandmarksMetadata landmarkMetadata = (WSEFaceLandmarksMetadata)faceLandmarksMetadataOut;
+                                for (int i = 0; i < 70; i++) unsafe
+                                    {
+
+                                        Canvas.SetLeft(m_landmarksPointsUI[i], (double)(landmarkMetadata.Landmarks2D[2 * i] * (UIPreviewElement.ActualWidth - 2 * m_canvasOffsetX) + m_canvasOffsetX));
+                                        Canvas.SetTop(m_landmarksPointsUI[i], (double)(landmarkMetadata.Landmarks2D[2 * i + 1] * (UIPreviewElement.ActualHeight - 2 * m_canvasOffsetY) + m_canvasOffsetY));
+                                    }
+                            }
+                            if (facePoseMetadataOut != null)
+                            {
+                                WSEFacePoseMetadata poseMetadata = (WSEFacePoseMetadata)facePoseMetadataOut;
+                                for (int i = 0; i < 2; i++) unsafe
+                                    {
+                                        m_poseLinesUI[i].Projection = new PlaneProjection()
+                                        {
+                                            RotationX = (double)poseMetadata.Pose[0],
+                                            RotationY = -(double)poseMetadata.Pose[1],
+                                            RotationZ = -(double)poseMetadata.Pose[2]
+                                        };
+                                        if (faceTrackMetadataOut == null)
+                                        {
+                                            Canvas.SetLeft(m_poseLinesUI[i], UIPreviewCanvas.ActualWidth / 2);
+                                            Canvas.SetTop(m_poseLinesUI[i], UIPreviewCanvas.ActualHeight / 2);
+                                        }
+                                        else
+                                        {
+                                            Canvas.SetLeft(m_poseLinesUI[i], (double)(faceTrackMetadataOut?.TopLeft.x * (UIPreviewCanvas.ActualWidth - 2 * m_canvasOffsetX) + m_canvasOffsetX));
+                                            Canvas.SetTop(m_poseLinesUI[i], (double)(faceTrackMetadataOut?.TopLeft.y * (UIPreviewCanvas.ActualHeight - 2 * m_canvasOffsetY) + m_canvasOffsetY));
+                                        }
+                                    }
+                            }
+                        }
+                        finally
+                        {
+                            m_canvasRefreshLock.Release();
+                        }
+
+                    });
+                }
+
                 m_frameReadingLock.Release();
             }
         }
@@ -521,7 +648,7 @@ public sealed partial class MainWindow : Window
     {
         m_initLock.Wait();
         NotifyUser($"MediaCapture_Failed: {errorEventArgs.Message}", NotifyType.ErrorMessage);
-        UninitializeCamera();
+        var t = UninitializeCamera();
         m_appState = AppState.Error;
         m_initLock.Release();
     }
@@ -569,6 +696,14 @@ public sealed partial class MainWindow : Window
                     m_uiDispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => RefreshCreativeFilterUI());
                     break;
 
+                case (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA:
+                    m_uiDispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => RefreshFaceMetadataUI());
+                    break;
+
+                case (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND:
+                    m_uiDispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal, () => RefreshAutomaticFramingKindUI());
+                    break;
+
                 default:
                     throw new Exception("unhandled Windows Studio Effects control change, implement or allow through at your convenience");
             }
@@ -609,7 +744,7 @@ public sealed partial class MainWindow : Window
     /// </summary>
     private void RefreshBackgroundSegmentationUI()
     {
-        // send a GET call for the eye gaze DDI and retrieve the result payload
+        // send a GET call for the background segmentation DDI and retrieve the result payload
         byte[] byteResultPayload = GetExtendedControlPayload(
             m_mediaCapture.VideoDeviceController,
             KSPROPERTYSETID_ExtendedCameraControl,
@@ -701,6 +836,66 @@ public sealed partial class MainWindow : Window
         UICreativeFilterModes.SelectionChanged += UICreativeFilterModes_SelectionChanged;
     }
 
+    private void RefreshAutomaticFramingKindUI()
+    {
+        // send a GET call for the AutomaticFramingKind DDI and retrieve the result payload
+        byte[] byteResultPayload = GetExtendedControlPayload(
+            m_mediaCapture.VideoDeviceController,
+            KSPROPERTYSETID_WindowsCameraEffect,
+            (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND);
+
+        // reinterpret the byte array as an extended property payload
+        KsBasicCameraExtendedPropPayload payload = FromBytes<KsBasicCameraExtendedPropPayload>(byteResultPayload);
+
+        // refresh the list of values displayed for this control
+        UIAutomaticFramingKind.SelectionChanged -= UIAutomaticFramingKind_SelectionChanged;
+
+        var automaticFramingKindCapabilities = m_possibleAutomaticFramingKindFlagValues.Where(x => (x.Value & payload.header.Capability) == x.Value).ToList();
+        UIAutomaticFramingKind.ItemsSource = automaticFramingKindCapabilities.Select(x => x.Key);
+
+        // reflect in UI what is the current value
+        var currentFlag = payload.header.Flags;
+        var currentIndexToSelect = automaticFramingKindCapabilities.FindIndex(x => x.Value == currentFlag);
+        UIAutomaticFramingKind.SelectedIndex = currentIndexToSelect;
+
+        UIAutomaticFramingKind.IsEnabled = true;
+        UIAutomaticFramingKind.SelectionChanged += UIAutomaticFramingKind_SelectionChanged;
+    }
+
+    private void RefreshFaceMetadataUI()
+    {
+        // send a GET call for the FaceMetadata DDI and retrieve the result payload
+        byte[] byteResultPayload = GetExtendedControlPayload(
+            m_mediaCapture.VideoDeviceController,
+            KSPROPERTYSETID_WindowsCameraEffect,
+            (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA);
+
+        // reinterpret the byte array as an extended property payload
+        KsBasicCameraExtendedPropPayload payload = FromBytes<KsBasicCameraExtendedPropPayload>(byteResultPayload);
+
+        // refresh the list of values displayed for this control
+        UIFaceTracking.Checked -= UIFaceTracking_Checked;
+        UIFaceTracking.Unchecked -= UIFaceTracking_Checked;
+        UIFaceLandmarks.Checked -= UIFaceLandmarks_Checked;
+        UIFaceLandmarks.Unchecked -= UIFaceLandmarks_Checked;
+        UIFacePose.Checked -= UIFacePose_Checked;
+        UIFacePose.Unchecked -= UIFacePose_Checked;
+
+        UIFaceTracking.IsEnabled = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACETRACKING & (payload.header.Capability)) > 0;
+        UIFaceTracking.IsChecked = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACETRACKING & (payload.header.Flags)) > 0;
+        UIFaceLandmarks.IsEnabled = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS & (payload.header.Capability)) > 0;
+        UIFaceLandmarks.IsChecked = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS & (payload.header.Flags)) > 0;
+        UIFacePose.IsEnabled = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACEPOSE & (payload.header.Capability)) > 0;
+        UIFacePose.IsChecked = ((uint)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACEPOSE & (payload.header.Flags)) > 0;
+
+        UIFaceTracking.Checked += UIFaceTracking_Checked;
+        UIFaceTracking.Unchecked += UIFaceTracking_Checked;
+        UIFaceLandmarks.Checked += UIFaceLandmarks_Checked;
+        UIFaceLandmarks.Unchecked += UIFaceLandmarks_Checked;
+        UIFacePose.Checked += UIFacePose_Checked;
+        UIFacePose.Unchecked += UIFacePose_Checked;
+    }
+
     #region UICallbacks
     private void UIEyeGazeCorrectionModes_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -782,6 +977,26 @@ public sealed partial class MainWindow : Window
             flagToSet);
     }
 
+    private void UIAutomaticFramingKind_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        var selectedIndex = UIAutomaticFramingKind.SelectedIndex;
+        if (selectedIndex < 0)
+        {
+            return;
+        }
+
+        // find the flags value associated with the current mode selected
+        string selection = UIAutomaticFramingKind.SelectedItem.ToString();
+        ulong flagToSet = m_possibleAutomaticFramingKindFlagValues.FirstOrDefault(x => x.Key == selection).Value;
+
+        // set the flags value for the corresponding extended control
+        SetExtendedControlFlags(
+            m_mediaCapture.VideoDeviceController,
+            KSPROPERTYSETID_WindowsCameraEffect,
+            (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_AUTOMATICFRAMINGKIND,
+            flagToSet);
+    }
+
     private void UILaunchSettingsPage_Click(object sender, RoutedEventArgs e)
     {
         // launch Windows Settings page for the camera identified by the specified Id
@@ -813,6 +1028,102 @@ public sealed partial class MainWindow : Window
             m_initLock.Release();
             var t = InitializeCameraAndUI(); // fire-forget
         }
+    }
+
+    private void UIFaceTracking_Checked(object sender, RoutedEventArgs e)
+    {
+        m_trackingRectUI.Visibility = UIFaceTracking.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        UIFaceMetadataSwitch_Toggled(null, null);
+    }
+
+    private void UIFaceLandmarks_Checked(object sender, RoutedEventArgs e)
+    {
+        for (int i = 0; i < 70; i++)
+        {
+            m_landmarksPointsUI[i].Visibility = UIFaceLandmarks.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+        UIFaceMetadataSwitch_Toggled(null, null);
+    }
+
+    private void UIFacePose_Checked(object sender, RoutedEventArgs e)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            m_poseLinesUI[i].Visibility = UIFacePose.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+        UIFaceMetadataSwitch_Toggled(null, null);
+    }
+
+    private void UIFaceMetadataSwitch_Toggled(object sender, RoutedEventArgs e)
+    {
+        // find the flags value associated with the current toggle value selected
+        ulong flagToSet =
+            ((UIFaceTracking.IsChecked == true ? (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACETRACKING : (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_OFF)
+            | (UIFaceLandmarks.IsChecked == true ? (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACELANDMARKS : (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_OFF)
+            | (UIFacePose.IsChecked == true ? (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_FACEPOSE : (ulong)WindowsStudioFaceMetadataCapabilityKind.KSCAMERA_WINDOWSSTUDIO_FACEMETADATA_OFF));
+
+        // set the flags value for the corresponding extended control
+        SetExtendedControlFlags(
+            m_mediaCapture.VideoDeviceController,
+            KSPROPERTYSETID_WindowsCameraEffect,
+            (uint)KSPROPERTY_CAMERACONTROL_WINDOWS_EFFECTS.KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_FACEMETADATA,
+            flagToSet);
+
+        UIPreviewCanvas.Width = UIPreviewElement.ActualWidth;
+        UIPreviewCanvas.Height = UIPreviewElement.ActualHeight;
+
+        if (((float)m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height) > (float)(UIPreviewElement.ActualWidth / UIPreviewElement.ActualHeight))
+        {
+            m_canvasOffsetY = (UIPreviewElement.ActualHeight - UIPreviewElement.ActualWidth * m_selectedFormat.VideoFormat.Height / m_selectedFormat.VideoFormat.Width) / 2;
+        }
+        else
+        {
+            m_canvasOffsetX = (UIPreviewElement.ActualWidth - UIPreviewElement.ActualHeight * m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height) / 2;
+        }
+
+        UIMetadataText.Visibility = flagToSet > 0 ? Visibility.Visible : Visibility.Collapsed;
+        UIPreviewCanvas.Visibility = flagToSet > 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private async void Window_Closed(object sender, WindowEventArgs args)
+    {
+        await UninitializeCamera();
+    }
+
+    private void UIPreviewCanvas_PointerMoved(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+    {
+        m_pointerPosition = e.GetCurrentPoint(UIPreviewCanvas).Position;
+    }
+
+    private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        var presenter = sender.Presenter as OverlappedPresenter;
+        if (presenter != null)
+        {
+            if (presenter.State == OverlappedPresenterState.Restored || presenter.State == OverlappedPresenterState.Maximized)
+            {
+                Window_SizeChanged(null, null);
+            }
+        }
+    }
+
+    private void Window_SizeChanged(object sender, WindowSizeChangedEventArgs args)
+    {
+        if (m_selectedFormat == null)
+        {
+            return;
+        }
+        if (((float)m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height) > (float)(UIPreviewElement.ActualWidth / UIPreviewElement.ActualHeight))
+        {
+            m_canvasOffsetY = (UIPreviewElement.ActualHeight - UIPreviewElement.ActualWidth * m_selectedFormat.VideoFormat.Height / m_selectedFormat.VideoFormat.Width) / 2;
+        }
+        else
+        {
+            m_canvasOffsetX = (UIPreviewElement.ActualWidth - UIPreviewElement.ActualHeight * m_selectedFormat.VideoFormat.Width / m_selectedFormat.VideoFormat.Height) / 2;
+        }
+
+        UIPreviewCanvas.Width = UIPreviewElement.ActualWidth;
+        UIPreviewCanvas.Height = UIPreviewElement.ActualHeight;
     }
 
     #endregion UICallbacks
@@ -861,7 +1172,7 @@ public sealed partial class MainWindow : Window
                 UIStatusBar.Severity = InfoBarSeverity.Error;
                 break;
         }
-        UIStatusBar.Message= strMessage;
+        UIStatusBar.Message = strMessage;
         Debug.WriteLine($"{type}: {strMessage}");
 
         // Collapse the StatusBlock if it has no text to conserve UI real estate.
