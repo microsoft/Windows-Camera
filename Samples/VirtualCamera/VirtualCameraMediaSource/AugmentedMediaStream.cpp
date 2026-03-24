@@ -139,7 +139,11 @@ namespace winrt::WindowsSample::implementation
 
         for (DWORD i = 0; i < validMediaTypeCount; i++)
         {
-            m_mediaTypeList[i] = sourceStreamMediaTypeList[i];
+            wil::com_ptr_nothrow<IMFMediaType> spSrcStreamMediaType = sourceStreamMediaTypeList[i];
+            if(spSrcStreamMediaType != nullptr)
+            {
+                m_mediaTypeList[i] = spSrcStreamMediaType.detach();
+            }
         }
 
         RETURN_IF_FAILED(MFCreateAttributes(&m_spAttributes, 10));

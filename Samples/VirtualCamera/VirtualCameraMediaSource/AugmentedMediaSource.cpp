@@ -338,7 +338,7 @@ namespace winrt::WindowsSample::implementation
             }
         }
         m_streamList.reset();
-        (void)m_spPresentationDescriptor.detach(); // calling reset() fails due to the stream also calling reset on its stream descriptor..
+        m_spPresentationDescriptor.reset();
         
         if (m_spEventQueue != nullptr)
         {
