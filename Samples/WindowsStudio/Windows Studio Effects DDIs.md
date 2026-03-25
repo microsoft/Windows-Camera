@@ -1545,7 +1545,7 @@ DEFINE_DEVPROPKEY(DEVPKEY_WindowsStudio_LensDistortionModel_PolyLinear,
 
 ; Set property to define DEVPKEY_WindowsStudio_LensDistortionModel_PolyLinear, specifying 9 pairs of sensor position after lens distortion and before lens distortion. (There can be up to 200 pairs defined)
 
-{0A6244AF-D455-4A0F-B43E-F29507A7DEB6}, 3, 18,, “46.0,45.9846,69.0,68.967,92.0,91.94,115.0,114.9,138.0,137.858,1219.0,1248.557,1679.0,1749.0,2162.0,2543.8,2231.0,2714.0”
+{0A6244AF-D455-4A0F-B43E-F29507A7DEB6}, 4, 18,, “46.0,45.9846,69.0,68.967,92.0,91.94,115.0,114.9,138.0,137.858,1219.0,1248.557,1679.0,1749.0,2162.0,2543.8,2231.0,2714.0”
 
 ~~~
 
