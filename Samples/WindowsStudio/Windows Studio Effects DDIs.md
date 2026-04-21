@@ -1311,7 +1311,7 @@ The optional device property *DEVPKEY_WindowsStudio_HighResolutionModeOverrideIn
 
 |  |  |
 | -- | -- |
-| **Name** | DEVPKEY_WindowsStudio_HighResolutionModeOverrideInDC |
+| **Name** | DEVPKEY_WindowsStudio_3AFaceROIIntervalInMs |
 | **Property GUID** | EAC24D1C-F801-4EC7-BBA6-A8B38314FFE5 |
 | **Property ID** | 3 |
 | **Type** | DEVPROP_TYPE_UINT32 |
