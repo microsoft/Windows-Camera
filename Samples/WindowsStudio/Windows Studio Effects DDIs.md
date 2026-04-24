@@ -1,7 +1,7 @@
 # Windows Studio Effects *(WSE)* driver – Windows DDIs and Exclusive DDIs, *WSE* device properties
 
 - [Windows Standardized DDIs implemented by *WSE* (blur, eye contact, automatic framing)](#windows-standardized-ddis-implemented-by-wse)
-- [Custom DDIs implemented by *WSE* for apps (creative filters, portrait light, face metadata)](#wse-custom-ddi-specification)
+- [Custom DDIs implemented by *WSE* for apps (creative filters, portrait light, automatic framing kind, supported control list, face metadata)](#wse-custom-ddi-specification)
 - [Custom DDIs implemented by *WSE* for drivers (set notification, sensor crop, viewport updates)](#wse-custom-ddis-and-driver-properties-intended-for-driver-implementers-oems-and-ihvs)
 - [Custom *WSE* device properties for drivers (high resolution modes, lens distortion correction, pinhole intrinsics, lens distortion model, face detection for 3A)](#wse-device-properties)
 
