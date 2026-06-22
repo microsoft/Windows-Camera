@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.3.32811.315
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11828.311 oobstable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CameraControlMonitorAppSample", "CameraControlMonitorAppSample\CameraControlMonitorAppSample.csproj", "{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlMonitorHelperWinRT", "ControlMonitorHelper\ControlMonitorHelperWinRT.vcxproj", "{3AC253A5-A383-49D8-ACC0-102C1E46E42F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControlMonitorHelperWinRT", "ControlMonitorHelper\ControlMonitorHelperWinRT.vcxproj", "{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CameraKsPropertyHelper", "..\Shared\CameraKsPropertyHelper\CameraKsPropertyHelper.vcxproj", "{3E174357-0294-40F1-BA11-7330617DDBB5}"
 EndProject
@@ -29,14 +29,14 @@ Global
 		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.ActiveCfg = Release|x64
 		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.Build.0 = Release|x64
 		{81D8C00C-5EEC-4F0B-8E36-FB4C18AD7460}.Release|x64.Deploy.0 = Release|x64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|ARM64.Build.0 = Debug|ARM64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x64.ActiveCfg = Debug|x64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Debug|x64.Build.0 = Debug|x64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM64.ActiveCfg = Release|ARM64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|ARM64.Build.0 = Release|ARM64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x64.ActiveCfg = Release|x64
-		{3AC253A5-A383-49D8-ACC0-102C1E46E42F}.Release|x64.Build.0 = Release|x64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Debug|ARM64.Build.0 = Debug|ARM64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Debug|x64.ActiveCfg = Debug|x64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Debug|x64.Build.0 = Debug|x64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Release|ARM64.ActiveCfg = Release|ARM64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Release|ARM64.Build.0 = Release|ARM64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Release|x64.ActiveCfg = Release|x64
+		{5A835B38-9B32-43CE-90FA-EDC3E4FC8070}.Release|x64.Build.0 = Release|x64
 		{3E174357-0294-40F1-BA11-7330617DDBB5}.Debug|ARM64.ActiveCfg = Debug|ARM64
 		{3E174357-0294-40F1-BA11-7330617DDBB5}.Debug|ARM64.Build.0 = Debug|ARM64
 		{3E174357-0294-40F1-BA11-7330617DDBB5}.Debug|x64.ActiveCfg = Debug|x64

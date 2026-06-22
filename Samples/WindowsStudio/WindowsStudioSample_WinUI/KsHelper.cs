@@ -120,12 +120,24 @@ namespace WindowsStudioSample_WinUI
         {
             public float x;
             public float y;
+
+            public MF_FLOAT2()
+            {
+                x = 0.0f;
+                y = 0.0f;
+            }
         };
 
         struct WSEFaceMetadataHeader
         {
             public uint Count;
             public uint Size;
+
+            public WSEFaceMetadataHeader()
+            {
+                Count = 0;
+                Size = 0;
+            }
         };
 
         public struct WSEFaceTrackingMetadata
@@ -134,6 +146,14 @@ namespace WindowsStudioSample_WinUI
             public MF_FLOAT2 BoxSize; // Width and Height of the bounding box of face in image relative coordinates [0, 1]
             public float Confidence; // Confidence of this region being an actual face (0..1)
             public uint TrackId; // Corresponding track id
+
+            public WSEFaceTrackingMetadata()
+            {
+                TopLeft = new MF_FLOAT2();
+                BoxSize = new MF_FLOAT2();
+                Confidence = 0.0f;
+                TrackId = 0;
+            }
         };
 
         public const int MAX_NUM_LANDMARKS = 70;
@@ -143,6 +163,11 @@ namespace WindowsStudioSample_WinUI
             public fixed float Landmarks2D[MAX_NUM_LANDMARKS * 2]; // landmark location of faces in image relative coordinates [0, 1].
             public fixed float Confidence[MAX_NUM_LANDMARKS]; // individual confidence for each landmark (0..1)
             public uint TrackId; // corresponding track id
+
+            public WSEFaceLandmarksMetadata()
+            {
+                TrackId = 0;
+            }
         };
 
         const int EULER_ANGLE_COUNT = 3; // number of angles in pose
@@ -151,7 +176,14 @@ namespace WindowsStudioSample_WinUI
             public fixed float Pose[EULER_ANGLE_COUNT]; // yaw, pitch, roll
             public float Confidence; // overall confidence of pose detection results (0..1)
             public uint TrackId; // corresponding track id
+
+            public WSEFacePoseMetadata()
+            {
+                Confidence = 0.0f;
+                TrackId = 0;
+            }
         }
+        
         // <-- Windows Studio Effects custom KsProperties
 
         [StructLayout(LayoutKind.Sequential)]

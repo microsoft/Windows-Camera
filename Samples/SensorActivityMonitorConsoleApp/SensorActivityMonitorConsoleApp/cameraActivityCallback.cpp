@@ -16,6 +16,8 @@ namespace
         RETURN_IF_FAILED(processActivity->GetProcessId(&pid));
 
         printf("\t Process %d [streaming:%s,mode:%s] \n", pid, (fStreaming ? "true" : "false"), ((mode == MFSensorDeviceMode_Controller) ? "controller" : "shared"));
+
+        return S_OK;
     }
 }
 

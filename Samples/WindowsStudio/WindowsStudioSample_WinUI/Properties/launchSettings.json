@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WindowsStudioSample_WinUI": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": true
+    }
+  }
+}
