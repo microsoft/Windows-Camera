@@ -1019,12 +1019,12 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void UIProfilesAvailable_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void UIProfilesAvailable_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (UIProfilesAvailable.IsEnabled)
         {
             m_initLock.Wait();
-            UninitializeCamera();
+            await UninitializeCamera();
             m_initLock.Release();
             var t = InitializeCameraAndUI(); // fire-forget
         }

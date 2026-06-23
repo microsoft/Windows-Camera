@@ -10,7 +10,7 @@
   <Identity
     Name="40087401-8729-4698-be94-48b59957c44e"
     Publisher="CN=Contoso"
-    Version="1.0.2.0" />
+    Version="1.0.3.0" />
 
   <mp:PhoneIdentity PhoneProductId="40087401-8729-4698-be94-48b59957c44e" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
