@@ -801,7 +801,7 @@ Implementing this DDI is optional:
 | Example of possible sensor crop | Example values returned via DDI assuming SensorWidth = 3840, SensorHeight = 2640 for the sensor center crop (green) | Example sensor area leveraged to service MediaType (red) |
 | -- | -- | -- |
 | ![sensor crop example 1](./DocAssets/SensorCrop1.png) | Size.cx = 3840<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1440, We infer then that the sensor area covered is:<br>2880 x 2160 |
-| ![sensor crop example 2](./DocAssets/SensorCrop2.png) | Size.cx = 3520<br>Size.cy = 2160 | Mediatype is of resolution 1920 x 1080, We infer then that the sensor area covered is:<br>2880 x 2160 |
+| ![sensor crop example 2](./DocAssets/SensorCrop2.png) | Size.cx = 3520<br>Size.cy = 2640 | Mediatype is of resolution 1920 x 1080, We infer then that the sensor area covered is:<br>3520 x 1980 |
 | ![sensor crop example 3](./DocAssets/SensorCrop3.png) | Size.cx = 1600<br>Size.cy = 1600 | Mediatype is of resolution 800 x 800, We infer then that the sensor area covered is:<br>1600 x 1600 |
 
 >**A driver component such as a DMFT that does not implement this DDI call shall relay it to the subsequent component**
