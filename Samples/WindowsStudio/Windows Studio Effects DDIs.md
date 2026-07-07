@@ -558,8 +558,7 @@ The capability field defines which supported SET notifications to receive.
 | **PinId** | This must be KSCAMERA_EXTENDEDPROP_FILTERSCOPE (0xFFFFFFFF). |
 | **Size** | sizeof(KSCAMERA_EXTENDEDPROP_HEADER) + sizeof(KSCAMERA_EXTENDEDPROP_VALUE) |
 | **Result** | Unused, must be 0 |
-| **Capability** | ***GET call***: Bitmask of notification supported **(KSCAMERA_WINDOWSSTUDIO_ SETNOTIFICATION_\*) for this component and all the subsequent ones up to this point**. Must at least contain a different valid potential flag value than KSCAMERA_WINDOWSSTUDIO_SETNOTIFICATION_NONE. <br /> ***SET call***: Unused, must be 0
- |
+| **Capability** | ***GET call***: Bitmask of notification supported **(KSCAMERA_WINDOWSSTUDIO_ SETNOTIFICATION_\*) for this component and all the subsequent ones up to this point**. Must at least contain a different valid potential flag value than KSCAMERA_WINDOWSSTUDIO_SETNOTIFICATION_NONE. <br /> ***SET call***: Unused, must be 0 |
 | **Flags** | ***GET call***: Unused, must be 0. <br /> ***SET call***: One of the KSCAMERA_WINDOWSSTUDIO_ SETNOTIFICATION_* value other than KSCAMERA_WINDOWSSTUDIO_SETNOTIFICATION_NONE. |
 
 This is an example of how a device MFT may report support for and relay a  KSPROPERTY_CAMERACONTROL_WINDOWSSTUDIO_SETNOTIFICATION payload.
